@@ -1,0 +1,8 @@
+- insert:
+    - id: dsh-coopanion
+      name: dsh-coopanion
+      config:
+        roam: true
+        size: 150
+        notifications: true
+        bubbleDurationMs: 12000

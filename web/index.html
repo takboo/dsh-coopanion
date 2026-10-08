@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>小鲸 · DeepSeek Harness</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside id="demo" hidden>
+    <div class="brand">dsh <span>coopanion</span></div>
+    <span class="eyebrow">YOUR LITTLE DESKTOP COMPANION</span>
+    <h1>工作的时候，<br>有小鲸陪着。</h1>
+    <p>一只住在桌面上的小鲸鱼。<br>点点它、拖着它走，或和它说句话。</p>
+    <div class="demo-status"><i></i> 浏览器演示 · 模拟 Harness 事件</div>
+    <div class="demo-buttons">
+      <button data-demo="thinking">思考</button><button data-demo="working">工作</button><button data-demo="waiting">等你确认</button><button data-demo="happy">任务完成</button><button data-demo="error">遇到问题</button>
+    </div>
+    <p class="hint">桌面插件会订阅真实任务，无需另填 API Key。</p>
+    <div class="demo-footer">DEEPSEEK HARNESS PLUGIN <span>01 / THE WHALE</span></div>
+  </aside>
+  <main id="stage" aria-label="桌宠活动区域">
+    <section id="bubble" class="bubble interactive" hidden aria-live="polite">
+      <header><span id="bubble-status">小鲸</span><button id="dismiss" aria-label="收起气泡">×</button></header>
+      <p id="bubble-text"></p>
+    </section>
+    <section id="chat" class="panel interactive" hidden>
+      <header><strong>和小鲸说话</strong><button id="chat-close" aria-label="关闭聊天">×</button></header>
+      <label for="sessions">发送到 Harness 会话</label>
+      <select id="sessions" aria-label="会话"></select>
+      <p id="chat-help">消息会发送给所选会话，回复显示在气泡里。</p>
+      <form id="chat-form"><textarea id="message" rows="3" maxlength="2000" placeholder="有什么想说的？" aria-label="消息"></textarea><button id="send" type="submit">发送 ↗</button></form>
+    </section>
+    <section id="menu" class="menu interactive" hidden>
+      <button id="toggle-roam">暂停走动</button>
+      <button id="toggle-sleep">休息一下</button>
+      <button id="toggle-notices">静音提醒</button>
+      <button id="hide">隐藏桌宠</button>
+      <small>小鲸 · dsh-coopanion</small>
+    </section>
+    <div id="pet" class="pet interactive" data-mood="idle" tabindex="0" role="button" aria-label="小鲸，点击互动，双击聊天，拖动移动">
+      <div class="pet-halo"></div>
+      <svg id="whale" viewBox="0 0 220 185" aria-hidden="true">
+        <defs>
+          <linearGradient id="body-color" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#74bfff"/><stop offset=".5" stop-color="#4d8eff"/><stop offset="1" stop-color="#3268df"/></linearGradient>
+          <linearGradient id="belly-color" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fbffff"/><stop offset="1" stop-color="#d8edff"/></linearGradient>
+        </defs>
+        <ellipse class="ground" cx="111" cy="165" rx="72" ry="9" fill="#356bb2" opacity=".13"/>
+        <g class="whale-body">
+          <g class="tail"><path d="M164 113Q174 107 178 85Q191 83 195 70Q207 87 196 101Q218 95 216 111Q207 127 181 126Z" fill="#4f8df7" stroke="#3268cd" stroke-width="2"/><path d="M190 98L180 119" fill="none" stroke="#3268cd" stroke-width="2"/></g>
+          <path d="M28 102C19 67 45 36 88 34C129 30 175 55 182 102C190 143 154 164 104 165C53 166 28 143 28 102Z" fill="url(#body-color)" stroke="#3467c5" stroke-width="2"/>
+          <path d="M31 109C61 118 128 128 179 104C189 145 152 164 105 164C59 165 36 145 31 109Z" fill="url(#belly-color)"/>
+          <path d="M135 118Q152 114 159 129Q149 151 130 146Q125 132 135 118Z" fill="#4d8af1" stroke="#3268cd" stroke-width="2" class="fin"/>
+          <path d="M48 63Q65 45 87 46" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".27" fill="none"/>
+          <g class="eyes"><ellipse cx="66" cy="91" rx="6" ry="9" fill="#16356a"/><ellipse cx="117" cy="91" rx="6" ry="9" fill="#16356a"/><circle cx="68" cy="88" r="2" fill="white"/><circle cx="119" cy="88" r="2" fill="white"/></g>
+          <g class="sleep-eyes"><path d="M58 93Q66 98 74 93M109 93Q117 98 125 93" stroke="#16356a" stroke-width="3" stroke-linecap="round" fill="none"/></g>
+          <ellipse cx="48" cy="106" rx="12" ry="6" fill="#ffaecb" opacity=".75"/><ellipse cx="134" cy="106" rx="12" ry="6" fill="#ffaecb" opacity=".75"/>
+          <path class="mouth" d="M85 108Q93 116 101 108" stroke="#214d8f" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <g class="spout" fill="#86cfff"><path d="M86 36Q77 11 66 19Q64 3 79 9Q91 17 91 34Z"/><path d="M93 34Q92 12 106 9Q119 10 113 21Q102 17 98 36Z"/><circle cx="62" cy="9" r="4"/><circle cx="121" cy="7" r="3"/></g>
+        </g>
+      </svg>
+      <div id="mood-icon" class="mood-icon" aria-hidden="true">✦</div>
+      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
+      <span class="name-tag">小鲸 <i></i></span>
+    </div>
+    <button id="toast" class="toast interactive" hidden><span>🐳</span><div><strong id="toast-title"></strong><p id="toast-body"></p></div><b>↗</b></button>
+  </main>
+  <script src="pet.js" type="module"></script>
+</body>
+</html>

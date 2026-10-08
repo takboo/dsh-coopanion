@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+import { existsSync } from 'node:fs';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { once } from 'node:events';
+import { chromium } from 'playwright-core';
+import { ElectronBridge } from '../dist/bridge.js';
+
+let display, browser;
+const bridge = new ElectronBridge();
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const dataDir = await mkdtemp(join(tmpdir(), 'dsh-pet-test-'));
+process.env.DSH_PET_TEST_DATA_DIR = dataDir;
+process.env.XDG_CONFIG_HOME = dataDir;
+process.env.XDG_CACHE_HOME = dataDir;
+try {
+  if (process.platform === 'linux' && !process.env.DISPLAY) {
+    const number = 100 + process.pid % 1000;
+    const command = process.env.XVFB_PATH ?? 'Xvfb';
+    display = spawn(command, [`:${number}`, '-screen', '0', '1200x800x24', '-nolisten', 'tcp'], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let displayError;
+    display.on('error', error => { displayError = error; });
+    for (let attempt = 0; attempt < 30 && !existsSync(`/tmp/.X11-unix/X${number}`); attempt++) {
+      if (displayError) throw displayError;
+      if (display.exitCode !== null) throw new Error('Xvfb exited before becoming ready');
+      await pause(100);
+    }
+    if (!existsSync(`/tmp/.X11-unix/X${number}`)) throw new Error('Xvfb did not create its display socket');
+    process.env.DISPLAY = `:${number}`;
+  }
+  const portServer = createServer(); portServer.listen(0, '127.0.0.1'); await once(portServer, 'listening');
+  const port = portServer.address().port; await new Promise(resolve => portServer.close(resolve));
+  process.env.DSH_PET_TEST_DEBUG_PORT = String(port);
+  process.env.DSH_PET_TEST_NO_SANDBOX = '1';
+  const actions = []; bridge.onAction(action => actions.push(action));
+  const failures = []; bridge.on('failure', error => failures.push(error.message));
+  const snapshot = { mood: 'thinking', text: '真实 IPC 桌面测试', sessionId: 'native-test', sessions: [{ id: 'native-test', label: '桌面测试会话', mood: 'thinking', text: '', reply: '' }] };
+  bridge.update(snapshot);
+  await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  const page = browser.contexts()[0].pages()[0];
+  await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '真实 IPC 桌面测试');
+  assert.equal(await page.locator('#demo').isVisible(), false, 'native window does not masquerade as a browser demo');
+  assert.equal(await page.evaluate(() => typeof window.require), 'undefined', 'renderer has no Node access');
+  assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'thinking');
+  await page.locator('#pet').dblclick(); await page.locator('#message').fill('通过桌宠发送'); await page.locator('#send').click();
+  for (let n = 0; n < 30 && actions.length === 0; n++) await pause(50);
+  assert.deepEqual(actions[0], { type: 'chat', text: '通过桌宠发送', sessionId: 'native-test' });
+  bridge.update({ ...snapshot, mood: 'happy', text: '宿主回复已到达。' });
+  await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '宿主回复已到达。');
+  bridge.notify({ title: '桌面测试 · 已完成', body: '真实窗口与宿主 IPC 验证通过。', sessionId: 'native-test' });
+  await page.waitForSelector('#toast:not([hidden])');
+  assert.equal(await page.locator('#toast-title').innerText(), '桌面测试 · 已完成');
+  await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/native-pet.png' });
+  await bridge.dispose();
+  assert.deepEqual(failures, []);
+  console.log('Native smoke passed: Electron ready handshake, isolated renderer, two-way chat IPC, host reply, notification, and clean shutdown.');
+} finally {
+  await bridge.dispose();
+  if (browser) await browser.close();
+  if (display?.exitCode === null) { display.kill(); await once(display, 'exit'); }
+  await rm(dataDir, { recursive: true, force: true });
+}

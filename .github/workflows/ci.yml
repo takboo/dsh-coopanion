@@ -1,0 +1,62 @@
+name: Test and release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run setup:electron
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright-core install --with-deps chromium
+      - run: npm run test:ui
+      - run: npm run test:desktop
+      - name: Check distributable and create package
+        run: |
+          npm pack
+          node scripts/check-package.mjs
+          sha256sum dsh-coopanion-*.tgz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-pet
+          path: |
+            artifacts/*.png
+            dsh-coopanion-*.tgz
+            SHA256SUMS
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "if ('v' + require('./package.json').version !== process.env.RELEASE_TAG) process.exit(1)"
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-pet
+          path: release
+      - name: Verify and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd release
+          sha256sum --check SHA256SUMS
+          gh release create "$RELEASE_TAG" dsh-coopanion-*.tgz SHA256SUMS --title "小鲸 $RELEASE_TAG" --notes-file ../docs/release-notes.md
