@@ -1,6 +1,6 @@
 {
   "name": "dsh-coopanion",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "An interactive whale desktop pet and task notifications for DeepSeek Harness",
   "type": "module",
   "license": "MIT",

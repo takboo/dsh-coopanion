@@ -98,8 +98,14 @@ try {
   const installed = join(profile, 'node_modules', manifest.name);
   assert.equal(JSON.parse(await readFile(join(installed, 'package.json'), 'utf8')).version, manifest.version);
 
-  // A test overlay supplies real host services; the released bundle and its apply() are unchanged.
-  const fixture = fileURLToPath(new URL('./fixtures/host.mjs', import.meta.url));
+  // Keep the observer in its own package. The Client loader identifies packages
+  // from ancestor manifests; a fixture inside this repository can be mistaken
+  // for a second active copy of the installed dsh-coopanion client.
+  const observer = join(root, 'observer');
+  await mkdir(observer, { recursive: true });
+  await writeFile(join(observer, 'package.json'), JSON.stringify({ name: 'coopanion-install-observer', private: true, type: 'module' }));
+  const fixture = join(observer, 'host.mjs');
+  await writeFile(fixture, await readFile(fileURLToPath(new URL('./fixtures/host.mjs', import.meta.url))));
   await writeFile(join(profile, 'cordis.patch.yml'), `- insert:\n    - id: install-observer\n      name: ${JSON.stringify(fixture)}\n- id: locale\n  config:\n    preference: zh\n- id: ui-settings-models\n  config:\n    credentialOnboarding: false\n- id: dsh-coopanion\n  config:\n    autoStart: true\n    size: 150\n    roam: false\n    notifications: true\n    bubbleDurationMs: 12000\n`);
   if (process.platform === 'linux' && !environment.DISPLAY) {
     const number = 100 + process.pid % 1000;

@@ -6,7 +6,7 @@
 - 设置页可打开角色管理；桌宠关闭时会先启动。现有大肥鱼和自定义角色的选择继续保留。
 - 仍支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**。客户端使用公开的插件清单、设置插槽和经过认证的 Connection 接口。
 
-下载 `dsh-coopanion-0.3.0.tgz`，在 Harness 插件页安装或升级，完全退出并重新打开 Harness；之后从 **Settings → 桌宠** 控制桌宠。Release 同时附带 `deepseek-whale.dshpet`、`paper-star.dshpet` 和 `SHA256SUMS`。
+下载 `dsh-coopanion-0.3.1.tgz`，在 Harness 插件页安装或升级，完全退出并重新打开 Harness；之后从 **Settings → 桌宠** 控制桌宠。Release 同时附带 `deepseek-whale.dshpet`、`paper-star.dshpet` 和 `SHA256SUMS`。
 
 CI 在两个官方发布版本中安装同一插件包，并使用官方前端验证设置页面加载、配置即时应用与持久化、原生窗口关闭后的重新启动及角色恢复、中英文即时切换与自动语言选择。另执行类型检查、生命周期和角色单元测试、浏览器交互与真实 Electron 测试。Linux 云端测试不调用模型 API；Windows/macOS 实机窗口和系统通知仍需验收。
 
