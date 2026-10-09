@@ -1,6 +1,6 @@
 # DSH 角色包 v1
 
-插件 v0.2.0 引入独立的 MIT 动画引擎和纯数据角色包。设计参考桌宠项目将宿主交互与角色绘制分开的方式，未复制 Coopanion 的实现或角色素材。本规范与 Coopanion 的 `figure.json` 接口不同，不能直接导入它的形象包。
+插件 v0.2.0 引入独立的 MIT 动画引擎和纯数据角色包。设计参考桌宠项目将宿主交互与角色绘制分开的方式，未复制 Coopanion 的引擎实现。v0.2.1 另外提供使用上游拆件贴图适配的 [DeepSeek 大肥鱼角色包](https://github.com/takboo/dsh-coopanion/blob/main/characters/deepseek-whale/README.md)。本规范与 Coopanion 的 `figure.json` 接口不同，不能直接导入它的形象包。
 
 ## 导入和切换
 
@@ -9,6 +9,8 @@
 Desktop 将角色包和选择保存在桌宠自己的 Electron `userData/characters` 中，独立于 Harness 会话、模型配置和 API Key。完整退出再打开后恢复选择。浏览器演示使用该浏览器的 IndexedDB；浏览器数据不会自动迁移到 Desktop。
 
 [Release](https://github.com/takboo/dsh-coopanion/releases) 附带 `paper-star.dshpet`，可直接导入体验序列帧动画。仓库的 `examples/star` 和 `examples/portrait` 分别是序列帧与立绘模板；内置小鲸的 `web/characters/whale/character.json` 是分层关键帧示例。
+
+Release 还附带 `deepseek-whale.dshpet`。它使用 Coopanion 的 DeepSeek 原配色贴图和本项目编写的关键帧，支持全部 10 个状态动作。素材的署名、来源和权利声明保存在随包 `README.md` / `LICENSE` 中，不能将素材许可理解为引擎的 MIT 许可。
 
 ## 文件结构
 

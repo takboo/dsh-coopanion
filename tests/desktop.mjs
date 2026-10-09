@@ -61,6 +61,10 @@ try {
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
   assert.match(await page.locator('#character-credit').innerText(), /MIT/);
+  await importCharacter(page, 'deepseek-whale.dshpet');
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'deepseek-whale' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=deepseek-whale]');
+  assert.match(await page.locator('#character-credit').innerText(), /Pal-AI-Lab.*ZipZipPipe/);
   assert.equal(actions.length, 1, 'character import does not send extra model messages');
   await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/native-pet.png' });
   await bridge.dispose();
@@ -68,11 +72,12 @@ try {
   bridge = new ElectronBridge(); bridge.on('failure', error => failures.push(error.message)); bridge.update(snapshot);
   await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); page = browser.contexts()[0].pages()[0];
-  await page.waitForSelector('#pet[data-character=paper-star]');
+  await page.waitForSelector('#pet[data-character=deepseek-whale]');
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
   await page.waitForFunction(() => !document.getElementById('character-remove').disabled);
   await page.locator('#character-remove').click(); await page.waitForSelector('#pet[data-character=whale]');
-  await page.waitForFunction(() => !document.querySelector('#character-select option[value=paper-star]') && !document.getElementById('character-import').disabled);
+  await page.waitForFunction(() => !document.querySelector('#character-select option[value=deepseek-whale]') && !document.getElementById('character-import').disabled);
+  assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 1);
   await bridge.dispose();
   assert.deepEqual(failures, []);
   console.log('Native smoke passed: Electron ready handshake, isolated renderer, two-way chat IPC, host reply, notification, and clean shutdown.');

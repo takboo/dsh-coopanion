@@ -1,0 +1,207 @@
+{
+  "repository": "https://github.com/Pal-AI-Lab/Coopanion",
+  "commit": "d7b1a0026fed3eb1975a6e0387527d806192cdbf",
+  "directory": "packages/cortico-world-desktop-pet/web/whale",
+  "files": [
+    {
+      "path": "feat/dizzy_eyeL.png",
+      "sha256": "dd1463fb71e5034db591d41f13facae2de128468c82fe936ea196029e6e68116"
+    },
+    {
+      "path": "feat/dizzy_eyeR.png",
+      "sha256": "b839a9f1fbee7da9038e3d6fda6d2612a6417008d6559d2e352eb9061d9d0698"
+    },
+    {
+      "path": "feat/dizzy_mouth.png",
+      "sha256": "b0861757ea0b751af93cb06f3e0a0ba8ddb6889b169cb63368044c3988f2fb70"
+    },
+    {
+      "path": "feat/drag_eyeL.png",
+      "sha256": "b41719f8e76adf2432ca04c919d8897654beb05e6c5ccbe1e73001fa5d1252a1"
+    },
+    {
+      "path": "feat/drag_eyeR.png",
+      "sha256": "7b17e4ef5aaf7a38319f2a1f4c243e0336680a213749b478b7757a960a4d18e1"
+    },
+    {
+      "path": "feat/drag_mouth.png",
+      "sha256": "265a5ce51ba386c2802b7cbdd2a1b919a356ce33d3c260c72b91239f14ab1bbe"
+    },
+    {
+      "path": "feat/eyeL_ball.png",
+      "sha256": "435909520885fcb643f50e6c6575241effb59625acd30731f2b9e1620b6119da"
+    },
+    {
+      "path": "feat/eyeL_iris.png",
+      "sha256": "bf79db42ecf57250af5e0da6889276191d6e109dd1d09d0c827e3f145d0e849d"
+    },
+    {
+      "path": "feat/eyeL_lash.png",
+      "sha256": "2ef528f4cfb39a0f2a9540d09f8c4dc59239bbb9a7a77e4c32f314a55af3f32b"
+    },
+    {
+      "path": "feat/eyeR_ball.png",
+      "sha256": "b88ee68a205b3a842cfcf9888724fd8a7c1eaa28c2fbafc8686b75dbbeb65329"
+    },
+    {
+      "path": "feat/eyeR_iris.png",
+      "sha256": "289f18fe3284d14fcff95424ad21e79176adad162ad294cfe76ca60d1fd57bdc"
+    },
+    {
+      "path": "feat/eyeR_lash.png",
+      "sha256": "4300bfafe62200de7f17fb9dc5911c160c9e25988a4a8b25c4037fe73af814cf"
+    },
+    {
+      "path": "feat/happy_eyeL.png",
+      "sha256": "5de1cbd7001c2e964bad0eb6af79120d1015047088d90d1650923c324301b8af"
+    },
+    {
+      "path": "feat/happy_eyeR.png",
+      "sha256": "e615a5bb644596a1f549333072ac27c21acb753af9fa058e3829b8837e5c51f0"
+    },
+    {
+      "path": "feat/happy_mouth.png",
+      "sha256": "77d34096e3af5608ba7d28aa4cf798f4aa1c486a578dd9c6c7a2bd862466ff2f"
+    },
+    {
+      "path": "feat/love_eyeL.png",
+      "sha256": "4f0c07497c78af27f37adb48086711b174da168baa0ed514fafb525bbf586810"
+    },
+    {
+      "path": "feat/love_eyeR.png",
+      "sha256": "cdb6c1ff8f8d64e4e85cf858c592c8a82d0d4346ec3ba06522d384849c2448ab"
+    },
+    {
+      "path": "feat/love_mouth.png",
+      "sha256": "32560c259264a584794d3eb8974dff03aefaf696f037faa2034d969eb9014182"
+    },
+    {
+      "path": "feat/neutral_mouth.png",
+      "sha256": "de30a74f66cb297ea91449bb33f9f5c31c2cfc63f642dca252ab6a2e09685f62"
+    },
+    {
+      "path": "feat/sleep_eyeL.png",
+      "sha256": "04ef045313de79211dac63e76add4b5d0213579ea9f7f15bec7e86c59c83489f"
+    },
+    {
+      "path": "feat/sleep_eyeR.png",
+      "sha256": "959dace8251f06127865a1562572eedafcc14da1a94e485b5fc0366220baeeba"
+    },
+    {
+      "path": "feat/sleep_mouth.png",
+      "sha256": "68fc6f8ead67cb355219ed5858984af6dc72cd35e9e5f68ef51d63b3ff7c89c5"
+    },
+    {
+      "path": "feat/surprised_eyeL.png",
+      "sha256": "1147850dbd6ff339778ace6f5a415b49f09f97cf5acc6e5ee01cd1c36e03e6f4"
+    },
+    {
+      "path": "feat/surprised_eyeR.png",
+      "sha256": "c9f98ac083b53f617b6b880c50fa74e15bc374044311e0467afb6d5027d491bd"
+    },
+    {
+      "path": "feat/surprised_mouth.png",
+      "sha256": "6dec5c7153e1e88e7d3501405be13942786e1ac63cff80d8ab6a1585ce79c2b3"
+    },
+    {
+      "path": "tex/ahoge.png",
+      "sha256": "f8db95998cbae5ca04caf492262372d233a4392278a2fcdaea944038f259b5d9"
+    },
+    {
+      "path": "tex/arm_far.png",
+      "sha256": "bb191999f4457fcf356f908902a2b00fba513b8862dd78ea549867496dfe3393"
+    },
+    {
+      "path": "tex/arm_far_end_front.png",
+      "sha256": "05ed4e4c0e842b5e6f913663473f9d1275b83c4c62ecd170c787170f208f44f6"
+    },
+    {
+      "path": "tex/arm_near.png",
+      "sha256": "b1b4e73c81c46058cd69dc3d288d4593989c0bf460924ca619f225d4333f0a6f"
+    },
+    {
+      "path": "tex/bangs.png",
+      "sha256": "d4689197d12c80568146c9e0d66b6a09284cdbe98b7c9aa0f34137972266888a"
+    },
+    {
+      "path": "tex/bow.png",
+      "sha256": "bacfe5d99df4766d8708dc0f41098eb2fa6ef9b7ade6224c22a8cf9a76c1740c"
+    },
+    {
+      "path": "tex/brows.png",
+      "sha256": "fb75a81ee60fcb6cdb0af9ce437533f76912c2c98d599ad79d79ecd309645f4b"
+    },
+    {
+      "path": "tex/eye_creases.png",
+      "sha256": "6d0070912b461129c8c29cef1e12a79aebce04421066d8ccc597913ba464e4bb"
+    },
+    {
+      "path": "tex/face.png",
+      "sha256": "cbe64591328d46059fd35b1fddb086be90c9d6964f4d5ce77eed1c9a69169167"
+    },
+    {
+      "path": "tex/fin_far.png",
+      "sha256": "e90626ef8946e55c8460d3625db199d25be656df5c0d285f89b4b12f9f3c3a91"
+    },
+    {
+      "path": "tex/fin_near.png",
+      "sha256": "fd49dc1309a0f4e8f884a853c9c392e2eeb7e31e987d79f81d8c5c706d2e67e4"
+    },
+    {
+      "path": "tex/hair_back.png",
+      "sha256": "c7bba3ef7988dd6b75053551803e33fab4c51ee4a470209c0b956192a334c783"
+    },
+    {
+      "path": "tex/hair_back_curl.png",
+      "sha256": "ab23c2236760dc7c26f951a9e428e92f5ff06420e3c9e420e44e1bb7483d46a4"
+    },
+    {
+      "path": "tex/hair_front_left.png",
+      "sha256": "862d21008dfe58fc34278a61a1557e19af09207f8e0fd044fe47413a29e26399"
+    },
+    {
+      "path": "tex/hair_front_right.png",
+      "sha256": "e2cf29230b15d465db0b96691caece779cd8c7961616a65a396aa63547524141"
+    },
+    {
+      "path": "tex/headdress.png",
+      "sha256": "c8831c5ae6c6385fd0cddc2ed3d6e827933a332e15c59c7e8749b1fddfb4c259"
+    },
+    {
+      "path": "tex/leg_back.png",
+      "sha256": "3ae6a35cc134e7237ca8c7aacfea53dbe4c97922c070fd0782e003d48060e8fb"
+    },
+    {
+      "path": "tex/leg_front.png",
+      "sha256": "047c63de3b3e12ea63d7bf9dc2775d98818518fc966644fbedb5e59eb3934b2c"
+    },
+    {
+      "path": "tex/sidelocks.png",
+      "sha256": "d645fff70dc582a2338a695c35dbe15168f2ad52cfa55706993d55547f3d97f9"
+    },
+    {
+      "path": "tex/skirt.png",
+      "sha256": "b7e8fdd8f9315698d2a20660c977badc3b663199a2328ff6eedc8ef5e833803e"
+    },
+    {
+      "path": "tex/skirt_sit.png",
+      "sha256": "1106dc9ac6c9792869936c1a67f56f388e73949efbc593f9a4f68f43210b442b"
+    },
+    {
+      "path": "tex/tail.png",
+      "sha256": "6afb085507fe2e793438de1b9434fd19dc5d8bea26e77cf0362a7ef6dee71e22"
+    },
+    {
+      "path": "tex/torso_up.png",
+      "sha256": "2064e48edc4b2dc1bbe7c24b3c8d05f3638d040e87c530d164ae8b0987af8886"
+    },
+    {
+      "path": "tex/waist_bow_front.png",
+      "sha256": "b652256abd6217b7982e344804df2d8125de7b64aef4d07340628d08a067c976"
+    },
+    {
+      "path": "tex/waist_bow_sit_front.png",
+      "sha256": "904ff638fa2054782386ffdcb08aacc123d98152ddefb0c82c6675cb1c735823"
+    }
+  ]
+}
