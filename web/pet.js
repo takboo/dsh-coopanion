@@ -7,6 +7,7 @@ const BUILTIN_ID = 'whale';
 const $ = id => document.getElementById(id);
 const native = window.dshPetBridge;
 const pet = $('pet'), bubble = $('bubble'), conversations = $('conversations'), chat = $('chat'), menu = $('menu'), characters = $('characters');
+const panelAnchors = new WeakMap();
 const labels = { idle: '陪你工作', thinking: '在想事情', working: '正在忙', waiting: '等你确认', happy: '完成啦', error: '需要关注', sleeping: '休息中' };
 const library = native?.characters ?? browserCharacters;
 const sfx = createSfx({ storageKey: 'dsh-pet.sound.v2', volume: .35 });
@@ -48,12 +49,14 @@ function position() {
   }
   const anchor = layout?.bubble ?? { x: x + options.size / 2, y };
   for (const panel of [bubble, conversations, chat, menu, characters]) {
-    if (panel.hidden) continue;
+    if (panel.hidden) { panelAnchors.delete(panel); continue; }
+    if (panel !== bubble && !panelAnchors.has(panel)) panelAnchors.set(panel, { ...anchor });
+    const panelAnchor = panel === bubble ? anchor : panelAnchors.get(panel);
     const pw = panel.offsetWidth, ph = panel.offsetHeight;
-    const px = Math.max(8, Math.min(innerWidth - pw - 8, anchor.x - pw / 2));
-    const py = Math.max(8, Math.min(innerHeight - ph - 12, anchor.y - ph - 18));
+    const px = Math.max(8, Math.min(innerWidth - pw - 8, panelAnchor.x - pw / 2));
+    const py = Math.max(8, Math.min(innerHeight - ph - 12, panelAnchor.y - ph - 18));
     panel.style.left = `${px}px`; panel.style.top = `${py}px`;
-    panel.style.setProperty('--tail', `${Math.max(22, Math.min(pw - 22, anchor.x - px))}px`);
+    panel.style.setProperty('--tail', `${Math.max(22, Math.min(pw - 22, panelAnchor.x - px))}px`);
   }
 }
 function speak(text, mood = snapshot.mood, sessionId = null) {
