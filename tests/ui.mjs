@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 import { previewServer } from '../scripts/preview.mjs';
+import { createCharacterPack } from '../dist/character-pack.js';
+import { zipSync, strToU8 } from 'fflate';
 
 const server = previewServer(); server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const executablePath = process.env.CHROMIUM_PATH ?? (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : chromium.executablePath());
@@ -12,6 +14,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.waitForSelector('#pet[data-character=whale]');
   await page.locator('#pet').click(); await page.waitForSelector('#bubble:not([hidden])');
   assert.match(await page.locator('#bubble-text').innerText(), /摸摸头|我在呢|小星星/);
   const before = await page.locator('#pet').boundingBox();
@@ -32,5 +35,64 @@ try {
   await page.locator('#pet').dblclick(); await page.locator('#message').fill('<img src=x onerror="throw 1">'); await page.locator('#send').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('<img'));
   assert.equal(await page.locator('#bubble-text img').count(), 0); assert.deepEqual(errors, []);
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await page.locator('#character-file').setInputFiles('paper-star.dshpet');
+  await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('已导入'));
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
+  await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'happy' && ['4', '5'].includes(document.getElementById('character-canvas').dataset.frame));
+  const firstFrame = await page.locator('#character-canvas').getAttribute('data-frame');
+  await page.waitForFunction(frame => document.getElementById('character-canvas').dataset.frame !== frame, firstFrame);
+  assert.match(await page.locator('#character-credit').innerText(), /MIT/);
+  await page.reload(); await page.waitForSelector('#pet[data-character=paper-star]');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForFunction(() => document.getElementById('character-canvas').dataset.frame === '0');
+  await page.waitForTimeout(600); assert.equal(await page.locator('#character-canvas').getAttribute('data-frame'), '0');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'sleeping');
+  assert.equal(await page.locator('#character-canvas').getAttribute('data-frame'), '6');
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  const portrait = JSON.parse(await readFile('examples/portrait/character.json', 'utf8'));
+  const png = await readFile('examples/portrait/assets/portrait.png');
+  const webp = await page.evaluate(async data => {
+    const image = new Image(); image.src = data; await image.decode();
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height; canvas.getContext('2d').drawImage(image, 0, 0);
+    return canvas.toDataURL('image/webp').split(',')[1];
+  }, `data:image/png;base64,${png.toString('base64')}`);
+  const portraitPack = createCharacterPack({ ...portrait, renderer: { type: 'image', image: 'assets/portrait.webp' } }, { 'assets/portrait.webp': new Uint8Array(Buffer.from(webp, 'base64')) });
+  await page.locator('#character-file').setInputFiles({ name: 'portrait.dshpet', mimeType: 'application/zip', buffer: Buffer.from(portraitPack) });
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'my-portrait' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=my-portrait]');
+  const invalid = zipSync({ 'character.json': strToU8(JSON.stringify(portrait)), 'assets/portrait.png': new Uint8Array(await readFile('examples/portrait/assets/portrait.png')), 'run.js': strToU8('throw new Error("executed")') });
+  await page.locator('#character-file').setInputFiles({ name: 'invalid.dshpet', mimeType: 'application/zip', buffer: Buffer.from(invalid) });
+  await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('操作未完成'));
+  assert.equal(await page.locator('#pet').getAttribute('data-character'), 'my-portrait');
+  await page.locator('#character-select').selectOption('paper-star');
+  await page.waitForFunction(() => !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click();
+  await page.screenshot({ path: 'artifacts/character-library.png' });
+  await page.locator('#character-remove').click(); await page.waitForSelector('#pet[data-character=whale]');
+  await page.waitForFunction(() => !document.querySelector('#character-select option[value=paper-star]') && !document.getElementById('character-import').disabled);
+  assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 0);
+  assert.equal(await page.locator('#character-select option[value=my-portrait]').count(), 1);
+
+  // Real canvas pixels verify parent transforms and facing, independently of timeline arithmetic.
+  const pixels = await page.evaluate(async () => {
+    const { CharacterAnimator } = await import('./character-runtime.js');
+    const sprite = document.createElement('canvas'); sprite.width = sprite.height = 2;
+    const transparent = sprite.toDataURL(); sprite.getContext('2d').fillStyle = 'red'; sprite.getContext('2d').fillRect(0, 0, 2, 2); const red = sprite.toDataURL();
+    const canvas = document.createElement('canvas'); canvas.style.width = canvas.style.height = '100px'; document.body.append(canvas);
+    const character = { manifest: { format: 'dsh-character', formatVersion: 1, id: 'transform-test', name: 'Test', author: 'Test', license: 'MIT', canvas: { width: 100, height: 100 }, motion: { breathe: 0, bob: 0, walkBounce: 0, happyBounce: 0 }, renderer: { type: 'layers', layers: [{ id: 'parent', image: 'assets/parent.png', width: 20, height: 20, x: 10, y: 10, pivotX: 0, pivotY: 0, scaleX: 2, scaleY: 2 }, { id: 'child', parent: 'parent', image: 'assets/child.png', width: 10, height: 10, x: 5, y: 0, pivotX: 0, pivotY: 0 }], animations: { idle: { durationMs: 1000, tracks: [] } } } }, assets: { 'assets/parent.png': transparent, 'assets/child.png': red } };
+    const animator = new CharacterAnimator(canvas, character); await animator.load();
+    const state = { mood: 'idle', moving: false, dragging: false, facing: 1, reducedMotion: false };
+    animator.step(0, state); const ctx = canvas.getContext('2d');
+    const visible = ctx.getImageData(25, 15, 1, 1).data[3], empty = ctx.getImageData(15, 15, 1, 1).data[3];
+    animator.step(0, { ...state, facing: -1 }); const mirrored = ctx.getImageData(75, 15, 1, 1).data[3];
+    animator.dispose(); canvas.remove(); return { visible, empty, mirrored };
+  });
+  assert.deepEqual(pixels, { visible: 255, empty: 0, mirrored: 255 });
+  assert.deepEqual(errors, []);
   console.log('UI smoke passed: interaction, drag, task states, notices, chat, sleep, and HTML text isolation.');
+  console.log('Character smoke passed: spritesheet playback, portrait import, layered transforms, reduced motion, rejection, persistence, and removal.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

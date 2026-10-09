@@ -1,18 +1,21 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { resolve, sep, extname } from 'node:path';
 
 export function previewServer() {
-  const files = new Map([['/', 'index.html'], ['/index.html', 'index.html'], ['/pet.js', 'pet.js'], ['/style.css', 'style.css']]);
-  const types = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' };
+  const root = fileURLToPath(new URL('../web/', import.meta.url));
+  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp' };
   return createServer(async (req, res) => {
-    const file = files.get(new URL(req.url, 'http://localhost').pathname);
-    if (!file || !['GET', 'HEAD'].includes(req.method)) { res.writeHead(404).end(); return; }
     try {
-      const body = await readFile(new URL(`../web/${file}`, import.meta.url));
-      res.writeHead(200, { 'Content-Type': types[file.split('.').pop()], 'Cache-Control': 'no-store' });
+      const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+      const file = resolve(root, path === '/' ? 'index.html' : path.slice(1));
+      const type = types[extname(file)];
+      if (!file.startsWith(root + (root.endsWith(sep) ? '' : sep)) || !type || !['GET', 'HEAD'].includes(req.method)) { res.writeHead(404).end(); return; }
+      const body = await readFile(file);
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : body);
-    } catch (error) { console.error(error); res.writeHead(500).end(); }
+    } catch (error) { res.writeHead(error.code === 'ENOENT' || error instanceof URIError ? 404 : 500).end(); }
   });
 }
 

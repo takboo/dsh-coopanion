@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="185" viewBox="0 0 220 185" aria-hidden="true">
+        <defs>
+          <linearGradient id="body-color" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#74bfff"/><stop offset=".5" stop-color="#4d8eff"/><stop offset="1" stop-color="#3268df"/></linearGradient>
+          <linearGradient id="belly-color" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fbffff"/><stop offset="1" stop-color="#d8edff"/></linearGradient>
+        </defs>
+        <ellipse class="ground" cx="111" cy="165" rx="72" ry="9" fill="#356bb2" opacity=".13"/>
+        <g class="whale-body">
+          <g class="tail"><path d="M164 113Q174 107 178 85Q191 83 195 70Q207 87 196 101Q218 95 216 111Q207 127 181 126Z" fill="#4f8df7" stroke="#3268cd" stroke-width="2"/><path d="M190 98L180 119" fill="none" stroke="#3268cd" stroke-width="2"/></g>
+          <path d="M28 102C19 67 45 36 88 34C129 30 175 55 182 102C190 143 154 164 104 165C53 166 28 143 28 102Z" fill="url(#body-color)" stroke="#3467c5" stroke-width="2"/>
+          <path d="M31 109C61 118 128 128 179 104C189 145 152 164 105 164C59 165 36 145 31 109Z" fill="url(#belly-color)"/>
+          <path d="M135 118Q152 114 159 129Q149 151 130 146Q125 132 135 118Z" fill="#4d8af1" stroke="#3268cd" stroke-width="2" class="fin"/>
+          <path d="M48 63Q65 45 87 46" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".27" fill="none"/>
+          <g class="eyes"><ellipse cx="66" cy="91" rx="6" ry="9" fill="#16356a"/><ellipse cx="117" cy="91" rx="6" ry="9" fill="#16356a"/><circle cx="68" cy="88" r="2" fill="white"/><circle cx="119" cy="88" r="2" fill="white"/></g>
+          <g class="sleep-eyes"><path d="M58 93Q66 98 74 93M109 93Q117 98 125 93" stroke="#16356a" stroke-width="3" stroke-linecap="round" fill="none"/></g>
+          <ellipse cx="48" cy="106" rx="12" ry="6" fill="#ffaecb" opacity=".75"/><ellipse cx="134" cy="106" rx="12" ry="6" fill="#ffaecb" opacity=".75"/>
+          <path class="mouth" d="M85 108Q93 116 101 108" stroke="#214d8f" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <g class="spout" fill="#86cfff"><path d="M86 36Q77 11 66 19Q64 3 79 9Q91 17 91 34Z"/><path d="M93 34Q92 12 106 9Q119 10 113 21Q102 17 98 36Z"/><circle cx="62" cy="9" r="4"/><circle cx="121" cy="7" r="3"/></g>
+        </g>
+      </svg>

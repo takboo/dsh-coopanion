@@ -1,13 +1,22 @@
+import { CharacterAnimator, validateCharacter, PACK_LIMIT } from './character-runtime.js';
+import { builtinWhale } from './characters/whale/manifest.js';
+import { browserCharacters } from './character-library.js';
 const $ = id => document.getElementById(id);
 const native = window.dshPetBridge;
-const pet = $('pet'), bubble = $('bubble'), chat = $('chat'), menu = $('menu');
-const labels = { idle: '小鲸 · 陪你工作', thinking: '小鲸 · 在想事情', working: '小鲸 · 正在忙', waiting: '小鲸 · 等你确认', happy: '小鲸 · 完成啦', error: '小鲸 · 需要关注', sleeping: '小鲸 · 休息中' };
+const pet = $('pet'), bubble = $('bubble'), chat = $('chat'), menu = $('menu'), characters = $('characters');
+const labels = { idle: '陪你工作', thinking: '在想事情', working: '正在忙', waiting: '等你确认', happy: '完成啦', error: '需要关注', sleeping: '休息中' };
+const whale = { manifest: validateCharacter(builtinWhale), builtin: true, assets: Object.fromEntries(builtinWhale.renderer.layers.map(layer => [layer.image, new URL(`./characters/whale/${layer.image}`, import.meta.url).href])) };
+const library = native?.characters ?? browserCharacters;
+let animator, previewAnimator, previewCharacter, activeName = '小鲸', libraryState, libraryBusy = false, facing = 1;
+const label = mood => `${activeName} · ${labels[mood] ?? labels.idle}`;
 const icons = { idle: '✦', thinking: '◌', working: '⚙', waiting: '!', happy: '✧', error: '!', sleeping: 'z' };
 let options = { size: 150, roam: true, notifications: true, bubbleDurationMs: 12000 };
-let snapshot = { mood: 'idle', text: '你好，我是小鲸。点点我，或双击和我说话。', sessionId: null, sessions: [] };
+let snapshot = { mood: 'idle', text: '你好。点点我，或双击和我说话。', sessionId: null, sessions: [] };
 let x = innerWidth * .68, y = innerHeight - 155, dragging, moving = false, hovered = false, asleep = false, muted = false, bubbleTimer, toastTimer, target = x, noticeSession;
 let roamAt = performance.now() + 8000;
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+let reduced = motionPreference.matches;
+motionPreference.addEventListener('change', event => { reduced = event.matches; });
 
 function send(action) {
   if (native) { native.action(action); return; }
@@ -22,7 +31,7 @@ function position() {
   x = Math.max(8, Math.min(innerWidth - w - 28, x));
   y = Math.max(12, Math.min(innerHeight - h - 22, y));
   pet.style.left = `${x}px`; pet.style.top = `${y}px`;
-  for (const panel of [bubble, chat, menu]) {
+  for (const panel of [bubble, chat, menu, characters]) {
     if (panel.hidden) continue;
     const pw = panel.offsetWidth, ph = panel.offsetHeight;
     const px = Math.max(8, Math.min(innerWidth - pw - 8, x + w / 2 - pw / 2));
@@ -35,10 +44,10 @@ function position() {
 function speak(text, mood = snapshot.mood) {
   clearTimeout(bubbleTimer);
   $('bubble-text').textContent = text;
-  $('bubble-status').textContent = labels[mood] ?? labels.idle;
+  $('bubble-status').textContent = label(mood);
   pet.dataset.mood = asleep ? 'sleeping' : mood;
   $('mood-icon').textContent = icons[pet.dataset.mood];
-  bubble.hidden = !chat.hidden || !menu.hidden;
+  bubble.hidden = !chat.hidden || !menu.hidden || !characters.hidden;
   position();
   if (!['waiting', 'error', 'thinking', 'working'].includes(mood)) bubbleTimer = setTimeout(() => { bubble.hidden = true; }, options.bubbleDurationMs);
 }
@@ -51,7 +60,7 @@ function render() {
   select.value = snapshot.sessionId ?? '';
   const enabled = !!snapshot.sessionId;
   $('message').disabled = !enabled; $('send').disabled = !enabled;
-  $('chat-help').textContent = enabled ? '消息会发送给所选会话，回复显示在气泡里。' : '小鲸仍然可以互动；AI 聊天需要一个已打开的 Harness 会话。';
+  $('chat-help').textContent = enabled ? '消息会发送给所选会话，回复显示在气泡里。' : '桌宠仍然可以互动；AI 聊天需要一个已打开的 Harness 会话。';
   if (previous && previous !== select.value) $('message').value = '';
   speak(snapshot.text);
 }
@@ -87,8 +96,8 @@ function hit(px, py) {
   native?.hit(active);
 }
 
-function openChat() { menu.hidden = true; bubble.hidden = true; chat.hidden = false; position(); if (!$('message').disabled) $('message').focus(); }
-function closePanels() { chat.hidden = true; menu.hidden = true; render(); }
+function openChat() { characters.hidden = true; menu.hidden = true; bubble.hidden = true; chat.hidden = false; position(); if (!$('message').disabled) $('message').focus(); }
+function closePanels() { chat.hidden = true; menu.hidden = true; characters.hidden = true; render(); }
 pet.addEventListener('pointerdown', event => {
   if (event.button !== 0 || event.target.closest('button')) return;
   dragging = { pointer: event.pointerId, sx: event.clientX, sy: event.clientY, x, y, distance: 0 };
@@ -109,14 +118,15 @@ function release(event) {
 pet.addEventListener('pointerup', release); pet.addEventListener('pointercancel', release);
 pet.addEventListener('click', event => {
   if (moving || event.target.closest('button')) { moving = false; return; }
+  animator?.clock.poke();
   speak(asleep ? '呼…再让我睡一小会儿。' : ['嘿，摸摸头收到啦！🐳', '我在呢。一起把事情做好吧。', '给你一颗小星星 ✦'][Math.floor(Math.random() * 3)], asleep ? 'sleeping' : 'happy');
 });
 pet.addEventListener('dblclick', event => { if (!event.target.closest('button')) openChat(); });
 pet.addEventListener('keydown', event => { if (event.target === pet && ['Enter', ' '].includes(event.key)) { event.preventDefault(); openChat(); } });
-pet.addEventListener('contextmenu', event => { event.preventDefault(); chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); });
+pet.addEventListener('contextmenu', event => { event.preventDefault(); characters.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); });
 pet.addEventListener('pointerenter', () => { hovered = true; }); pet.addEventListener('pointerleave', () => { hovered = false; });
 $('open-chat').onclick = openChat;
-$('open-menu').onclick = () => { chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); };
+$('open-menu').onclick = () => { characters.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); };
 $('chat-close').onclick = closePanels;
 $('dismiss').onclick = () => { bubble.hidden = true; };
 $('sessions').onchange = event => { $('message').value = ''; send({ type: 'select', sessionId: event.target.value }); };
@@ -128,7 +138,7 @@ $('chat-form').onsubmit = event => {
   if (!native) setTimeout(() => speak(`收到「${text}」！这是演示回复。真实插件会使用 Harness 的模型。`, 'happy'), 350);
 };
 $('toggle-roam').onclick = () => { options.roam = !options.roam; $('toggle-roam').textContent = options.roam ? '暂停走动' : '恢复走动'; menu.hidden = true; render(); };
-$('toggle-sleep').onclick = () => { asleep = !asleep; $('toggle-sleep').textContent = asleep ? '叫醒小鲸' : '休息一下'; menu.hidden = true; speak(asleep ? '呼…有重要消息我还是会提醒你的。' : '我醒啦，一起继续吧。', asleep ? 'sleeping' : 'happy'); };
+$('toggle-sleep').onclick = () => { asleep = !asleep; $('toggle-sleep').textContent = asleep ? '叫醒伙伴' : '休息一下'; menu.hidden = true; speak(asleep ? '呼…有重要消息我还是会提醒你的。' : '我醒啦，一起继续吧。', asleep ? 'sleeping' : 'happy'); };
 $('toggle-notices').onclick = () => { muted = !muted; $('toggle-notices').textContent = muted ? '开启提醒' : '静音提醒'; menu.hidden = true; speak(muted ? '气泡提醒已静音。系统通知请在插件配置中关闭。' : '气泡提醒已开启。'); };
 $('hide').onclick = () => { if (native) send({ type: 'hide' }); else { closePanels(); speak('桌面版可从托盘重新叫出我。'); } };
 $('toast').onclick = () => { send({ type: 'select', sessionId: noticeSession }); $('toast').hidden = true; openChat(); };
@@ -139,11 +149,14 @@ addEventListener('resize', () => { y = innerHeight - pet.offsetHeight - 22; targ
 let last = performance.now();
 function animate(now) {
   const dt = Math.min((now - last) / 1000, .05); last = now;
-  if (options.roam && !reduced && !asleep && !dragging && !hovered && chat.hidden && menu.hidden && snapshot.mood === 'idle') {
+  let walking = false;
+  if (options.roam && !reduced && !asleep && !dragging && !hovered && chat.hidden && menu.hidden && characters.hidden && snapshot.mood === 'idle') {
     if (now > roamAt) { target = 12 + Math.random() * Math.max(1, innerWidth - pet.offsetWidth - 60); roamAt = now + 18000; }
     const distance = target - x;
-    if (Math.abs(distance) > 1) { x += Math.sign(distance) * Math.min(Math.abs(distance), dt * 25); position(); }
+    if (Math.abs(distance) > 1) { facing = Math.sign(distance); walking = true; x += facing * Math.min(Math.abs(distance), dt * 25); position(); }
   }
+  animator?.step(dt, { mood: pet.dataset.mood, moving: walking, dragging: !!dragging, facing, reducedMotion: reduced });
+  if (!characters.hidden) previewAnimator?.step(dt, { mood: 'idle', moving: false, dragging: false, facing: 1, reducedMotion: reduced });
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
@@ -156,7 +169,87 @@ else {
   const texts = { thinking: '让我想一想，怎样把这个功能做好…', working: '正在看文件 · src/index.ts', waiting: '下一步需要你确认。真实插件会引导你回到 Harness。', happy: '任务完成啦！要不要休息一下？🐳', error: '任务遇到了问题，请回到 Harness 查看详情。' };
   document.querySelectorAll('[data-demo]').forEach(button => { button.onclick = () => {
     snapshot.mood = button.dataset.demo; snapshot.text = texts[snapshot.mood]; render();
-    if (['happy', 'waiting', 'error'].includes(snapshot.mood)) receive({ type: 'notice', notice: { title: labels[snapshot.mood], body: snapshot.text, sessionId: 'demo' } });
+    if (['happy', 'waiting', 'error'].includes(snapshot.mood)) receive({ type: 'notice', notice: { title: label(snapshot.mood), body: snapshot.text, sessionId: 'demo' } });
   }; });
   y = innerHeight - pet.offsetHeight - 42; render();
 }
+
+async function setCharacter(view) {
+  const next = new CharacterAnimator($('character-canvas'), view); await next.load();
+  animator?.dispose(); animator = next; activeName = view.manifest.name;
+  pet.dataset.character = view.manifest.id;
+  pet.style.height = `calc(var(--size) * ${view.manifest.canvas.height / view.manifest.canvas.width})`;
+  $('character-name').textContent = activeName; $('chat-title').textContent = `和${activeName}说话`;
+  pet.setAttribute('aria-label', `${activeName}，点击互动，双击聊天，拖动移动`);
+  y = innerHeight - pet.offsetHeight - 22; position(); render();
+}
+function setBusy(value) {
+  libraryBusy = value;
+  for (const id of ['character-select', 'character-import', 'character-use']) $(id).disabled = value;
+  $('character-use').disabled = value || !previewCharacter;
+  $('character-remove').disabled = value || $('character-select').value === 'whale';
+}
+async function preview(id) {
+  previewCharacter = undefined; previewAnimator?.dispose(); previewAnimator = undefined;
+  const canvas = $('character-preview'), context = canvas.getContext('2d');
+  context?.resetTransform(); context?.clearRect(0, 0, canvas.width, canvas.height);
+  $('character-about').textContent = ''; $('character-credit').textContent = '';
+  const view = id === 'whale' ? whale : await library.load(id);
+  const next = new CharacterAnimator($('character-preview'), view); await next.load();
+  previewAnimator?.dispose(); previewAnimator = next; previewCharacter = view;
+  $('character-preview').style.aspectRatio = `${view.manifest.canvas.width} / ${view.manifest.canvas.height}`;
+  $('character-about').textContent = view.manifest.description;
+  $('character-credit').textContent = `作者：${view.manifest.author} · 许可：${view.manifest.license}`;
+  $('character-use').textContent = pet.dataset.character === id ? '正在使用' : '使用角色';
+}
+async function refreshCharacters(selected) {
+  libraryState = await library.list();
+  $('character-select').replaceChildren(...[whale.manifest, ...libraryState.characters].map(manifest => new Option(manifest.name, manifest.id)));
+  $('character-select').value = selected ?? libraryState.selected;
+  if (!$('character-select').value) $('character-select').value = 'whale';
+  await preview($('character-select').value);
+  if (libraryState.problems.length) $('character-status').textContent = libraryState.problems.join('；');
+}
+async function characterOperation(operation) {
+  if (libraryBusy) return;
+  setBusy(true);
+  try { await operation(); }
+  catch (error) { $('character-status').textContent = `操作未完成：${String(error.message ?? error).slice(0, 400)}`; }
+  finally { setBusy(false); position(); }
+}
+$('open-characters').onclick = () => {
+  closePanels(); bubble.hidden = true; characters.hidden = false; position();
+  void characterOperation(() => refreshCharacters(pet.dataset.character));
+};
+$('characters-close').onclick = closePanels;
+$('character-select').onchange = () => void characterOperation(() => preview($('character-select').value));
+$('character-import').onclick = () => $('character-file').click();
+$('character-file').onchange = () => void characterOperation(async () => {
+  const file = $('character-file').files[0]; if (!file) return;
+  try {
+    if (file.size > PACK_LIMIT) throw new Error('角色包不能超过 32 MiB');
+    const after = await library.import(await file.arrayBuffer());
+    await refreshCharacters(after.importedId);
+    $('character-status').textContent = '已导入。预览满意后点击使用角色。';
+  } finally { $('character-file').value = ''; }
+});
+$('character-use').onclick = () => void characterOperation(async () => {
+  if (!previewCharacter) return;
+  await library.select(previewCharacter.manifest.id); await setCharacter(previewCharacter);
+  $('character-use').textContent = '正在使用'; $('character-status').textContent = '已切换，重启后会保留这个角色。';
+});
+$('character-remove').onclick = () => void characterOperation(async () => {
+  const id = $('character-select').value;
+  await library.remove(id);
+  if (pet.dataset.character === id) await setCharacter(whale);
+  await refreshCharacters(); $('character-status').textContent = '已删除本地角色包。';
+});
+void (async () => {
+  setBusy(true);
+  try {
+    await setCharacter(whale);
+    libraryState = await library.list();
+    if (libraryState.selected !== 'whale') await setCharacter(await library.load(libraryState.selected));
+  } catch (error) { $('character-status').textContent = `已恢复内置小鲸：${String(error.message ?? error).slice(0, 300)}`; }
+  finally { setBusy(false); }
+})();

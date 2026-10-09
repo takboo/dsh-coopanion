@@ -124,6 +124,11 @@ try {
   await page.waitForSelector('#pet');
   assert.equal(await page.locator('#demo').isVisible(), false);
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
+  await page.waitForSelector('#pet[data-character=whale]');
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await page.locator('#character-file').setInputFiles(join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.dshpet'));
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
   host.send({ type: 'start-task' });
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
   const logged = new Promise(resolveLog => {
@@ -139,7 +144,7 @@ try {
   await page.screenshot({ path: join(project, 'artifacts', `installed-${version}.png`) });
   await stop(host);
   assert.equal(host.exitCode, 0, hostLog);
-  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, sessionNotifications: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
+  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, sessionNotifications: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
   console.log(`Installation smoke passed on DSH ${version}: package admission, bundle activation, actual host loader, Electron window, session notification, and clean shutdown.`);
 } catch (error) {
   if (hostLog) console.error(hostLog);

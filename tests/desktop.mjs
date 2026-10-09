@@ -10,7 +10,7 @@ import { chromium } from 'playwright-core';
 import { ElectronBridge } from '../dist/bridge.js';
 
 let display, browser;
-const bridge = new ElectronBridge();
+let bridge = new ElectronBridge();
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const dataDir = await mkdtemp(join(tmpdir(), 'dsh-pet-test-'));
 process.env.DSH_PET_TEST_DATA_DIR = dataDir;
@@ -41,7 +41,7 @@ try {
   bridge.update(snapshot);
   await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
-  const page = browser.contexts()[0].pages()[0];
+  let page = browser.contexts()[0].pages()[0];
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '真实 IPC 桌面测试');
   assert.equal(await page.locator('#demo').isVisible(), false, 'native window does not masquerade as a browser demo');
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined', 'renderer has no Node access');
@@ -54,10 +54,28 @@ try {
   bridge.notify({ title: '桌面测试 · 已完成', body: '真实窗口与宿主 IPC 验证通过。', sessionId: 'native-test' });
   await page.waitForSelector('#toast:not([hidden])');
   assert.equal(await page.locator('#toast-title').innerText(), '桌面测试 · 已完成');
+  await page.waitForSelector('#pet[data-character=whale]');
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await page.locator('#character-file').setInputFiles('paper-star.dshpet');
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
+  assert.match(await page.locator('#character-credit').innerText(), /MIT/);
+  assert.equal(actions.length, 1, 'character import does not send extra model messages');
   await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/native-pet.png' });
+  await bridge.dispose();
+  await browser.close(); browser = undefined;
+  bridge = new ElectronBridge(); bridge.on('failure', error => failures.push(error.message)); bridge.update(snapshot);
+  await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); page = browser.contexts()[0].pages()[0];
+  await page.waitForSelector('#pet[data-character=paper-star]');
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await page.waitForFunction(() => !document.getElementById('character-remove').disabled);
+  await page.locator('#character-remove').click(); await page.waitForSelector('#pet[data-character=whale]');
+  await page.waitForFunction(() => !document.querySelector('#character-select option[value=paper-star]') && !document.getElementById('character-import').disabled);
   await bridge.dispose();
   assert.deepEqual(failures, []);
   console.log('Native smoke passed: Electron ready handshake, isolated renderer, two-way chat IPC, host reply, notification, and clean shutdown.');
+  console.log('Native character smoke passed: import, selection, disk persistence across process restart, and removal.');
 } finally {
   await bridge.dispose();
   if (browser) await browser.close();

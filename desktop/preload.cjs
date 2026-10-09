@@ -1,4 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
+async function characterCall(channel, value) {
+  const result = await ipcRenderer.invoke(channel, value);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 contextBridge.exposeInMainWorld('dshPetBridge', {
   subscribe(callback) {
     const listener = (_event, message) => callback(message);
@@ -7,4 +12,11 @@ contextBridge.exposeInMainWorld('dshPetBridge', {
   },
   action(value) { ipcRenderer.send('pet:action', value); },
   hit(active) { ipcRenderer.send('pet:hit', active); },
+  characters: {
+    list: () => characterCall('pet:characters:list'),
+    load: id => characterCall('pet:characters:load', id),
+    select: id => characterCall('pet:characters:select', id),
+    remove: id => characterCall('pet:characters:remove', id),
+    import: bytes => characterCall('pet:characters:import', bytes),
+  },
 });

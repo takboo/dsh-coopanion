@@ -1,6 +1,6 @@
 {
   "name": "dsh-coopanion",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "An interactive whale desktop pet and task notifications for DeepSeek Harness",
   "type": "module",
   "license": "MIT",
@@ -16,9 +16,13 @@
     "dist",
     "desktop",
     "web",
+    "examples",
+    "docs/characters.md",
+    "docs/character.schema.json",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "dsh": {
     "bundle": {
@@ -33,12 +37,16 @@
     "test:ui": "node tests/ui.mjs",
     "test:desktop": "node tests/desktop.mjs",
     "test:install": "node tests/install.mjs",
+    "character:pack": "node scripts/pack-character.mjs",
+    "character:schema": "node scripts/character-schema.mjs",
     "dev": "node scripts/preview.mjs",
     "demo": "node scripts/demo.mjs",
     "prepack": "npm run build"
   },
   "dependencies": {
-    "electron": "44.7.0"
+    "electron": "44.7.0",
+    "fflate": "0.8.3",
+    "zod": "4.6.5"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.4 || 4.0.5-alpha.1",

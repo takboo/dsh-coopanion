@@ -90,7 +90,7 @@ export class PetModel {
 
   snapshot(): PetSnapshot {
     const item = this.selected ? this.sessions.get(this.selected) : undefined;
-    return { mood: item?.mood ?? 'idle', text: item?.text ?? '你好，我是小鲸。打开 Harness 会话后就能和我聊天。', sessionId: item?.id ?? null, sessions: [...this.sessions.values()].map(s => ({ ...s })) };
+    return { mood: item?.mood ?? 'idle', text: item?.text ?? '你好。打开 Harness 会话后就能和我聊天。', sessionId: item?.id ?? null, sessions: [...this.sessions.values()].map(s => ({ ...s })) };
   }
 }
 

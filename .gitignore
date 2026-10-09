@@ -3,3 +3,5 @@ dist/
 .cache/
 artifacts/
 *.tgz
+web/character-runtime.js
+*.dshpet

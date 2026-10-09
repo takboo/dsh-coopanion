@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, Notification, screen, Menu, Tray, nativeImage } = require('electron');
 const { join } = require('node:path');
+const { CharacterStore } = require('../dist/character-store.cjs');
 app.setName('小鲸');
 if (process.env.DSH_PET_TEST_DATA_DIR) {
   app.setPath('userData', process.env.DSH_PET_TEST_DATA_DIR);
@@ -49,6 +50,26 @@ process.on('disconnect', () => app.quit());
 process.on('SIGTERM', () => app.quit());
 
 app.whenReady().then(async () => {
+  const characters = new CharacterStore(join(app.getPath('userData'), 'characters'));
+  let characterOperation = Promise.resolve();
+  const characterCall = (channel, operation) => ipcMain.handle(channel, (event, value) => {
+    if (event.sender !== win?.webContents || event.senderFrame !== win.webContents.mainFrame) return { ok: false, error: '无效的角色请求' };
+    const result = characterOperation.then(async () => {
+      try { return { ok: true, value: await operation(value) }; }
+      catch (error) { return { ok: false, error: String(error.message ?? error).slice(0, 400) }; }
+    });
+    characterOperation = result.then(() => undefined);
+    return result;
+  });
+  const characterId = value => { if (typeof value !== 'string') throw new Error('无效的角色 id'); return value; };
+  characterCall('pet:characters:list', () => characters.list());
+  characterCall('pet:characters:load', value => characters.load(characterId(value)));
+  characterCall('pet:characters:select', value => characters.select(characterId(value)));
+  characterCall('pet:characters:remove', value => characters.remove(characterId(value)));
+  characterCall('pet:characters:import', value => {
+    if (!(value instanceof ArrayBuffer)) throw new Error('请选择 .dshpet 或 .zip 角色包');
+    return characters.import(new Uint8Array(value));
+  });
   win = new BrowserWindow({ ...screen.getPrimaryDisplay().workArea, transparent: true, frame: false, resizable: false, skipTaskbar: true, hasShadow: false, show: false, alwaysOnTop: true, backgroundColor: '#00000000', webPreferences: { preload: join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   win.setAlwaysOnTop(true, 'floating');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });

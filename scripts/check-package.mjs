@@ -3,6 +3,6 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const entries = execFileSync('tar', ['-tzf', `${pkg.name}-${pkg.version}.tgz`], { encoding: 'utf8' }).trim().split('\n');
-for (const required of ['package/dist/index.js', 'package/cordis.patch.yml', 'package/desktop/main.cjs', 'package/desktop/preload.cjs', 'package/web/index.html', 'package/web/pet.js', 'package/web/style.css', 'package/LICENSE', 'package/README.md']) assert.ok(entries.includes(required), `missing ${required}`);
+for (const required of ['package/dist/index.js', 'package/dist/character-store.cjs', 'package/cordis.patch.yml', 'package/desktop/main.cjs', 'package/desktop/preload.cjs', 'package/web/index.html', 'package/web/pet.js', 'package/web/style.css', 'package/web/character-runtime.js', 'package/web/characters/whale/assets/body.png', 'package/web/characters/whale/manifest.js', 'package/docs/characters.md', 'package/docs/character.schema.json', 'package/examples/star/character.json', 'package/THIRD_PARTY_NOTICES.md', 'package/LICENSE', 'package/README.md']) assert.ok(entries.includes(required), `missing ${required}`);
 assert.ok(!entries.some(path => path.includes('node_modules/') || path.includes('tests/') || path.includes('.cache/')));
 console.log(`Package verified: ${entries.length} files, native window and renderer included.`);

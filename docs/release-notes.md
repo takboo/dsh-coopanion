@@ -1,10 +1,13 @@
-修复小鲸插件在 DeepSeek Harness **0.2.0-rc.2** 中安装时被拒绝的问题，同时支持 **0.2.1-alpha.1**。
+新增独立动画引擎和 **DSH 角色包 v1**，支持你的自定义角色，也可以分享其他作者制作的角色包。
 
-- SDK peer 依赖明确覆盖这两个经过验证的宿主版本；不需要开启版本豁免。
-- 以 rc.2 的已发布 SDK 执行类型检查和插件测试。
-- CI 增加两个已发布 DSH 宿主的真实安装矩阵，验证 `.tgz` 安装、bundle 激活、profile loader、Electron 窗口、会话事件通知和正常关闭。安装矩阵通过后才能发布。
-- 保留桌宠互动、拖动、会话聊天和任务通知功能。
+- 三种渲染方式：透明立绘、序列帧图集、分层父子变换与关键帧动画。
+- 右键桌宠 → 角色与动画：导入 `.dshpet` / `.zip`，预览、切换、删除；完整重启后保留选择。
+- 原创小鲸改为内置分层角色包；Release 附带可直接导入的 `paper-star.dshpet`，仓库提供立绘和序列帧模板。
+- 清单记录作者及素材许可；角色包为纯数据，不执行作者脚本。引擎保持 MIT，未复制 Coopanion 的代码或素材。
+- 保留桌宠互动、会话聊天及任务通知，支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**。
 
-下载 `dsh-coopanion-0.1.1.tgz` 后，在 Harness 插件页安装该文件的绝对路径。此前安装失败的用户直接安装修正版；如果已经装有旧版，先卸载旧版再安装。安装后重新打开 Harness；首次启用时会从 Electron 官方发行源下载并校验桌宠运行时，需要联网。详细操作见仓库 README。
+下载 `dsh-coopanion-0.2.0.tgz`，在 Harness 插件页安装并重启。已有旧版时先卸载旧版；本地自定义角色位于桌宠自己的 userData 中。首次运行仍需从官方源下载并校验 Electron。
 
-自动化验证在 Linux 的已发布 DSH CLI / profile loader、Chromium、Xvfb 和 Electron 上执行，使用实际会话服务的测试事件，不调用模型 API。macOS、Windows 的桌面安装页、实机窗口、系统通知和真实模型聊天仍需验证。
+类型检查、单元测试、浏览器画布与交互测试、真实 Electron 导入和重启保存测试，以及两个已发布 DSH 宿主的安装与角色加载矩阵，通过后才发布。Linux 云端验证不调用模型 API；Windows/macOS 实机界面、系统通知和真实模型对话仍需验收。
+
+角色制作和限制见 [角色包规范](https://github.com/takboo/dsh-coopanion/blob/main/docs/characters.md)。v1 不包含网格变形、Live2D / VRM、音效、换装或角色商店。
