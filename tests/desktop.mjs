@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { once } from 'node:events';
 import { chromium } from 'playwright-core';
 import { ElectronBridge } from '../dist/bridge.js';
+import { importCharacter } from './helpers/characters.mjs';
 
 let display, browser;
 let bridge = new ElectronBridge();
@@ -56,7 +57,7 @@ try {
   assert.equal(await page.locator('#toast-title').innerText(), '桌面测试 · 已完成');
   await page.waitForSelector('#pet[data-character=whale]');
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
-  await page.locator('#character-file').setInputFiles('paper-star.dshpet');
+  await importCharacter(page, 'paper-star.dshpet');
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
   assert.match(await page.locator('#character-credit').innerText(), /MIT/);

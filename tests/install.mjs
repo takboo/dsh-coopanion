@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
+import { importCharacter } from './helpers/characters.mjs';
 
 const version = process.env.DSH_TEST_VERSION ?? '0.2.0-rc.2';
 assert.ok(['0.2.0-rc.2', '0.2.1-alpha.1'].includes(version), 'test only advertised DSH versions');
@@ -126,7 +127,7 @@ try {
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
   await page.waitForSelector('#pet[data-character=whale]');
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
-  await page.locator('#character-file').setInputFiles(join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.dshpet'));
+  await importCharacter(page, join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.dshpet'));
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
   host.send({ type: 'start-task' });

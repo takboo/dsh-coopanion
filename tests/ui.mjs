@@ -6,6 +6,7 @@ import { chromium } from 'playwright-core';
 import { previewServer } from '../scripts/preview.mjs';
 import { createCharacterPack } from '../dist/character-pack.js';
 import { zipSync, strToU8 } from 'fflate';
+import { importCharacter } from './helpers/characters.mjs';
 
 const server = previewServer(); server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const executablePath = process.env.CHROMIUM_PATH ?? (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : chromium.executablePath());
@@ -36,7 +37,7 @@ try {
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('<img'));
   assert.equal(await page.locator('#bubble-text img').count(), 0); assert.deepEqual(errors, []);
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
-  await page.locator('#character-file').setInputFiles('paper-star.dshpet');
+  await importCharacter(page, 'paper-star.dshpet');
   await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('已导入'));
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
   await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'happy' && ['4', '5'].includes(document.getElementById('character-canvas').dataset.frame));
@@ -61,11 +62,11 @@ try {
     return canvas.toDataURL('image/webp').split(',')[1];
   }, `data:image/png;base64,${png.toString('base64')}`);
   const portraitPack = createCharacterPack({ ...portrait, renderer: { type: 'image', image: 'assets/portrait.webp' } }, { 'assets/portrait.webp': new Uint8Array(Buffer.from(webp, 'base64')) });
-  await page.locator('#character-file').setInputFiles({ name: 'portrait.dshpet', mimeType: 'application/zip', buffer: Buffer.from(portraitPack) });
+  await importCharacter(page, { name: 'portrait.dshpet', mimeType: 'application/zip', buffer: Buffer.from(portraitPack) });
   await page.waitForFunction(() => document.getElementById('character-select').value === 'my-portrait' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=my-portrait]');
   const invalid = zipSync({ 'character.json': strToU8(JSON.stringify(portrait)), 'assets/portrait.png': new Uint8Array(await readFile('examples/portrait/assets/portrait.png')), 'run.js': strToU8('throw new Error("executed")') });
-  await page.locator('#character-file').setInputFiles({ name: 'invalid.dshpet', mimeType: 'application/zip', buffer: Buffer.from(invalid) });
+  await importCharacter(page, { name: 'invalid.dshpet', mimeType: 'application/zip', buffer: Buffer.from(invalid) });
   await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('操作未完成'));
   assert.equal(await page.locator('#pet').getAttribute('data-character'), 'my-portrait');
   await page.locator('#character-select').selectOption('paper-star');
