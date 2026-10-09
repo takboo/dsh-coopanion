@@ -38,6 +38,36 @@ it('uses the real Cordis event bus, delegates approval, logs user input through 
 });
 
 it('rejects invalid configuration before starting a desktop process', () => {
-  expect(() => Config({ ...Config(), size: 500 })).toThrow();
-  expect(() => Config({ ...Config(), bubbleDurationMs: 0 })).toThrow();
+  expect(() => Config({ size: 500 })).toThrow();
+  expect(() => Config({ bubbleDurationMs: 0 })).toThrow();
+});
+
+it('keeps the plugin mounted when launch fails, and honors disabled auto-start', async () => {
+  const ctx = new Context(); ctx.provide('agents', { list: () => [] });
+  const bridge: PetBridge = { start: vi.fn(async () => { throw new Error('test: no display'); }), update: vi.fn(), notify: vi.fn(), onAction: vi.fn(), removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  const fiber = ctx.plugin(async scope => mountPet(scope, Config({ autoStart: false }), bridge));
+  await fiber.await(); expect(bridge.start).not.toHaveBeenCalled();
+  expect(ctx.coopanion.status().phase).toBe('stopped');
+  expect((await ctx.coopanion.command('start')).phase).toBe('error');
+  expect(ctx.coopanion.status().error).toBe('test: no display');
+  await fiber.dispose(); await ctx.fiber.dispose();
+});
+
+it('registers and disposes exact authenticated Connection routes without taking over the shared Gateway', async () => {
+  const ctx = new Context(); ctx.provide('agents', { list: () => [] });
+  const routes = new Map<string, { fetch: (request: Request) => Promise<Response> }>();
+  ctx.provide('connection', { fetch: { register: (route: { path: string; fetch: (request: Request) => Promise<Response> }) => { routes.set(route.path, route); return () => { routes.delete(route.path); }; } } } as never);
+  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(), onAction: vi.fn(), removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  const fiber = ctx.plugin(async scope => mountPet(scope, Config({ autoStart: false }), bridge)); await fiber.await();
+  expect([...routes.keys()]).toEqual(['/api/coopanion/status', '/api/coopanion/control']);
+  const invoke = async (payload: unknown) => {
+    const response = await routes.get('/api/coopanion/control')!.fetch(new Request('http://localhost/api/coopanion/control', { method: 'POST', body: JSON.stringify({ type: 'client-request', rpcId: 'test', method: 'coopanion/control', payload }) }));
+    return response.json();
+  };
+  expect((await invoke({ command: 'start', electronPath: '/untrusted' })).result.ok).toBe(false);
+  expect(bridge.start).not.toHaveBeenCalled();
+  expect(await invoke({ command: 'start' })).toEqual({ type: 'server-response', rpcId: 'test', result: { ok: true, value: { phase: 'running', visible: true } } });
+  const malformed = await routes.get('/api/coopanion/status')!.fetch(new Request('http://localhost/api/coopanion/status', { method: 'POST', body: '{}' }));
+  expect(malformed.status).toBe(400);
+  await fiber.dispose(); expect(routes.size).toBe(0); await ctx.fiber.dispose();
 });

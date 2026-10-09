@@ -12,6 +12,10 @@ export interface PetBridge {
   onAction(listener: (action: unknown) => void): void;
   removeAction(listener: (action: unknown) => void): void;
   dispose(): Promise<void>;
+  configure?(options: DesktopOptions): void;
+  control?(command: 'show' | 'hide' | 'characters'): void;
+  onLifecycle?(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void;
+  removeLifecycle?(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void;
 }
 
 /** Owns a separate Electron window; no changes or private IPC in the Harness desktop shell are needed. */
@@ -22,6 +26,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
 
   async start(options: DesktopOptions): Promise<void> {
     if (this.child) throw new Error('Desktop pet is already running');
+    this.closing = false;
     if (process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) throw new Error('桌宠需要桌面显示环境。无桌面的云环境可运行 npm run dev 预览，或用 Xvfb 运行桌面测试。');
     const executable: string = options.electronPath ?? createRequire(import.meta.url)('electron');
     const env = { ...process.env };
@@ -35,6 +40,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     child.stderr?.on('data', data => { diagnostic = (diagnostic + data.toString()).slice(-4000); });
     child.on('message', message => {
       if (isRecord(message) && message.type === 'action') this.emit('action', message.action);
+      if (isRecord(message) && message.type === 'visibility' && typeof message.visible === 'boolean') this.emit('lifecycle', { running: true, visible: message.visible });
     });
     await new Promise<void>((resolve, reject) => {
       const finish = (error?: Error) => {
@@ -54,7 +60,9 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     child.on('error', error => this.emit('failure', error));
     child.once('exit', code => {
       this.child = undefined;
-      if (!this.closing) this.emit('failure', new Error(`桌宠窗口已关闭 (${code})`));
+      const error = !this.closing && code !== 0 ? `桌宠进程已退出 (${code})` : undefined;
+      this.emit('lifecycle', { running: false, visible: false, ...(error ? { error } : {}) });
+      if (error) this.emit('failure', new Error(error));
     });
   }
 
@@ -62,6 +70,10 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   notify(notice: PetNotice): void { this.send({ type: 'notice', notice }); }
   onAction(listener: (action: unknown) => void): void { this.on('action', listener); }
   removeAction(listener: (action: unknown) => void): void { this.off('action', listener); }
+  configure(options: DesktopOptions): void { this.send({ type: 'configure', options }); }
+  control(command: 'show' | 'hide' | 'characters'): void { this.send({ type: 'control', command }); }
+  onLifecycle(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void { this.on('lifecycle', listener); }
+  removeLifecycle(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void { this.off('lifecycle', listener); }
   private send(message: object): void {
     if (this.child?.connected) this.child.send(message, error => { if (error && !this.closing) this.emit('failure', error); });
   }
@@ -69,12 +81,14 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   async dispose(): Promise<void> {
     this.closing = true;
     const child = this.child;
-    if (!child || child.exitCode !== null || child.signalCode !== null) return;
+    if (!child) return;
+    if (child.exitCode !== null || child.signalCode !== null) { if (this.child === child) this.child = undefined; return; }
     await new Promise<void>(resolve => {
       const timer = setTimeout(() => { child.kill('SIGKILL'); }, 3000);
       child.once('exit', () => { clearTimeout(timer); resolve(); });
       if (child.connected) child.send({ type: 'quit' }); else child.kill();
     });
+    if (this.child === child) this.child = undefined;
   }
 }
 

@@ -1,0 +1,97 @@
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Button, Switch, Input, StateDot } from '@deepseek-ai/dsh-client-ui-primitives';
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client';
+import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
+import type { PetCommand, PetStatus } from '../controls.ts';
+
+export interface Preferences { size: number; roam: boolean; notifications: boolean; bubbleDurationMs: number; autoStart: boolean; }
+export interface SettingsFace { form: ConfigForm<Preferences>; call: (command?: PetCommand, signal?: AbortSignal) => Promise<PetStatus>; local: boolean; }
+export type SettingsProps = SettingsFace & PropsLocale<'coopanion'>;
+
+function NumberPreference({ value, min, max, label, hint, invalidHint, id, disabled, save }: {
+  value: number; min: number; max: number; label: string; hint: string; invalidHint: string; id: string; disabled: boolean; save: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const number = Number(draft);
+  const invalid = !draft.trim() || !Number.isFinite(number) || number < min || number > max;
+  return <div className="pet-row">
+    <div className="pet-label"><label htmlFor={id}>{label}</label><p id={`${id}-hint`}>{hint}</p>{invalid ? <p className="pet-error" id={`${id}-error`}>{invalidHint}</p> : null}</div>
+    <Input className="pet-number" id={id} type="number" min={min} max={max} step={1} value={draft} disabled={disabled}
+      aria-describedby={`${id}-hint${invalid ? ` ${id}-error` : ''}`} aria-invalid={invalid} onChange={event => setDraft(event.target.value)}
+      onBlur={() => { if (!invalid && number !== value) save(number); }}
+      onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} />
+  </div>;
+}
+
+export function Settings({ form, call, local, t }: SettingsProps) {
+  const accepted = useSyncExternalStore(listener => form.subscribe(listener), () => form.getSnapshot());
+  const [status, setStatus] = useState<PetStatus>();
+  const [failure, setFailure] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<'saved' | 'refused'>();
+  const [saveFailure, setSaveFailure] = useState('');
+  useEffect(() => {
+    if (!local) return;
+    let active = true;
+    const abort = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      try { const value = await call(undefined, abort.signal); if (active) { setStatus(value); setFailure(''); } }
+      catch (error) { if (active) setFailure(String(error instanceof Error ? error.message : error)); }
+      finally { if (active) timer = setTimeout(() => void refresh(), 1500); }
+    };
+    void refresh();
+    return () => { active = false; abort.abort(); clearTimeout(timer); };
+  }, [call, local]);
+  const command = async (value: PetCommand) => {
+    if (busy) return;
+    setBusy(true); setFailure('');
+    try { setStatus(await call(value)); }
+    catch (error) { setFailure(String(error instanceof Error ? error.message : error)); }
+    finally { setBusy(false); }
+  };
+  const save = async (field: keyof Preferences, value: number | boolean) => {
+    setSaving(true); setFeedback(undefined); setSaveFailure('');
+    try { setFeedback(await form.set(field, value) ? 'saved' : 'refused'); }
+    catch (error) { setSaveFailure(String(error instanceof Error ? error.message : error)); }
+    finally { setSaving(false); }
+  };
+  const ready = accepted.status === 'ready' && accepted.writable && !saving;
+  const prefs = accepted.value;
+  const running = status?.phase === 'running';
+  const disabled = !local || busy || status?.phase === 'starting' || status?.phase === 'stopping';
+  const statusText = !status ? t('loading') : status.phase === 'running' ? t(status.visible ? 'running' : 'hidden') : t(status.phase);
+  return <div className="dsh-coopanion-settings" data-testid="coopanion-settings">
+    <h2>{t('title')}</h2><p>{t('intro')} {t('languageHint')}</p>
+    <section className="pet-card" aria-label={t('runtime')}>
+      <div className="pet-row"><h3>{t('runtime')}</h3><span className="pet-status" role="status" data-testid="pet-status"><StateDot state={status?.phase === 'error' ? 'error' : running ? 'done' : status?.phase === 'starting' || status?.phase === 'stopping' ? 'ongoing' : 'idle'} />{statusText}</span></div>
+      <p>{t('runtimeHint')}</p>
+      <div className="pet-actions">
+        <Button variant="outline" disabled={disabled} onClick={() => void command(running ? 'show' : 'start')}>{t(running ? 'show' : 'start')}</Button>
+        <Button variant="outline" disabled={disabled || !running} onClick={() => void command('hide')}>{t('hide')}</Button>
+        <Button variant="outline" disabled={disabled} onClick={() => void command('restart')}>{t('restart')}</Button>
+        <Button disabled={disabled || !running} onClick={() => void command('stop')}>{t('stop')}</Button>
+      </div>
+      {failure || status?.error ? <p className="pet-error" role="alert">{failure || status?.error}</p> : null}
+    </section>
+    <section className="pet-card" aria-label={t('preferences')}>
+      <h3>{t('preferences')}</h3>
+      {!accepted.writable || !local ? <p>{t('unavailable')}</p> : null}
+      {(['autoStart', 'roam', 'notifications'] as const).map(field => <div className="pet-row" key={field}>
+        <div className="pet-label"><strong>{t(field)}</strong><p>{t(`${field}Hint`)}</p></div>
+        <Switch checked={prefs?.[field] ?? false} disabled={!ready || !local} label={t(field)} onChange={value => void save(field, value)} />
+      </div>)}
+      {prefs ? <>
+        <NumberPreference id="coopanion-size" label={t('size')} hint={t('sizeHint')} invalidHint={t('invalid')} value={prefs.size} min={90} max={240} disabled={!ready || !local} save={value => void save('size', value)} />
+        <NumberPreference id="coopanion-duration" label={t('duration')} hint={t('durationHint')} invalidHint={t('invalid')} value={prefs.bubbleDurationMs / 1000} min={2} max={60} disabled={!ready || !local} save={value => void save('bubbleDurationMs', value * 1000)} />
+      </> : null}
+      <p className="pet-feedback" role="status">{saving ? t('saving') : saveFailure || (feedback ? t(feedback) : '')}</p>
+    </section>
+    <section className="pet-card" aria-label={t('characters')}>
+      <div className="pet-row"><div className="pet-label"><h3>{t('characters')}</h3><p>{t('charactersHint')}</p></div>
+        <Button variant="outline" disabled={disabled} onClick={() => void command('characters')}>{t('manage')}</Button></div>
+    </section>
+  </div>;
+}

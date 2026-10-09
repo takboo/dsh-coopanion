@@ -30,7 +30,7 @@ header button { border-radius: 50%; background: transparent; color: #93a5ba; fon
 .panel { padding: 17px; }
 .panel strong { font-size: 14px; font-weight: 600; }
 .panel label { display: block; margin: 14px 0 6px; font-size: 11px; color: #7890ac; }
-.characters { width: min(350px, calc(100vw - 20px)); max-height: calc(100vh - 24px); overflow-y: auto; }
+.characters { z-index: 2; width: min(350px, calc(100vw - 20px)); max-height: calc(100vh - 24px); overflow-y: auto; }
 .character-preview { display: flex; justify-content: center; margin: 12px 0; background: #f2f6fc; border-radius: 12px; }
 #character-preview { width: 130px; height: auto; max-height: 150px; aspect-ratio: 1; }
 #character-about, #character-credit, #character-status { font-size: 11px; line-height: 1.6; color: #7890ac; overflow-wrap: anywhere; }

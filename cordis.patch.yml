@@ -2,6 +2,7 @@
     - id: dsh-coopanion
       name: dsh-coopanion
       config:
+        autoStart: true
         roam: true
         size: 150
         notifications: true

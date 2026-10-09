@@ -73,6 +73,13 @@ function receive(message) {
       document.documentElement.style.setProperty('--size', `${options.size}px`);
       if (message.snapshot) snapshot = message.snapshot;
       y = innerHeight - pet.offsetHeight - 22; render(); break;
+    case 'configure':
+      options = { ...options, ...message.options };
+      document.documentElement.style.setProperty('--size', `${options.size}px`);
+      y = Math.max(0, Math.min(y, innerHeight - pet.offsetHeight - 22));
+      $('toggle-roam').textContent = options.roam ? '暂停走动' : '恢复走动';
+      render(); break;
+    case 'characters': $('open-characters').click(); break;
     case 'snapshot': snapshot = message.snapshot; render(); break;
     case 'notice': {
       if (muted) break;

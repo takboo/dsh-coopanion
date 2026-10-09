@@ -1,14 +1,13 @@
-新增 **DeepSeek 大肥鱼角色包**，使用 Coopanion 的 DeepSeek 原配色拆件贴图，适配本项目独立实现的动画引擎。
+新增 Harness 原生 **Settings → 桌宠** 页面，修复桌宠关闭后没有重新启动入口的问题。
 
-- Release 附带 `deepseek-whale.dshpet`：31 个图层、全部 10 个 Harness 动作，支持眨眼、摆尾、呆毛 / 鲸鳍摆动、挥手、走路、坐姿睡眠和任务表情。
-- 素材保留 Pal-AI-Lab、溟月（上善无形）、ZipZipPipe 的署名和上游权利声明。应用及新写的适配代码保持 MIT，素材不因此被重新授权。
-- 动画使用本项目新编写的关键帧，未移植 Coopanion 的 JavaScript、模型、网格变形或物理模拟；动作细节与原版有差异，只包含 DeepSeek 原配色。
-- 保留桌宠互动、会话聊天及任务通知，支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**。
+- 启动、显示、隐藏、重启和关闭桌宠，并显示实际运行状态与启动失败原因。独立窗口退出后，插件和设置页面继续可用。
+- 使用 DSH 自带的按钮、开关、状态指示和主题变量，支持中英文及浅色 / 深色界面。语言跟随 Harness，切换后立即更新；未固定语言时，使用宿主启动时读取的系统语言，其他语言回退到英文。更改系统语言后重新打开 Harness 应用。
+- 随 Harness 启动、闲时走动、任务通知、尺寸和气泡时长通过宿主原生设置服务保存。运行中的桌宠直接应用偏好，无需重新安装。
+- 设置页可打开角色管理；桌宠关闭时会先启动。现有大肥鱼和自定义角色的选择继续保留。
+- 仍支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**。客户端使用公开的插件清单、设置插槽和经过认证的 Connection 接口。
 
-已有插件 v0.2.0 时可以直接导入角色包。右键桌宠 → **角色与动画** → **导入角色包**，选择 `deepseek-whale.dshpet`，预览后点击 **使用角色**。
+下载 `dsh-coopanion-0.3.0.tgz`，在 Harness 插件页安装或升级，完全退出并重新打开 Harness；之后从 **Settings → 桌宠** 控制桌宠。Release 同时附带 `deepseek-whale.dshpet`、`paper-star.dshpet` 和 `SHA256SUMS`。
 
-首次安装插件时下载 `dsh-coopanion-0.2.1.tgz`，在 Harness 插件页安装并重启。首次运行仍需从官方源下载并校验 Electron。
+CI 在两个官方发布版本中安装同一插件包，并使用官方前端验证设置页面加载、配置即时应用与持久化、原生窗口关闭后的重新启动及角色恢复、中英文即时切换与自动语言选择。另执行类型检查、生命周期和角色单元测试、浏览器交互与真实 Electron 测试。Linux 云端测试不调用模型 API；Windows/macOS 实机窗口和系统通知仍需验收。
 
-类型检查、单元测试、浏览器画布与交互测试、真实 Electron 导入和重启保存测试，以及两个已发布 DSH 宿主的安装与角色加载矩阵，通过后才发布。Linux 云端验证不调用模型 API；Windows/macOS 实机界面、系统通知和真实模型对话仍需验收。
-
-角色来源、权利声明、适配范围及重建方式见 [大肥鱼角色包说明](https://github.com/takboo/dsh-coopanion/blob/main/characters/deepseek-whale/README.md)。通用格式见 [角色包规范](https://github.com/takboo/dsh-coopanion/blob/main/docs/characters.md)。
+应用代码使用 MIT；大肥鱼贴图继续保留原有素材署名和权利声明，见[角色包说明](https://github.com/takboo/dsh-coopanion/blob/main/characters/deepseek-whale/README.md)。

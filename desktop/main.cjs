@@ -34,6 +34,12 @@ process.on('message', message => {
   if (!message || typeof message !== 'object') return;
   if (message.type === 'quit') { app.quit(); return; }
   if (message.type === 'init') { options = message.options; lastFrame = message; forward(message); }
+  if (message.type === 'configure') { options = message.options; if (lastFrame) lastFrame.options = options; forward(message); }
+  if (message.type === 'control') {
+    if (message.command === 'hide') win?.hide();
+    if (message.command === 'show' || message.command === 'characters') show();
+    if (message.command === 'characters') forward({ type: 'characters' });
+  }
   if (message.type === 'snapshot') { lastFrame = { type: 'init', options, snapshot: message.snapshot }; forward(message); }
   if (message.type === 'notice') {
     forward(message);
@@ -72,6 +78,8 @@ app.whenReady().then(async () => {
   });
   win = new BrowserWindow({ ...screen.getPrimaryDisplay().workArea, transparent: true, frame: false, resizable: false, skipTaskbar: true, hasShadow: false, show: false, alwaysOnTop: true, backgroundColor: '#00000000', webPreferences: { preload: join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   win.setAlwaysOnTop(true, 'floating');
+  const visibility = () => process.send?.({ type: 'visibility', visible: win.isVisible() });
+  win.on('show', visibility); win.on('hide', visibility);
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   if (process.platform === 'darwin') app.dock?.hide();
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));

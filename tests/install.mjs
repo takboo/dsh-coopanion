@@ -29,7 +29,18 @@ const environment = {
   DSH_PET_TEST_DATA_DIR: join(root, 'pet'), DSH_PET_TEST_NO_SANDBOX: '1',
 };
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-let display, host, browser;
+async function waitProfile(pattern) {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (pattern.test(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'))) return;
+    await pause(100);
+  }
+  assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), pattern, 'the Host persisted its locale preference');
+}
+let display, host, browser, settingsBrowser;
+let hostUrl;
+let settingsPage;
+const uiErrors = [];
+const consoleErrors = [];
 let hostLog = '';
 
 async function run(command, args, cwd = project) {
@@ -75,7 +86,7 @@ try {
   assert.ok(evaluatePluginCompatibility(manifest, {}, '0.2.0-rc.1'), 'unverified versions remain incompatible');
 
   await mkdir(profile, { recursive: true });
-  await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'coopanion-install-profile', private: true, dependencies: {}, dsh: { profile: { bundles: [] } } }));
+  await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'coopanion-install-profile', private: true, dependencies: {}, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } }));
   await writeFile(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\nautoInstallPeers: false\n');
   console.log(`Installing ${manifest.name}@${manifest.version} with the real DSH ${version} plugin command…`);
   const installLog = await run(process.execPath, [cli, 'plugin', '--profile', profileName, 'add', archive]);
@@ -89,7 +100,7 @@ try {
 
   // A test overlay supplies real host services; the released bundle and its apply() are unchanged.
   const fixture = fileURLToPath(new URL('./fixtures/host.mjs', import.meta.url));
-  await writeFile(join(profile, 'cordis.patch.yml'), `- insert:\n    - id: install-sessions\n      name: '@deepseek-ai/dsh-session'\n    - id: install-agents\n      name: '@deepseek-ai/dsh-agent'\n    - id: install-observer\n      name: ${JSON.stringify(fixture)}\n- id: dsh-coopanion\n  config:\n    size: 150\n    roam: false\n    notifications: true\n    bubbleDurationMs: 12000\n`);
+  await writeFile(join(profile, 'cordis.patch.yml'), `- insert:\n    - id: install-observer\n      name: ${JSON.stringify(fixture)}\n- id: locale\n  config:\n    preference: zh\n- id: ui-settings-models\n  config:\n    credentialOnboarding: false\n- id: dsh-coopanion\n  config:\n    autoStart: true\n    size: 150\n    roam: false\n    notifications: true\n    bubbleDurationMs: 12000\n`);
   if (process.platform === 'linux' && !environment.DISPLAY) {
     const number = 100 + process.pid % 1000;
     display = spawn(process.env.XVFB_PATH ?? 'Xvfb', [`:${number}`, '-screen', '0', '1200x800x24', '-nolisten', 'tcp'], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -105,21 +116,28 @@ try {
   const listener = createServer(); listener.listen(0, '127.0.0.1'); await once(listener, 'listening');
   const port = listener.address().port; await new Promise(resolve => listener.close(resolve));
   environment.DSH_PET_TEST_DEBUG_PORT = String(port);
-  console.log(`Starting the installed bundle through the published DSH ${version} profile loader…`);
-  host = spawn(process.execPath, [cli, '--profile', profileName], { cwd: root, env: environment, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
-  const collect = chunk => { hostLog = (hostLog + chunk.toString()).slice(-32000); };
-  host.stdout.on('data', collect); host.stderr.on('data', collect);
-  await new Promise((resolveReady, reject) => {
-    const timeout = setTimeout(() => finish(new Error(`Host startup timed out:\n${hostLog}`)), 120000);
-    const ready = message => { if (message?.type === 'host-ready') finish(); };
-    const ended = (code, signal) => finish(new Error(`Host exited ${signal ?? code}:\n${hostLog}`));
-    const failed = error => finish(error);
-    function finish(error) {
-      clearTimeout(timeout); host.off('message', ready); host.off('exit', ended); host.off('error', failed);
-      if (error) reject(error); else resolveReady();
-    }
-    host.on('message', ready); host.once('exit', ended); host.once('error', failed);
-  });
+  const bootHost = async () => {
+    hostLog = '';
+    console.log(`Starting the installed bundle through the published DSH ${version} profile loader…`);
+    host = spawn(process.execPath, [cli, '--profile', profileName, '--no-open', '--port', '0'], { cwd: root, env: environment, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+    const collect = chunk => { hostLog = (hostLog + chunk.toString()).slice(-32000); };
+    host.stdout.on('data', collect); host.stderr.on('data', collect);
+    await new Promise((resolveReady, reject) => {
+      const timeout = setTimeout(() => finish(new Error(`Host startup timed out:\n${hostLog}`)), 120000);
+      const ready = message => { if (message?.type === 'host-ready') {
+        if (message.services.errors.length) return finish(new Error(message.services.errors.join('\n')));
+        assert.equal(message.services.customSettingsPage, true); hostUrl = message.url; finish();
+      } };
+      const ended = (code, signal) => finish(new Error(`Host exited ${signal ?? code}:\n${hostLog}`));
+      const failed = error => finish(error);
+      function finish(error) {
+        clearTimeout(timeout); host.off('message', ready); host.off('exit', ended); host.off('error', failed);
+        if (error) reject(error); else resolveReady();
+      }
+      host.on('message', ready); host.once('exit', ended); host.once('error', failed);
+    });
+  };
+  await bootHost();
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const page = browser.contexts()[0].pages()[0];
   await page.waitForSelector('#pet');
@@ -146,16 +164,129 @@ try {
   assert.ok((await logged).includes('turn/end'), 'notification comes from the real host session log');
   await mkdir(join(project, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(project, 'artifacts', `installed-${version}.png`) });
+  assert.ok(hostUrl, 'the published DSH web surface is ready');
+  settingsBrowser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : chromium.executablePath()), headless: true, args: ['--no-sandbox'] });
+  const settings = await settingsBrowser.newPage({ viewport: { width: 1280, height: 900 } });
+  settingsPage = settings;
+  settings.on('pageerror', error => uiErrors.push(error.message));
+  settings.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
+  await settings.goto(hostUrl);
+  await settings.getByRole('button', { name: /^(继续|Continue)$/, exact: true }).click();
+  await settings.getByRole('button', { name: /^(设置|Settings)$/, exact: true }).click();
+  await settings.getByRole('button', { name: '桌宠', exact: true }).click();
+  const surface = settings.getByTestId('coopanion-settings');
+  await surface.waitFor();
+  console.log('Official DSH settings page loaded; checking controls and persisted preferences…');
+  await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
+  await surface.getByRole('button', { name: '隐藏桌宠', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '已隐藏' }).waitFor();
+  await surface.getByRole('button', { name: '显示桌宠', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
+  await surface.getByRole('spinbutton', { name: '角色尺寸', exact: true }).fill('180');
+  await surface.getByRole('spinbutton', { name: '角色尺寸', exact: true }).press('Enter');
+  await surface.getByRole('status').filter({ hasText: '已保存' }).waitFor();
+  await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
+  assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /size: 180/, 'native Host settings persist the size');
+  await page.close();
+  await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
+  await surface.getByRole('button', { name: '启动桌宠', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  const reopened = browser.contexts()[0].pages()[0];
+  await reopened.waitForSelector('#pet[data-character=deepseek-whale]');
+  await reopened.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
+  await surface.getByRole('button', { name: '管理角色', exact: true }).click();
+  await reopened.waitForSelector('#characters:not([hidden])');
+  await surface.getByRole('switch', { name: '随 Harness 启动', exact: true }).click();
+  await surface.getByRole('status').filter({ hasText: '已保存' }).waitFor();
+  assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /autoStart: false/);
+  await settings.screenshot({ path: join(project, 'artifacts', `settings-${version}.png`) });
+  const lightColor = await surface.evaluate(element => getComputedStyle(element).color);
+  await settings.getByRole('button', { name: '通用设置', exact: true }).click();
+  await settings.getByRole('button', { name: '深色', exact: true }).click();
+  await settings.getByRole('button', { name: '桌宠', exact: true }).click();
+  await settings.waitForFunction(color => getComputedStyle(document.querySelector('.dsh-coopanion-settings')).color !== color, lightColor);
+  await settings.screenshot({ path: join(project, 'artifacts', `settings-dark-${version}.png`) });
+  await settings.getByRole('button', { name: '通用设置', exact: true }).click();
+  await settings.getByRole('button', { name: '中文', exact: true }).click();
+  await settings.getByRole('menuitem', { name: 'English', exact: true }).click();
+  await settings.getByRole('button', { name: 'Desktop pet', exact: true }).click();
+  await surface.getByRole('heading', { name: 'Pet status', exact: true }).waitFor();
+  await surface.getByRole('switch', { name: 'Start with Harness', exact: true }).waitFor();
+  await surface.getByRole('button', { name: 'Manage characters', exact: true }).waitFor();
+  assert.equal(await surface.getByRole('spinbutton', { name: 'Character size', exact: true }).inputValue(), '180');
+  await settings.screenshot({ path: join(project, 'artifacts', `settings-en-${version}.png`) });
+  await settings.getByRole('button', { name: 'General', exact: true }).click();
+  await settings.getByRole('button', { name: 'English', exact: true }).click();
+  await settings.getByRole('menuitem', { name: '中文', exact: true }).click();
+  await settings.getByRole('button', { name: '桌宠', exact: true }).waitFor();
+  await waitProfile(/preference: zh/);
+  await stop(host); assert.equal(host.exitCode, 0, hostLog);
+  await bootHost();
+  await settings.goto(hostUrl);
+  await settings.getByRole('button', { name: '设置', exact: true }).click();
+  await settings.getByRole('button', { name: '桌宠', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
+  assert.equal(await surface.getByRole('spinbutton', { name: '角色尺寸', exact: true }).inputValue(), '180');
+  assert.equal(await surface.getByRole('switch', { name: '随 Harness 启动', exact: true }).getAttribute('aria-checked'), 'false');
+  await surface.getByRole('button', { name: '管理角色', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  const afterHostRestart = browser.contexts()[0].pages()[0];
+  await afterHostRestart.waitForSelector('#pet[data-character=deepseek-whale]');
+  await afterHostRestart.waitForSelector('#characters:not([hidden])');
+  const oldWindowClosed = afterHostRestart.waitForEvent('close');
+  await surface.getByRole('button', { name: '重启', exact: true }).click();
+  await oldWindowClosed;
+  await settings.waitForFunction(() => [...document.querySelectorAll('.dsh-coopanion-settings button')].find(button => button.textContent === '重启')?.disabled === false);
+  await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  await browser.contexts()[0].pages()[0].waitForSelector('#pet[data-character=deepseek-whale]');
+  await surface.getByRole('button', { name: '关闭桌宠', exact: true }).click();
+  await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
+  const languageReady = new Promise((resolveReady, reject) => {
+    const timeout = setTimeout(() => finish(new Error('Automatic language selection timed out')), 15000);
+    const receive = message => { if (message?.type === 'system-language-ready') finish(message.error ? new Error(message.error) : undefined); };
+    function finish(error) { clearTimeout(timeout); host.off('message', receive); if (error) reject(error); else resolveReady(); }
+    host.on('message', receive);
+  });
+  host.send({ type: 'follow-system-language' });
+  await languageReady;
+  assert.doesNotMatch(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /preference: (?:zh|en)\b/);
+  for (const locale of ['en-US', 'zh-CN']) {
+    const context = await settingsBrowser.newContext({ locale, viewport: { width: 1280, height: 900 } });
+    try {
+      const automatic = await context.newPage();
+      automatic.on('pageerror', error => uiErrors.push(error.message));
+      await automatic.goto(hostUrl);
+      await automatic.getByRole('button', { name: locale === 'zh-CN' ? '设置' : 'Settings', exact: true }).click();
+      await automatic.getByRole('button', { name: locale === 'zh-CN' ? '桌宠' : 'Desktop pet', exact: true }).click();
+      const translated = automatic.getByTestId('coopanion-settings');
+      await translated.getByRole('heading', { name: locale === 'zh-CN' ? '偏好设置' : 'Preferences', exact: true }).waitFor();
+      await translated.getByRole('button', { name: locale === 'zh-CN' ? '启动桌宠' : 'Start pet', exact: true }).waitFor();
+      const size = translated.getByRole('spinbutton', { name: locale === 'zh-CN' ? '角色尺寸' : 'Character size', exact: true });
+      await size.fill('89'); await size.press('Tab');
+      await translated.getByText(locale === 'zh-CN' ? '请输入范围内的数字。' : 'Enter a number within the allowed range.', { exact: true }).waitFor();
+      assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /size: 180/, 'invalid localized inputs do not write preferences');
+      await automatic.screenshot({ path: join(project, 'artifacts', `settings-system-${locale}-${version}.png`) });
+    } finally { await context.close(); }
+  }
+  assert.deepEqual(uiErrors, [], 'the native DSH module loader and settings renderer have no page errors');
   await stop(host);
   assert.equal(host.exitCode, 0, hostLog);
-  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, customCharacterId: 'deepseek-whale', sessionNotifications: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
-  console.log(`Installation smoke passed on DSH ${version}: package admission, bundle activation, actual host loader, Electron window, session notification, and clean shutdown.`);
+  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, customCharacterId: 'deepseek-whale', sessionNotifications: true, nativeSettingsPage: true, darkTheme: true, closeAndRelaunch: true, hostRestartPersistence: true, autoStartDisabled: true, chineseAndEnglish: true, liveLocaleSwitch: true, automaticSystemLanguage: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
+  console.log(`Installation smoke passed on DSH ${version}: admission, actual profile loader, native window, session notifications, official settings UI, live persisted preferences, and reopening after native close.`);
 } catch (error) {
+  if (settingsPage) {
+    await settingsPage.screenshot({ path: join(project, 'artifacts', `settings-failed-${version}.png`) }).catch(() => {});
+    console.error('DSH frontend:', await settingsPage.locator('body').innerText().catch(() => ''), uiErrors, consoleErrors.slice(0, 8));
+  }
   if (hostLog) console.error(hostLog);
   throw error;
 } finally {
   await stop(host);
   if (browser) await browser.close();
+  if (settingsBrowser) await settingsBrowser.close();
   await stop(display);
   await rm(root, { recursive: true, force: true });
 }
