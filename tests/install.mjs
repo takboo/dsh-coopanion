@@ -36,6 +36,26 @@ async function waitProfile(pattern) {
   }
   assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), pattern, 'the Host persisted its locale preference');
 }
+async function openPetSettings(page, chinese = true) {
+  const launcher = page.getByRole('button', { name: chinese ? '设置' : 'Settings', exact: true });
+  const section = page.getByRole('button', { name: chinese ? '桌宠' : 'Desktop pet', exact: true });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await launcher.click();
+    try {
+      await section.waitFor({ timeout: 5000 });
+      await section.click();
+      await page.getByTestId('pet-status').filter({ hasNotText: /正在连接|Connecting/ }).waitFor({ timeout: 5000 });
+      await page.locator('#coopanion-size:enabled').waitFor({ timeout: 5000 });
+      return;
+    } catch (error) {
+      // DSH closes its panel when initial session/onboarding hydration settles.
+      // Reopen only if the public launcher confirms it actually closed; a missing
+      // plugin section or failed status/configuration load in an open panel must fail.
+      if (attempt !== 0 || await launcher.getAttribute('aria-expanded') !== 'false') throw error;
+      console.log('DSH closed settings during initial onboarding; reopening the native panel.');
+    }
+  }
+}
 let display, host, browser, settingsBrowser;
 let hostUrl;
 let settingsPage;
@@ -178,8 +198,7 @@ try {
   settings.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
   await settings.goto(hostUrl);
   await settings.getByRole('button', { name: /^(继续|Continue)$/, exact: true }).click();
-  await settings.getByRole('button', { name: /^(设置|Settings)$/, exact: true }).click();
-  await settings.getByRole('button', { name: '桌宠', exact: true }).click();
+  await openPetSettings(settings);
   const surface = settings.getByTestId('coopanion-settings');
   await surface.waitFor();
   console.log('Official DSH settings page loaded; checking controls and persisted preferences…');
@@ -230,8 +249,7 @@ try {
   await stop(host); assert.equal(host.exitCode, 0, hostLog);
   await bootHost();
   await settings.goto(hostUrl);
-  await settings.getByRole('button', { name: '设置', exact: true }).click();
-  await settings.getByRole('button', { name: '桌宠', exact: true }).click();
+  await openPetSettings(settings);
   await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
   assert.equal(await surface.getByRole('spinbutton', { name: '角色尺寸', exact: true }).inputValue(), '180');
   assert.equal(await surface.getByRole('switch', { name: '随 Harness 启动', exact: true }).getAttribute('aria-checked'), 'false');
@@ -265,8 +283,7 @@ try {
       const automatic = await context.newPage();
       automatic.on('pageerror', error => uiErrors.push(error.message));
       await automatic.goto(hostUrl);
-      await automatic.getByRole('button', { name: locale === 'zh-CN' ? '设置' : 'Settings', exact: true }).click();
-      await automatic.getByRole('button', { name: locale === 'zh-CN' ? '桌宠' : 'Desktop pet', exact: true }).click();
+      await openPetSettings(automatic, locale === 'zh-CN');
       const translated = automatic.getByTestId('coopanion-settings');
       await translated.getByRole('heading', { name: locale === 'zh-CN' ? '偏好设置' : 'Preferences', exact: true }).waitFor();
       await translated.getByRole('button', { name: locale === 'zh-CN' ? '启动桌宠' : 'Start pet', exact: true }).waitFor();
