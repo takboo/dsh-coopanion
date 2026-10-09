@@ -24,15 +24,20 @@
     <section id="bubble" class="bubble interactive" hidden aria-live="polite">
       <header><span id="bubble-status">小鲸</span><button id="dismiss" aria-label="收起气泡">×</button></header>
       <p id="bubble-text"></p>
+      <button id="bubble-session" class="session-link" hidden>回到这个会话 ↗</button>
     </section>
     <section id="chat" class="panel interactive" hidden>
       <header><strong id="chat-title">和小鲸说话</strong><button id="chat-close" aria-label="关闭聊天">×</button></header>
       <label for="sessions">发送到 Harness 会话</label>
       <select id="sessions" aria-label="会话"></select>
+      <button id="chat-session" class="session-link">在 Harness 中打开 ↗</button>
       <p id="chat-help">消息会发送给所选会话，回复显示在气泡里。</p>
       <form id="chat-form"><textarea id="message" rows="3" maxlength="2000" placeholder="有什么想说的？" aria-label="消息"></textarea><button id="send" type="submit">发送 ↗</button></form>
     </section>
     <section id="menu" class="menu interactive" hidden>
+      <label for="menu-sessions">关注的会话</label>
+      <select id="menu-sessions" aria-label="关注的会话"></select>
+      <button id="open-session">回到所选会话 ↗</button>
       <button id="open-characters">角色与动画</button>
       <button id="toggle-roam">暂停走动</button>
       <button id="toggle-sleep">休息一下</button>
@@ -54,7 +59,7 @@
       <div class="pet-halo"></div>
       <canvas id="character-canvas" aria-hidden="true"></canvas>
       <div id="mood-icon" class="mood-icon" aria-hidden="true">✦</div>
-      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
+      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-sessions" aria-label="选择会话">↗</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
       <span class="name-tag"><span id="character-name">小鲸</span> <i></i></span>
     </div>
     <button id="toast" class="toast interactive" hidden><span>🐳</span><div><strong id="toast-title"></strong><p id="toast-body"></p></div><b>↗</b></button>

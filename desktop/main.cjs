@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Notification, screen, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, screen, Menu, Tray, nativeImage, shell } = require('electron');
 const { join } = require('node:path');
 const { CharacterStore } = require('../dist/character-store.cjs');
 app.setName('小鲸');
@@ -39,6 +39,8 @@ process.on('message', message => {
     if (message.command === 'hide') win?.hide();
     if (message.command === 'show' || message.command === 'characters') show();
     if (message.command === 'characters') forward({ type: 'characters' });
+    // Fixed public Desktop protocol; no renderer-supplied URL or private shell IPC.
+    if (message.command === 'focus-harness' && process.env.DSH_PET_TEST_NO_SANDBOX !== '1') void shell.openExternal('dsh://open').catch(() => {});
   }
   if (message.type === 'snapshot') { lastFrame = { type: 'init', options, snapshot: message.snapshot }; forward(message); }
   if (message.type === 'notice') {
@@ -47,7 +49,7 @@ process.on('message', message => {
       const notice = new Notification({ title: message.notice.title, body: message.notice.body, silent: true });
       notices.add(notice);
       notice.on('close', () => notices.delete(notice));
-      notice.on('click', () => { show(); process.send?.({ type: 'action', action: { type: 'select', sessionId: message.notice.sessionId } }); });
+      notice.on('click', () => { process.send?.({ type: 'action', action: { type: 'open-session', sessionId: message.notice.sessionId } }); });
       notice.show();
     }
   }
@@ -90,7 +92,7 @@ app.whenReady().then(async () => {
     if (event.sender !== win.webContents || !action || typeof action !== 'object') return;
     if (action.type === 'hide') { win.hide(); return; }
     if (action.type === 'move-display') { win.setBounds(bounds()); forward({ type: 'display-changed' }); return; }
-    if (action.type !== 'chat' && action.type !== 'select') return;
+    if (action.type !== 'chat' && action.type !== 'select' && action.type !== 'open-session') return;
     process.send?.({ type: 'action', action });
   });
   await win.loadFile(join(__dirname, '../web/index.html'));

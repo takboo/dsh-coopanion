@@ -55,6 +55,15 @@ try {
   bridge.notify({ title: '桌面测试 · 已完成', body: '真实窗口与宿主 IPC 验证通过。', sessionId: 'native-test' });
   await page.waitForSelector('#toast:not([hidden])');
   assert.equal(await page.locator('#toast-title').innerText(), '桌面测试 · 已完成');
+  await page.locator('#toast').click();
+  for (let n = 0; n < 30 && actions.length < 2; n++) await pause(50);
+  assert.deepEqual(actions[1], { type: 'open-session', sessionId: 'native-test' });
+  bridge.update({ ...snapshot, mood: 'idle', text: '准备好了，随时叫我。', revision: 2, sessions: [...snapshot.sessions, { id: 'second-test', label: '另一会话', mood: 'working', text: '正在运行命令', reply: '', revision: 1 }] });
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
+  await page.locator('#open-sessions').click(); await page.locator('#menu-sessions').selectOption('second-test');
+  for (let n = 0; n < 30 && actions.length < 3; n++) await pause(50);
+  assert.deepEqual(actions[2], { type: 'select', sessionId: 'second-test' });
+  await page.keyboard.press('Escape');
   await page.waitForSelector('#pet[data-character=whale]');
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
   await importCharacter(page, 'paper-star.dshpet');
@@ -65,7 +74,7 @@ try {
   await page.waitForFunction(() => document.getElementById('character-select').value === 'deepseek-whale' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=deepseek-whale]');
   assert.match(await page.locator('#character-credit').innerText(), /Pal-AI-Lab.*ZipZipPipe/);
-  assert.equal(actions.length, 1, 'character import does not send extra model messages');
+  assert.equal(actions.filter(action => action.type === 'chat').length, 1, 'character import and session navigation do not send extra model messages');
   await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/native-pet.png' });
   await bridge.dispose();
   await browser.close(); browser = undefined;

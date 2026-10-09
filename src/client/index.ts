@@ -3,6 +3,8 @@ import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client';
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client';
 import type {} from '@deepseek-ai/dsh-client-locale/client';
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client';
+import type { SessionId } from '@deepseek-ai/dsh-session/types';
 import type { PetStatus } from '../controls.ts';
 import { Settings, type SettingsFace, type Preferences } from './Settings.tsx';
 import { en, zh, type LocaleKey } from './locales.ts';
@@ -34,4 +36,22 @@ export function apply(ctx: Context): void {
     name: 'settings.section', id: 'dsh-coopanion', order: 60,
     label: () => ctx.locale.bind('coopanion')('nav'), locale: 'coopanion', inject: () => face,
   }, Settings));
+  ctx.inject(['uiWorkspace'], child => {
+    if (!ctx.connection.isLoopback) return;
+    child.effect(() => {
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout>;
+      const poll = async () => {
+        try {
+          const result = await ctx.connection.rpc.call('/api', 'coopanion/navigation', {}, controller.signal);
+          if (result.ok && result.value && !controller.signal.aborted) {
+            const value = result.value as { sessionId?: unknown };
+            if (typeof value.sessionId === 'string') { child.uiWorkspace.openSession(value.sessionId as SessionId); window.focus(); }
+          }
+        } catch { /* Connection recovery owns transport errors. */ }
+        finally { if (!controller.signal.aborted) timer = setTimeout(poll, 750); }
+      };
+      void poll(); return () => { controller.abort(); clearTimeout(timer); };
+    });
+  });
 }

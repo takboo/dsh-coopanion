@@ -36,10 +36,18 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
   const model = new PetModel();
   const currentOptions = (): DesktopOptions => ({ size: options.size.get(), roam: options.roam.get(), notifications: options.notifications.get(), bubbleDurationMs: options.bubbleDurationMs.get(), electronPath: options.electronPath });
   const controls = new PetControls(bridge, currentOptions);
+  let navigation: { sessionId: string; expires: number } | undefined;
   ctx.provide('coopanion', controls);
-  const update = () => bridge.update(model.snapshot());
+  const update = () => {
+    const snapshot = model.snapshot(), live = new Set<string>(ctx.agents.list().map(agent => agent.session.id));
+    bridge.update({ ...snapshot, sessions: snapshot.sessions.map(session => ({ ...session, chatAvailable: live.has(session.id) })) });
+  };
   const notice = (value: ReturnType<PetModel['consume']>) => { if (value && options.notifications.get()) bridge.notify(value); };
   ctx.effect(() => () => controls.dispose());
+  ctx.effect(() => {
+    const timer = setInterval(() => { if (model.settle()) update(); }, 250);
+    timer.unref(); return () => clearInterval(timer);
+  });
   ctx.on('settings/document-updated', ns => { if (ns === 'dsh-coopanion') controls.configure(); });
   ctx.inject(['connection'], child => {
     const dispatch = async (endpoint: string, payload: unknown, signal: AbortSignal) => {
@@ -49,6 +57,12 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
           wire.object({}).strict().parse(payload);
           return { ok: true, value: controls.status() };
         }
+        if (endpoint === 'navigation') {
+          wire.object({}).strict().parse(payload);
+          const value = navigation && navigation.expires > Date.now() ? { sessionId: navigation.sessionId } : null;
+          navigation = undefined;
+          return { ok: true, value };
+        }
         if (endpoint !== 'control') throw new Error('未知的桌宠操作');
         const { command } = wire.object({ command: wire.enum(['start', 'show', 'hide', 'restart', 'stop', 'characters']) }).strict().parse(payload);
         return { ok: true, value: await controls.command(command) };
@@ -56,7 +70,7 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
     };
     // Exact Connection routes coexist with the Gateway's exclusive /api interceptor.
     // The Connection carrier applies its normal Host/Origin and authentication checks.
-    for (const endpoint of ['status', 'control'] as const) {
+    for (const endpoint of ['status', 'control', 'navigation'] as const) {
       child.effect(() => child.connection.fetch.register({
         path: `/api/coopanion/${endpoint}`, methods: ['POST'], requestBody: 'buffered',
         fetch: async request => {
@@ -67,25 +81,36 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
       }));
     }
   });
-  for (const agent of ctx.agents.list()) model.observe(agent.session);
-  ctx.on('agent/created', ({ agent }) => { model.observe(agent.session); update(); return undefined; });
+  ctx.inject(['sessions'], child => { for (const session of child.sessions.list()) model.observe(session); update(); });
+  for (const agent of ctx.agents.list()) { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); }
+  ctx.on('session/created', session => { model.observe(session); update(); });
+  ctx.on('agent/created', ({ agent }) => { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); update(); return undefined; });
+  ctx.on('agent/disposed', () => { update(); });
   ctx.on('session/event', (session, event) => { notice(model.consume(session, event)); update(); });
   ctx.on('session/disposed', session => { model.remove(session.id); update(); });
   ctx.on('approval/request', async (request, next) => {
     model.observe(request.agent.session);
-    notice(model.approval(request.agent.id, request.toolName)); update();
+    const token = Symbol('approval');
+    notice(model.approval(request.agent.session.id, request.toolName, token)); update();
     try { return await next(); }
-    finally { model.approvalSettled(request.agent.id); update(); }
+    finally { model.approvalSettled(request.agent.session.id, token); update(); }
   });
   const onAction = (action: unknown) => {
     if (!isRecord(action)) return;
     if (action.type === 'select' && typeof action.sessionId === 'string') { model.select(action.sessionId); update(); return; }
+    if (action.type === 'open-session' && typeof action.sessionId === 'string') {
+      if (!model.select(action.sessionId)) return;
+      navigation = { sessionId: action.sessionId, expires: Date.now() + 30000 };
+      bridge.focusHarness?.(); update(); return;
+    }
     if (action.type !== 'chat' || typeof action.text !== 'string' || typeof action.sessionId !== 'string') return;
     const text = action.text.trim();
     if (!text || text.length > 2000 || !model.select(action.sessionId)) return;
     const id = model.snapshot().sessionId;
-    const agent = ctx.agents.list().find(agent => agent.id === id);
-    if (!agent || agent.session.header.origin === 'subagent') { model.remove(action.sessionId); update(); return; }
+    const agent = ctx.agents.list().find(agent => agent.session.id === id);
+    if (!agent || agent.session.header.origin === 'subagent') {
+      bridge.notify({ title: '会话尚未就绪', body: '请先回到 Harness 打开这个会话，然后再发送消息。', sessionId: action.sessionId }); update(); return;
+    }
     try {
       ctx.agents.withInitiator(agent, () => agent.followup(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } })));
       update();

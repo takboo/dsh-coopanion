@@ -45,7 +45,9 @@ textarea { resize: none; width: 100%; border: 1px solid #dbe5ef; background: #f9
 #chat-form { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 #send { color: white; background: #5187df; border-radius: 8px; padding: 7px 15px; font-size: 12px; }
 button:disabled { opacity: .5; cursor: default; }
-.menu { width: 160px; padding: 7px; border-radius: 12px; }
+.menu { width: 260px; padding: 7px; border-radius: 12px; }
+.menu label { display: block; margin: 5px 8px; font-size: 11px; color: #7890ac; }
+.session-link { display: block; margin-top: 8px; padding: 6px 0; color: #5379ac; background: transparent; font-size: 11px; }
 .menu button { display: block; width: 100%; padding: 9px 12px; border-radius: 7px; text-align: left; color: #436185; background: none; font-size: 12px; }
 .menu button:hover { background: #eef5ff; }
 .menu small { display: block; border-top: 1px solid #edf1f6; margin: 4px 6px 0; padding: 8px 2px 4px; color: #a2aebf; font-size: 10px; }

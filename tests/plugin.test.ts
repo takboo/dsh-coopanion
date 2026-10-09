@@ -56,10 +56,13 @@ it('keeps the plugin mounted when launch fails, and honors disabled auto-start',
 it('registers and disposes exact authenticated Connection routes without taking over the shared Gateway', async () => {
   const ctx = new Context(); ctx.provide('agents', { list: () => [] });
   const routes = new Map<string, { fetch: (request: Request) => Promise<Response> }>();
+  const session = { id: SessionId('existing'), header: { id: SessionId('existing'), cwd: '/existing' } } as Session;
+  ctx.provide('sessions', { list: () => [session] } as never);
   ctx.provide('connection', { fetch: { register: (route: { path: string; fetch: (request: Request) => Promise<Response> }) => { routes.set(route.path, route); return () => { routes.delete(route.path); }; } } } as never);
-  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(), onAction: vi.fn(), removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  let action: ((value: unknown) => void) | undefined;
+  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(), onAction: listener => { action = listener; }, removeAction: vi.fn(), dispose: vi.fn(async () => {}), focusHarness: vi.fn() };
   const fiber = ctx.plugin(async scope => mountPet(scope, Config({ autoStart: false }), bridge)); await fiber.await();
-  expect([...routes.keys()]).toEqual(['/api/coopanion/status', '/api/coopanion/control']);
+  expect([...routes.keys()]).toEqual(['/api/coopanion/status', '/api/coopanion/control', '/api/coopanion/navigation']);
   const invoke = async (payload: unknown) => {
     const response = await routes.get('/api/coopanion/control')!.fetch(new Request('http://localhost/api/coopanion/control', { method: 'POST', body: JSON.stringify({ type: 'client-request', rpcId: 'test', method: 'coopanion/control', payload }) }));
     return response.json();
@@ -69,5 +72,15 @@ it('registers and disposes exact authenticated Connection routes without taking 
   expect(await invoke({ command: 'start' })).toEqual({ type: 'server-response', rpcId: 'test', result: { ok: true, value: { phase: 'running', visible: true } } });
   const malformed = await routes.get('/api/coopanion/status')!.fetch(new Request('http://localhost/api/coopanion/status', { method: 'POST', body: '{}' }));
   expect(malformed.status).toBe(400);
+  expect(bridge.update).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'existing' }));
+  action?.({ type: 'chat', sessionId: 'existing', text: '不能静默丢弃' });
+  expect(bridge.notify).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'existing', title: '会话尚未就绪' }));
+  const navigation = async () => (await routes.get('/api/coopanion/navigation')!.fetch(new Request('http://localhost/api/coopanion/navigation', { method: 'POST', body: JSON.stringify({ type: 'client-request', rpcId: 'nav', method: 'coopanion/navigation', payload: {} }) }))).json();
+  action?.({ type: 'open-session', sessionId: 'unknown' }); expect((await navigation()).result.value).toBeNull();
+  expect(bridge.focusHarness).not.toHaveBeenCalled();
+  action?.({ type: 'open-session', sessionId: 'existing' });
+  expect((await navigation()).result.value).toEqual({ sessionId: 'existing' });
+  expect((await navigation()).result.value).toBeNull(); // Claimed only once.
+  expect(bridge.focusHarness).toHaveBeenCalledOnce();
   await fiber.dispose(); expect(routes.size).toBe(0); await ctx.fiber.dispose();
 });

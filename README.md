@@ -13,15 +13,19 @@
 - Harness 原生 **Settings → 桌宠** 页面：运行状态、启动 / 重启 / 关闭、显示 / 隐藏、角色管理，以及实时保存的偏好设置。桌宠关闭后仍能从此页打开。
 - 思考、工具工作、等待确认、完成和出错的表情与气泡。
 - 完成、出错和审批提醒；支持系统通知和桌宠通知卡片。
-- 会话选择与聊天；输入通过 `Agent.followup()` 进入 Harness 的持久会话，使用其模型、工具和现有权限。
+- 从桌宠工具栏或右键菜单选择关注的会话，显示各会话独立状态；点击任务气泡、通知卡片或菜单返回对应的 Harness 会话。
+- 完成表情播放 2.5 秒后回到待机；开启走动时继续移动，切换菜单或走动开关不会重放完成气泡。
+- 会话聊天；输入通过 `Agent.followup()` 进入 Harness 的持久会话，使用其模型、工具和现有权限。
 
 审批提示会引导你回到 Harness，桌宠不代替宿主作出审批。小鲸不自动向模型发送点击、拖动等互动，也不单独收集 API Key。
 
+会话列表包含当前宿主已加载的顶层会话，忽略子代理；尚未加载的历史会话先在 Harness 中打开。多个本机客户端同时连接时，返回请求由首先领取的客户端打开；桌面版通过公开的 `dsh://open` 协议唤回主窗口，普通 Web 使用已打开的本机页面。浏览器是否允许页面抢占焦点由浏览器决定。
+
 ## 安装到 Desktop
 
-**v0.3.1 支持 DSH 0.2.0-rc.2 和 0.2.1-alpha.1**。v0.1.0 要求较新的 SDK，会被 0.2.0-rc.2 的安装检查拒绝；使用 rc.2 时请下载修正版。接口尚未稳定，其他版本未声明兼容。
+**v0.3.2 支持 DSH 0.2.0-rc.2 和 0.2.1-alpha.1**。v0.1.0 要求较新的 SDK，会被 0.2.0-rc.2 的安装检查拒绝；使用 rc.2 时请下载修正版。接口尚未稳定，其他版本未声明兼容。
 
-1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.3.1.tgz`，记下绝对路径。
+1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.3.2.tgz`，记下绝对路径。
 2. 打开 Harness 的侧边栏 **插件** 页，安装该压缩包路径，并启用 `dsh-coopanion`。
 3. 完全退出再重新打开 Harness。首次启用时，Electron 44 自动从 GitHub 官方发行源下载并校验桌宠运行时，需要联网；下载较大，启动可能稍慢。
 4. 打开一个会话，双击小鲸聊天。如本机必须使用代理，可先按下方开发步骤预装 Electron，或通过 `electronPath` 指定已安装的独立运行时。
@@ -29,7 +33,7 @@
 也可使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，然后执行：
 
 ```bash
-dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.3.1.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.3.2.tgz
 ```
 
 此处需要 Desktop 自带的 CLI；npm 安装的 dsh 不能管理 Desktop 所拥有的 profile。Desktop 完全退出后执行包管理命令，再重新打开应用。
@@ -115,8 +119,8 @@ npm run character:pack -- examples/star paper-star.dshpet
 main 的 push、PR 和手动运行执行类型检查、插件测试、浏览器交互测试、Electron 桌面测试、压缩包检查，并在两个支持的 DSH 版本中安装和加载同一压缩包。推送与 `package.json.version` 一致的 `v*` 标签时，只有全部测试及安装矩阵成功后才创建 GitHub Release，附带插件 `.tgz`、`paper-star.dshpet`、`deepseek-whale.dshpet` 和 `SHA256SUMS`；不自动发布到 npm。
 
 ```bash
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
 插件本身没有遥测或额外联网 API；模型请求与权限管理由 Harness 负责。Electron 首次准备时从官方发行源下载运行时并执行校验。Node 24 的代理下载可通过 `NODE_USE_ENV_PROXY=1` 使用现有 HTTP(S) 代理变量，TLS 与校验保持开启。

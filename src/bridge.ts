@@ -14,6 +14,7 @@ export interface PetBridge {
   dispose(): Promise<void>;
   configure?(options: DesktopOptions): void;
   control?(command: 'show' | 'hide' | 'characters'): void;
+  focusHarness?(): void;
   onLifecycle?(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void;
   removeLifecycle?(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void;
 }
@@ -72,6 +73,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   removeAction(listener: (action: unknown) => void): void { this.off('action', listener); }
   configure(options: DesktopOptions): void { this.send({ type: 'configure', options }); }
   control(command: 'show' | 'hide' | 'characters'): void { this.send({ type: 'control', command }); }
+  focusHarness(): void { this.send({ type: 'control', command: 'focus-harness' }); }
   onLifecycle(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void { this.on('lifecycle', listener); }
   removeLifecycle(listener: (state: { running: boolean; visible: boolean; error?: string }) => void): void { this.off('lifecycle', listener); }
   private send(message: object): void {

@@ -13,10 +13,16 @@ const executablePath = process.env.CHROMIUM_PATH ?? (existsSync('/usr/bin/chromi
 const browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
 try {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+  // Approaching the moving pet with the pointer pauses it, just as on a desktop.
+  const petClick = async (options = {}, twice = false) => {
+    const box = await page.locator('#pet').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.locator('#pet')[twice ? 'dblclick' : 'click'](options);
+  };
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForSelector('#pet[data-character=whale]');
-  await page.locator('#pet').click(); await page.waitForSelector('#bubble:not([hidden])');
+  await petClick(); await page.waitForSelector('#bubble:not([hidden])');
   assert.match(await page.locator('#bubble-text').innerText(), /摸摸头|我在呢|小星星/);
   const before = await page.locator('#pet').boundingBox();
   await page.mouse.move(before.x + 70, before.y + 60); await page.mouse.down(); await page.mouse.move(before.x - 140, before.y + 30, { steps: 12 }); await page.mouse.up();
@@ -24,22 +30,23 @@ try {
   await page.locator('[data-demo=thinking]').click(); assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'thinking');
   await page.locator('[data-demo=waiting]').click(); assert.match(await page.locator('#toast-title').innerText(), /等你确认/);
   await page.locator('[data-demo=happy]').click(); assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'happy');
-  await page.locator('#pet').dblclick(); await page.locator('#message').fill('你好小鲸'); await page.locator('#send').click();
+  await petClick({}, true); await page.locator('#message').fill('你好小鲸'); await page.locator('#send').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('这是演示回复'));
   assert.match(await page.locator('#bubble-text').innerText(), /你好小鲸/);
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
   assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'sleeping');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
   await page.locator('[data-demo=happy]').click();
   await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/desktop-pet.png' });
   // Host text must stay text even when it contains HTML or script markup.
-  await page.locator('#pet').dblclick(); await page.locator('#message').fill('<img src=x onerror="throw 1">'); await page.locator('#send').click();
+  await petClick({}, true); await page.locator('#message').fill('<img src=x onerror="throw 1">'); await page.locator('#send').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('<img'));
   assert.equal(await page.locator('#bubble-text img').count(), 0); assert.deepEqual(errors, []);
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await petClick({ button: 'right' }); await page.locator('#open-characters').click();
   await importCharacter(page, 'paper-star.dshpet');
   await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('已导入'));
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
+  await page.locator('[data-demo=happy]').click();
   await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'happy' && ['4', '5'].includes(document.getElementById('character-canvas').dataset.frame));
   const firstFrame = await page.locator('#character-canvas').getAttribute('data-frame');
   await page.waitForFunction(frame => document.getElementById('character-canvas').dataset.frame !== frame, firstFrame);
@@ -49,11 +56,11 @@ try {
   await page.waitForFunction(() => document.getElementById('character-canvas').dataset.frame === '0');
   await page.waitForTimeout(600); assert.equal(await page.locator('#character-canvas').getAttribute('data-frame'), '0');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
   await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'sleeping');
   assert.equal(await page.locator('#character-canvas').getAttribute('data-frame'), '6');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await petClick({ button: 'right' }); await page.locator('#open-characters').click();
   const portrait = JSON.parse(await readFile('examples/portrait/character.json', 'utf8'));
   const png = await readFile('examples/portrait/assets/portrait.png');
   const webp = await page.evaluate(async data => {
@@ -105,7 +112,19 @@ try {
   assert.notEqual(await page.locator('#character-canvas').evaluate(canvas => canvas.toDataURL()), neutral);
   await page.screenshot({ path: 'artifacts/deepseek-whale.png' });
   await page.locator('#characters-close').click();
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'closing character panel does not replay completed reply');
+  await petClick({ button: 'right' }); await page.locator('#toggle-roam').click();
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'roam toggle does not replay completed reply');
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
+  await petClick({ button: 'right' }); await page.locator('#toggle-roam').click();
+  await page.mouse.move(5, 5);
+  await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'walk');
+  const walkingBefore = await page.locator('#pet').boundingBox();
+  await page.waitForTimeout(400);
+  const walkingAfter = await page.locator('#pet').boundingBox();
+  assert.ok(Math.abs(walkingAfter.x - walkingBefore.x) > 3, 'completed pet actually moves, rather than waving in place');
+  assert.equal(await page.locator('#bubble').isVisible(), false);
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
   await page.waitForFunction(() => document.getElementById('character-canvas').dataset.action === 'sleeping');
   await page.reload(); await page.waitForSelector('#pet[data-character=deepseek-whale]');
   assert.deepEqual(errors, []);

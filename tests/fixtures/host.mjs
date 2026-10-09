@@ -3,11 +3,14 @@ export const inject = ['sessions', 'appReady', 'webServer', 'connection', 'setti
 
 export function apply(ctx) {
   let session;
+  const sessions = new Map();
   const action = async message => {
     if (message?.type === 'start-task') {
-      session = ctx.sessions.create('host-install', { meta: { cwd: '/test/安装验证' } });
+      const id = message.sessionId ?? 'host-install';
+      session = ctx.sessions.create(id, { meta: { cwd: id === 'host-install' ? '/test/安装验证' : '/test/第二会话' } });
+      sessions.set(id, session);
       session.append('turn/start', { turn: 1 });
-    } else if (message?.type === 'finish-task' && session) {
+    } else if (message?.type === 'finish-task' && (session = sessions.get(message.sessionId ?? 'host-install'))) {
       session.append('turn/end', { turn: 1, reason: { kind: 'completed' } });
       process.send?.({ type: 'session-log', events: session.log.map(event => event.type) });
     } else if (message?.type === 'follow-system-language') {

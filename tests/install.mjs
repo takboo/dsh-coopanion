@@ -188,6 +188,18 @@ try {
   await page.waitForSelector('#toast:not([hidden])');
   assert.match(await page.locator('#toast-title').innerText(), /任务完成/);
   assert.ok((await logged).includes('turn/end'), 'notification comes from the real host session log');
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
+  host.send({ type: 'start-task', sessionId: 'host-other' });
+  await page.waitForFunction(() => document.querySelector('#menu-sessions option[value="host-other"]'));
+  assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'idle', 'background turn leaves the selected settled session idle');
+  await page.locator('#open-sessions').click();
+  await page.locator('#menu-sessions').selectOption('host-other');
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
+  await mkdir(join(project, 'artifacts'), { recursive: true });
+  await page.screenshot({ path: join(project, 'artifacts', `installed-sessions-${version}.png`) });
+  await page.locator('#menu-sessions').selectOption('host-install');
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
+  await page.keyboard.press('Escape');
   await mkdir(join(project, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(project, 'artifacts', `installed-${version}.png`) });
   assert.ok(hostUrl, 'the published DSH web surface is ready');
@@ -198,6 +210,15 @@ try {
   settings.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
   await settings.goto(hostUrl);
   await settings.getByRole('button', { name: /^(继续|Continue)$/, exact: true }).click();
+  // A background completion opens its own session in the actual Harness client.
+  host.send({ type: 'finish-task', sessionId: 'host-other' });
+  await page.waitForFunction(() => document.getElementById('toast-title').textContent.includes('第二会话'));
+  await page.locator('#toast').click();
+  await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '第二会话' }).waitFor();
+  await page.locator('#open-sessions').click(); await page.locator('#menu-sessions').selectOption('host-install');
+  await page.locator('#open-session').click();
+  await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '安装验证' }).waitFor();
+  assert.equal(await page.locator('#sessions').inputValue(), 'host-install');
   await openPetSettings(settings);
   const surface = settings.getByTestId('coopanion-settings');
   await surface.waitFor();
@@ -297,8 +318,8 @@ try {
   assert.deepEqual(uiErrors, [], 'the native DSH module loader and settings renderer have no page errors');
   await stop(host);
   assert.equal(host.exitCode, 0, hostLog);
-  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, customCharacterId: 'deepseek-whale', sessionNotifications: true, nativeSettingsPage: true, darkTheme: true, closeAndRelaunch: true, hostRestartPersistence: true, autoStartDisabled: true, chineseAndEnglish: true, liveLocaleSwitch: true, automaticSystemLanguage: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
-  console.log(`Installation smoke passed on DSH ${version}: admission, actual profile loader, native window, session notifications, official settings UI, live persisted preferences, and reopening after native close.`);
+  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, customCharacterId: 'deepseek-whale', sessionNotifications: true, multipleSessions: true, completionReturnsToIdle: true, notificationOpensSourceSession: true, nativeSettingsPage: true, darkTheme: true, closeAndRelaunch: true, hostRestartPersistence: true, autoStartDisabled: true, chineseAndEnglish: true, liveLocaleSwitch: true, automaticSystemLanguage: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
+  console.log(`Installation smoke passed on DSH ${version}: admission, actual profile loader, native window, independent sessions, session navigation from notices, official settings UI, live persisted preferences, and reopening after native close.`);
 } catch (error) {
   if (settingsPage) {
     await settingsPage.screenshot({ path: join(project, 'artifacts', `settings-failed-${version}.png`) }).catch(() => {});
