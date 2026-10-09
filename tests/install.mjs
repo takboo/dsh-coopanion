@@ -56,6 +56,9 @@ async function openPetSettings(page, chinese = true) {
     }
   }
 }
+async function openSessionPicker(page) {
+  await page.locator('#pet').dblclick(); await page.locator('#chat-current').click();
+}
 let display, host, browser, settingsBrowser;
 let hostUrl;
 let settingsPage;
@@ -166,17 +169,19 @@ try {
   await bootHost();
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const page = browser.contexts()[0].pages()[0];
+  page.on('pageerror', error => uiErrors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
   await page.waitForSelector('#pet');
   assert.equal(await page.locator('#demo').isVisible(), false);
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
-  await page.waitForSelector('#pet[data-character=deepseek-whale]');
+  await page.waitForSelector('#pet[data-character=whale]');
   await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
-  await importCharacter(page, join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.dshpet'));
+  await importCharacter(page, join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.zip'));
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
-  await page.locator('#character-select').selectOption('deepseek-whale');
-  await page.waitForFunction(() => document.getElementById('character-select').value === 'deepseek-whale' && !document.getElementById('character-use').disabled);
-  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=deepseek-whale]');
+  await page.locator('#character-select').selectOption('whale');
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'whale' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=whale]');
   host.send({ type: 'start-task' });
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
   const logged = new Promise(resolveLog => {
@@ -192,8 +197,8 @@ try {
   host.send({ type: 'start-task', sessionId: 'host-other' });
   await page.waitForFunction(() => document.querySelector('#conversation-list [data-session-id="host-other"]'));
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
-  assert.equal(await page.locator('#current-session').innerText(), '第二会话', 'a newly created session becomes the conversation the character is accompanying');
-  await page.locator('#open-sessions').click();
+  assert.equal(await page.locator('#chat-session-name').innerText(), '第二会话', 'a newly created session becomes the conversation the character is accompanying');
+  await openSessionPicker(page);
   assert.equal(await page.locator('#conversation-list [data-session-id="host-other"]').getAttribute('aria-selected'), 'true');
   await mkdir(join(project, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(project, 'artifacts', `installed-sessions-${version}.png`) });
@@ -215,10 +220,10 @@ try {
   await page.waitForFunction(() => document.getElementById('toast-title').textContent.includes('第二会话'));
   await page.locator('#toast').click();
   await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '第二会话' }).waitFor();
-  await page.locator('#open-sessions').click(); await page.locator('#conversation-list [data-session-id="host-install"]').click();
-  await page.locator('#open-sessions').click(); await page.locator('#conversation-open').click();
+  await openSessionPicker(page); await page.locator('#conversation-list [data-session-id="host-install"]').click();
+  await openSessionPicker(page); await page.locator('#conversation-open').click();
   await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '安装验证' }).waitFor();
-  assert.equal(await page.locator('#current-session').innerText(), '安装验证');
+  assert.equal(await page.locator('#chat-session-name').innerText(), '安装验证');
   await openPetSettings(settings);
   const surface = settings.getByTestId('coopanion-settings');
   await surface.waitFor();
@@ -239,7 +244,7 @@ try {
   await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const reopened = browser.contexts()[0].pages()[0];
-  await reopened.waitForSelector('#pet[data-character=deepseek-whale]');
+  await reopened.waitForSelector('#pet[data-character=whale]');
   await reopened.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
   await surface.getByRole('button', { name: '管理角色', exact: true }).click();
   await reopened.waitForSelector('#characters:not([hidden])');
@@ -278,7 +283,7 @@ try {
   await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const afterHostRestart = browser.contexts()[0].pages()[0];
-  await afterHostRestart.waitForSelector('#pet[data-character=deepseek-whale]');
+  await afterHostRestart.waitForSelector('#pet[data-character=whale]');
   await afterHostRestart.waitForSelector('#characters:not([hidden])');
   const oldWindowClosed = afterHostRestart.waitForEvent('close');
   await surface.getByRole('button', { name: '重启', exact: true }).click();
@@ -286,7 +291,7 @@ try {
   await settings.waitForFunction(() => [...document.querySelectorAll('.dsh-coopanion-settings button')].find(button => button.textContent === '重启')?.disabled === false);
   await surface.getByTestId('pet-status').filter({ hasText: '正在显示' }).waitFor();
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
-  await browser.contexts()[0].pages()[0].waitForSelector('#pet[data-character=deepseek-whale]');
+  await browser.contexts()[0].pages()[0].waitForSelector('#pet[data-character=whale]');
   await surface.getByRole('button', { name: '关闭桌宠', exact: true }).click();
   await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
   const languageReady = new Promise((resolveReady, reject) => {
@@ -318,9 +323,16 @@ try {
   assert.deepEqual(uiErrors, [], 'the native DSH module loader and settings renderer have no page errors');
   await stop(host);
   assert.equal(host.exitCode, 0, hostLog);
-  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, builtinCharacterId: 'deepseek-whale', sessionNotifications: true, multipleSessions: true, completionReturnsToIdle: true, notificationOpensSourceSession: true, nativeSettingsPage: true, darkTheme: true, closeAndRelaunch: true, hostRestartPersistence: true, autoStartDisabled: true, chineseAndEnglish: true, liveLocaleSwitch: true, automaticSystemLanguage: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
+  await writeFile(join(project, 'artifacts', `install-${version}.json`), JSON.stringify({ dsh: version, plugin: `${manifest.name}@${manifest.version}`, package: archive, installed: true, profileLoader: true, nativeWindow: true, customCharacter: true, builtinCharacterId: 'whale', sessionNotifications: true, multipleSessions: true, completionReturnsToIdle: true, notificationOpensSourceSession: true, nativeSettingsPage: true, darkTheme: true, closeAndRelaunch: true, hostRestartPersistence: true, autoStartDisabled: true, chineseAndEnglish: true, liveLocaleSwitch: true, automaticSystemLanguage: true, riskExemption: false, cleanShutdown: true }, null, 2) + '\n');
   console.log(`Installation smoke passed on DSH ${version}: admission, actual profile loader, native window, independent sessions, session navigation from notices, official settings UI, live persisted preferences, and reopening after native close.`);
 } catch (error) {
+  if (browser) {
+    const desktopPage = browser.contexts()[0]?.pages()[0];
+    if (desktopPage) {
+      await desktopPage.screenshot({ path: join(project, 'artifacts', `desktop-failed-${version}.png`) }).catch(() => {});
+      console.error('Desktop diagnostic:', await desktopPage.locator('#character-status').innerText().catch(() => ''), await desktopPage.locator('#pet').getAttribute('data-character').catch(() => ''), uiErrors, consoleErrors.slice(0, 12));
+    }
+  }
   if (settingsPage) {
     await settingsPage.screenshot({ path: join(project, 'artifacts', `settings-failed-${version}.png`) }).catch(() => {});
     console.error('DSH frontend:', await settingsPage.locator('body').innerText().catch(() => ''), uiErrors, consoleErrors.slice(0, 8));

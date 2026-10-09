@@ -1,14 +1,20 @@
 # Third-party notices
 
-The animation engine and paper-star example are original implementations in this repository. Bundled libraries retain their MIT licenses below. Coopanion inspired the separation between character presentation and host interaction; its engine source is not included.
+## Coopanion runtime (AGPL-3.0-or-later)
 
-## Built-in DeepSeek Whale character
+This application includes and adapts code from [Pal-AI-Lab/Coopanion](https://github.com/Pal-AI-Lab/Coopanion), commit `d7b1a0026fed3eb1975a6e0387527d806192cdbf`, package `packages/cortico-world-desktop-pet`. The vendored body, mesh rig, whale figure/model, sandbox protocol and synthesized sounds are under `web/upstream/`; its manifest reader is adapted in `src/upstream/packs.ts`. Speech timing and bubble styles are adapted in `web/speech.js` and `web/style.css`.
 
-The built-in character under `web/characters/deepseek-whale/`, its source directory `characters/deepseek-whale/`, and the rendered preview `docs/images/deepseek-actions.png` use PNG artwork from Pal-AI-Lab/Coopanion, commit `d7b1a0026fed3eb1975a6e0387527d806192cdbf`. Original character: 溟月（上善无形）; DeepSeek maid reinterpretation: ZipZipPipe; generated/split artwork: Pal-AI-Lab using OpenAI's image model. DeepSeek's mark belongs to its owner and does not imply endorsement.
+The combined program is distributed under **AGPL-3.0-or-later**, with the full license in `LICENSE`. Original dsh-coopanion code's MIT notice is retained in `LICENSE-MIT`. The exact imported version and modifications made on 2026-10-09 are documented in `web/upstream/UPSTREAM.md`. The installed program offers its corresponding source through **菜单 → 下载本版本源码**, including all source, vendored files, build scripts and the dependency lockfile; the npm archive also includes these files.
 
-Upstream excludes these textures from its AGPL grant and does not provide a separate standard open-source license. This adaptation follows the project user's statement that the character is community-created and reusable, while preserving upstream's rights notice. The project's MIT license does not relicense upstream artwork or composited facial textures. See the character pack's `LICENSE` and the [upstream notice](https://github.com/Pal-AI-Lab/Coopanion/blob/d7b1a0026fed3eb1975a6e0387527d806192cdbf/packages/cortico-world-desktop-pet/THIRD_PARTY_NOTICES.md).
+## DeepSeek Whale artwork and marks
 
-The adaptation script and newly authored keyframe manifest are MIT. No upstream model, JavaScript entry point or animation engine is embedded in the plugin.
+The textures and thumbnails in `web/upstream/whale/`, and the generated tray icon `desktop/icon.png`, are excluded from upstream's AGPL grant. Original character: 溟月（上善无形）; DeepSeek maid reinterpretation: ZipZipPipe; generated/split artwork: Pal-AI-Lab using OpenAI's image model. Vendor marks belong to their respective owners and do not imply endorsement.
+
+This integration follows the project user's existing statement that the community character is reusable. AGPL does not relicense these textures. The complete original upstream rights notice is preserved verbatim in [web/upstream/THIRD_PARTY_NOTICES.md](web/upstream/THIRD_PARTY_NOTICES.md). Its sections on speech-recognition libraries/models describe the upstream package; this plugin does not bundle those components.
+
+## Electron
+
+Electron 44.7.0 is installed as a dependency and retains its MIT license and Chromium's accompanying notices. Runtime download and verification remain unchanged.
 
 ## fflate 0.8.3
 

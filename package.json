@@ -1,9 +1,9 @@
 {
   "name": "dsh-coopanion",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "DeepSeek Whale desktop companion and task notifications for DeepSeek Harness",
   "type": "module",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "engines": {
     "node": ">=22.19"
   },
@@ -17,12 +17,18 @@
     "dist",
     "desktop",
     "web",
+    "src",
+    "scripts",
+    "tests",
     "examples",
-    "docs/characters.md",
-    "docs/character.schema.json",
+    "docs",
+    "tsconfig.json",
+    "tsconfig.client.json",
+    "npm-shrinkwrap.json",
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
+    "LICENSE-MIT",
     "THIRD_PARTY_NOTICES.md"
   ],
   "dsh": {
@@ -49,9 +55,6 @@
     "test:desktop": "node tests/desktop.mjs",
     "test:install": "node tests/install.mjs",
     "character:pack": "node scripts/pack-character.mjs",
-    "character:deepseek": "node scripts/import-deepseek-whale.mjs",
-    "character:sync": "node scripts/sync-deepseek-builtin.mjs",
-    "character:schema": "node scripts/character-schema.mjs",
     "dev": "node scripts/preview.mjs",
     "demo": "node scripts/demo.mjs",
     "prepack": "npm run build"

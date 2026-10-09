@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('dshPetBridge', {
   characters: {
     list: () => characterCall('pet:characters:list'),
     load: id => characterCall('pet:characters:load', id),
-    select: id => characterCall('pet:characters:select', id),
+    select: (id, scheme = '') => characterCall('pet:characters:select', { id, scheme }),
     remove: id => characterCall('pet:characters:remove', id),
     import: bytes => characterCall('pet:characters:import', bytes),
   },

@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <link rel="icon" href="data:,">
   <title>DeepSeek 大肥鱼 · Harness</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -21,10 +22,11 @@
     <div class="demo-footer">DEEPSEEK HARNESS PLUGIN <span>01 / THE WHALE</span></div>
   </aside>
   <main id="stage" aria-label="桌宠活动区域">
+    <div id="body-layer" aria-hidden="true"></div>
     <section id="bubble" class="bubble interactive" hidden aria-live="polite">
-      <header><span id="bubble-status">DeepSeek 大肥鱼</span><button id="dismiss" aria-label="收起气泡">×</button></header>
-      <p id="bubble-text"></p>
-      <button id="bubble-session" class="session-link" hidden>回到这个会话 ↗</button>
+      <button id="dismiss" class="b-close" aria-label="收起气泡">×</button>
+      <p id="bubble-text" class="b-text"></p>
+      <div class="bubble-footer"><span id="bubble-status"></span><button id="bubble-session" hidden>回到会话 ↗</button></div>
     </section>
     <section id="conversations" class="panel conversations interactive" hidden>
       <header><span class="conversation-heading"><small>DEEPSEEK WHALE</small><strong>想让我听哪一边？</strong></span><button id="conversations-close" aria-label="收起对话气泡">×</button></header>
@@ -44,27 +46,25 @@
       <button id="toggle-roam">暂停走动</button>
       <button id="toggle-sleep">休息一下</button>
       <button id="toggle-notices">静音提醒</button>
+      <button id="toggle-sound">关闭音效</button>
       <button id="hide">隐藏桌宠</button>
+      <a href="source" download>下载本版本源码 · AGPL</a>
       <small>DeepSeek 大肥鱼 · dsh-coopanion</small>
     </section>
     <section id="characters" class="panel characters interactive" hidden>
       <header><strong>角色与动画</strong><button id="characters-close" aria-label="关闭角色面板">×</button></header>
       <label for="character-select">选择角色</label>
       <select id="character-select" aria-label="角色"></select>
-      <div class="character-preview"><canvas id="character-preview" aria-label="角色动画预览"></canvas></div>
+      <label for="character-scheme">配色 / 换装</label><select id="character-scheme" aria-label="角色配色"></select>
+      <div id="character-axes" hidden></div>
+      <div id="character-preview" class="character-preview" aria-label="角色动画预览"></div>
+      <div class="character-actions"><select id="character-action" aria-label="预览动作"></select><button id="character-test">播放动作</button></div>
       <p id="character-about"></p><p id="character-credit"></p>
       <div class="character-buttons"><button id="character-use">使用角色</button><button id="character-import">导入角色包</button><button id="character-remove" disabled>删除</button></div>
-      <input id="character-file" type="file" accept=".dshpet,.zip" hidden>
-      <p id="character-status" role="status">大肥鱼是内置形象；导入其他角色后可预览并使用，选择会在重启后保留。</p>
+      <input id="character-file" type="file" accept=".zip" hidden>
+      <p id="character-status" role="status">支持 Coopanion API 2 ZIP 角色包；角色和配色会在重启后保留。</p>
     </section>
-    <div id="pet" class="pet interactive" data-mood="idle" tabindex="0" role="button" aria-label="DeepSeek 大肥鱼，点击互动，双击聊天，拖动移动">
-      <button id="open-sessions" class="session-orb" type="button" aria-label="切换当前对话"><i></i><span id="current-session">等待对话</span><b id="session-count" hidden></b></button>
-      <div class="pet-halo"></div>
-      <canvas id="character-canvas" aria-hidden="true"></canvas>
-      <div id="mood-icon" class="mood-icon" aria-hidden="true">✦</div>
-      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
-      <span class="name-tag"><span id="character-name">DeepSeek 大肥鱼</span> <i></i></span>
-    </div>
+    <div id="pet" class="pet interactive" data-mood="idle" tabindex="0" role="button" aria-label="DeepSeek 大肥鱼，点击互动，双击聊天，右键菜单，拖动移动"></div>
     <button id="toast" class="toast interactive" hidden><span>🐳</span><div><strong id="toast-title"></strong><p id="toast-body"></p></div><b>↗</b></button>
   </main>
   <script src="pet.js" type="module"></script>

@@ -22,25 +22,21 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright-core install --with-deps chromium
-      - run: npm run character:pack -- examples/star paper-star.dshpet
-      - name: Verify committed character schema
-        run: |
-          npm run character:schema
-          git diff --exit-code -- docs/character.schema.json
+      - run: npm run character:pack -- examples/star paper-star.zip
       - run: npm run test:ui
       - run: npm run test:desktop
       - name: Check distributable and create package
         run: |
           npm pack
           node scripts/check-package.mjs
-          sha256sum dsh-coopanion-*.tgz paper-star.dshpet > SHA256SUMS
+          sha256sum dsh-coopanion-*.tgz paper-star.zip > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-pet
           path: |
             artifacts/*.png
             dsh-coopanion-*.tgz
-            paper-star.dshpet
+            paper-star.zip
             SHA256SUMS
   install:
     needs: test
@@ -101,4 +97,4 @@ jobs:
         run: |
           cd release
           sha256sum --check SHA256SUMS
-          gh release create "$RELEASE_TAG" dsh-coopanion-*.tgz paper-star.dshpet SHA256SUMS --title "桌宠 $RELEASE_TAG" --notes-file ../docs/release-notes.md
+          gh release create "$RELEASE_TAG" dsh-coopanion-*.tgz paper-star.zip SHA256SUMS --title "桌宠 $RELEASE_TAG" --notes-file ../docs/release-notes.md

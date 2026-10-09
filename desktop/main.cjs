@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain, Notification, screen, Menu, Tray, nativeImage, shell } = require('electron');
 const { join } = require('node:path');
+const { randomBytes } = require('node:crypto');
+const { once } = require('node:events');
 const { CharacterStore } = require('../dist/character-store.cjs');
+const { createPetServer } = require('../dist/figure-server.cjs');
 app.setName('DeepSeek 大肥鱼');
 if (process.env.DSH_PET_TEST_DATA_DIR) {
   app.setPath('userData', process.env.DSH_PET_TEST_DATA_DIR);
@@ -9,13 +12,15 @@ if (process.env.DSH_PET_TEST_DATA_DIR) {
 if (process.platform === 'win32') app.setAppUserModelId('dev.takboo.dsh-coopanion');
 
 // Used only by the virtual-display test; normal installations retain Chromium's sandbox.
-if (process.env.DSH_PET_TEST_NO_SANDBOX === '1') app.commandLine.appendSwitch('no-sandbox');
+if (process.env.DSH_PET_TEST_NO_SANDBOX === '1') {
+  app.commandLine.appendSwitch('no-sandbox');
+  app.commandLine.appendSwitch('enable-unsafe-swiftshader');
+}
 if (process.env.DSH_PET_TEST_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-address', '127.0.0.1');
   app.commandLine.appendSwitch('remote-debugging-port', process.env.DSH_PET_TEST_DEBUG_PORT);
 }
-app.commandLine.appendSwitch('disable-gpu');
-let win, tray, options, lastFrame, poll;
+let win, tray, options, lastFrame, poll, assetServer;
 let interactive = null;
 const notices = new Set();
 function forward(message) { if (win && !win.isDestroyed()) win.webContents.send('pet:update', message); }
@@ -58,7 +63,11 @@ process.on('disconnect', () => app.quit());
 process.on('SIGTERM', () => app.quit());
 
 app.whenReady().then(async () => {
-  const characters = new CharacterStore(join(app.getPath('userData'), 'characters'));
+  const webRoot = join(__dirname, '../web');
+  const characters = new CharacterStore(join(app.getPath('userData'), 'figures-v2'), join(webRoot, 'upstream/whale'));
+  const prefix = `/${randomBytes(24).toString('hex')}/`;
+  assetServer = createPetServer({ webRoot, store: characters, prefix });
+  assetServer.listen(0, '127.0.0.1'); await once(assetServer, 'listening');
   let characterOperation = Promise.resolve();
   const characterCall = (channel, operation) => ipcMain.handle(channel, (event, value) => {
     if (event.sender !== win?.webContents || event.senderFrame !== win.webContents.mainFrame) return { ok: false, error: '无效的角色请求' };
@@ -72,10 +81,13 @@ app.whenReady().then(async () => {
   const characterId = value => { if (typeof value !== 'string') throw new Error('无效的角色 id'); return value; };
   characterCall('pet:characters:list', () => characters.list());
   characterCall('pet:characters:load', value => characters.load(characterId(value)));
-  characterCall('pet:characters:select', value => characters.select(characterId(value)));
+  characterCall('pet:characters:select', value => {
+    if (!value || typeof value.scheme !== 'string') throw new Error('无效的角色配色');
+    return characters.select(characterId(value.id), value.scheme);
+  });
   characterCall('pet:characters:remove', value => characters.remove(characterId(value)));
   characterCall('pet:characters:import', value => {
-    if (!(value instanceof ArrayBuffer)) throw new Error('请选择 .dshpet 或 .zip 角色包');
+    if (!(value instanceof ArrayBuffer)) throw new Error('请选择 API 2 ZIP 角色包');
     return characters.import(new Uint8Array(value));
   });
   win = new BrowserWindow({ ...screen.getPrimaryDisplay().workArea, transparent: true, frame: false, resizable: false, skipTaskbar: true, hasShadow: false, show: false, alwaysOnTop: true, backgroundColor: '#00000000', webPreferences: { preload: join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
@@ -86,16 +98,17 @@ app.whenReady().then(async () => {
   if (process.platform === 'darwin') app.dock?.hide();
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
+  win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   win.webContents.on('did-finish-load', () => { if (lastFrame) forward(lastFrame); });
-  ipcMain.on('pet:hit', (event, active) => { if (event.sender === win.webContents && typeof active === 'boolean') hit(active); });
+  ipcMain.on('pet:hit', (event, active) => { if (event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame && typeof active === 'boolean') hit(active); });
   ipcMain.on('pet:action', (event, action) => {
-    if (event.sender !== win.webContents || !action || typeof action !== 'object') return;
+    if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || !action || typeof action !== 'object') return;
     if (action.type === 'hide') { win.hide(); return; }
     if (action.type === 'move-display') { win.setBounds(bounds()); forward({ type: 'display-changed' }); return; }
     if (action.type !== 'chat' && action.type !== 'select' && action.type !== 'open-session') return;
     process.send?.({ type: 'action', action });
   });
-  await win.loadFile(join(__dirname, '../web/index.html'));
+  await win.loadURL(`http://127.0.0.1:${assetServer.address().port}${prefix}`);
   hit(false); show();
   // Pointer polling restores hit testing even when a click-through page receives no mousemove.
   poll = setInterval(() => {
@@ -112,5 +125,5 @@ app.whenReady().then(async () => {
   process.send?.({ type: 'ready' });
 }).catch(error => { console.error(error); app.exit(1); });
 
-app.on('before-quit', () => { clearInterval(poll); for (const notice of notices) notice.close(); tray?.destroy(); });
+app.on('before-quit', () => { clearInterval(poll); assetServer?.close(); for (const notice of notices) notice.close(); tray?.destroy(); });
 app.on('window-all-closed', () => app.quit());
