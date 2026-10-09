@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { validateCharacter, assetPaths, imageInfo } from '../dist/character-pack.js';
+import { syncDeepseekBuiltin } from './sync-deepseek-builtin.mjs';
 
 // Only PNG artwork is read from upstream. No upstream model, figure or engine code executes.
 const directory = resolve('characters/deepseek-whale');
@@ -131,4 +132,5 @@ const animations = {
 const manifest = validateCharacter({ format: 'dsh-character', formatVersion: 1, id: 'deepseek-whale', name: 'DeepSeek 大肥鱼', author: 'Pal-AI-Lab；原设：溟月（上善无形）；女仆二创：ZipZipPipe', license: '素材权利沿用上游声明，见随包 LICENSE；动画适配 MIT', description: 'Coopanion 的 DeepSeek 原配色鲸鱼女仆。适配本项目的分层关键帧：眨眼、摆尾、挥手、走路、坐姿睡眠及任务表情。', canvas: { width: 216, height: 272 }, motion: { breathe: .008, bob: 1, walkBounce: 4, happyBounce: 5 }, renderer: { type: 'layers', layers, animations } });
 await writeFile(join(directory, 'character.json'), JSON.stringify(manifest, null, 2) + '\n');
 for (const file of assetPaths(manifest)) imageInfo(new Uint8Array(await readFile(join(directory, file))));
+await syncDeepseekBuiltin();
 console.log(`DeepSeek 大肥鱼适配完成：${layers.length} 图层，${Object.keys(animations).length} 动作；素材来源 ${source.commit}`);

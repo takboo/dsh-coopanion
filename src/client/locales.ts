@@ -1,5 +1,5 @@
 export const zh = {
-  nav: '桌宠', title: '桌宠', intro: '让小鲸陪你工作，并在任务完成或需要确认时提醒你。',
+  nav: '桌宠', title: '桌宠', intro: '让大肥鱼陪你工作，并在任务完成或需要确认时提醒你。',
   languageHint: '界面语言跟随 Harness；未指定语言时自动使用系统语言。',
   runtime: '桌宠状态', running: '正在显示', hidden: '已隐藏', stopped: '已关闭', starting: '正在启动…', stopping: '正在关闭…', error: '启动或运行失败', loading: '正在连接…',
   start: '启动桌宠', show: '显示桌宠', hide: '隐藏桌宠', restart: '重启', stop: '关闭桌宠',
@@ -12,7 +12,7 @@ export const zh = {
 };
 export type LocaleKey = keyof typeof zh;
 export const en: Record<LocaleKey, string> = {
-  nav: 'Desktop pet', title: 'Desktop pet', intro: 'Keep a whale by your side and get a reminder when a task finishes or needs your attention.',
+  nav: 'Desktop pet', title: 'Desktop pet', intro: 'Keep DeepSeek Whale by your side and get a reminder when a task finishes or needs your attention.',
   languageHint: 'The interface follows the Harness language, using the system language when no preference is set.',
   runtime: 'Pet status', running: 'Visible', hidden: 'Hidden', stopped: 'Closed', starting: 'Starting…', stopping: 'Closing…', error: 'Unable to start or run', loading: 'Connecting…',
   start: 'Start pet', show: 'Show pet', hide: 'Hide pet', restart: 'Restart', stop: 'Close pet',

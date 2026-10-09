@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
-  <title>小鲸 · DeepSeek Harness</title>
+  <title>DeepSeek 大肥鱼 · Harness</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <aside id="demo" hidden>
     <div class="brand">dsh <span>coopanion</span></div>
-    <span class="eyebrow">YOUR LITTLE DESKTOP COMPANION</span>
-    <h1>工作的时候，<br>有小鲸陪着。</h1>
-    <p>一只住在桌面上的小鲸鱼。<br>点点它、拖着它走，或和它说句话。</p>
+    <span class="eyebrow">DEEPSEEK WHALE · DESKTOP COMPANION</span>
+    <h1>工作的时候，<br>大肥鱼陪着。</h1>
+    <p>住在桌面上的 DeepSeek 大肥鱼。<br>点点她、拖着她走，或和她说句话。</p>
     <div class="demo-status"><i></i> 浏览器演示 · 模拟 Harness 事件</div>
     <div class="demo-buttons">
       <button data-demo="thinking">思考</button><button data-demo="working">工作</button><button data-demo="waiting">等你确认</button><button data-demo="happy">任务完成</button><button data-demo="error">遇到问题</button>
@@ -22,28 +22,30 @@
   </aside>
   <main id="stage" aria-label="桌宠活动区域">
     <section id="bubble" class="bubble interactive" hidden aria-live="polite">
-      <header><span id="bubble-status">小鲸</span><button id="dismiss" aria-label="收起气泡">×</button></header>
+      <header><span id="bubble-status">DeepSeek 大肥鱼</span><button id="dismiss" aria-label="收起气泡">×</button></header>
       <p id="bubble-text"></p>
       <button id="bubble-session" class="session-link" hidden>回到这个会话 ↗</button>
     </section>
+    <section id="conversations" class="panel conversations interactive" hidden>
+      <header><span class="conversation-heading"><small>DEEPSEEK WHALE</small><strong>想让我听哪一边？</strong></span><button id="conversations-close" aria-label="收起对话气泡">×</button></header>
+      <p class="conversation-intro">选一段，我就转过去陪着；其他对话有要紧事，我也会来提醒你。</p>
+      <div id="conversation-list" class="conversation-list" role="listbox" aria-label="切换当前对话"></div>
+      <button id="conversation-open" class="session-link">回到这段对话 ↗</button>
+    </section>
     <section id="chat" class="panel interactive" hidden>
-      <header><strong id="chat-title">和小鲸说话</strong><button id="chat-close" aria-label="关闭聊天">×</button></header>
-      <label for="sessions">发送到 Harness 会话</label>
-      <select id="sessions" aria-label="会话"></select>
+      <header><strong id="chat-title">和 DeepSeek 大肥鱼说话</strong><button id="chat-close" aria-label="关闭聊天">×</button></header>
+      <button id="chat-current" class="chat-current" type="button"><span><small>正在陪你聊</small><strong id="chat-session-name">还没有对话</strong></span><b>换一段 ›</b></button>
       <button id="chat-session" class="session-link">在 Harness 中打开 ↗</button>
-      <p id="chat-help">消息会发送给所选会话，回复显示在气泡里。</p>
+      <p id="chat-help">消息会交给当前对话，回复显示在气泡里。</p>
       <form id="chat-form"><textarea id="message" rows="3" maxlength="2000" placeholder="有什么想说的？" aria-label="消息"></textarea><button id="send" type="submit">发送 ↗</button></form>
     </section>
     <section id="menu" class="menu interactive" hidden>
-      <label for="menu-sessions">关注的会话</label>
-      <select id="menu-sessions" aria-label="关注的会话"></select>
-      <button id="open-session">回到所选会话 ↗</button>
       <button id="open-characters">角色与动画</button>
       <button id="toggle-roam">暂停走动</button>
       <button id="toggle-sleep">休息一下</button>
       <button id="toggle-notices">静音提醒</button>
       <button id="hide">隐藏桌宠</button>
-      <small>小鲸 · dsh-coopanion</small>
+      <small>DeepSeek 大肥鱼 · dsh-coopanion</small>
     </section>
     <section id="characters" class="panel characters interactive" hidden>
       <header><strong>角色与动画</strong><button id="characters-close" aria-label="关闭角色面板">×</button></header>
@@ -53,14 +55,15 @@
       <p id="character-about"></p><p id="character-credit"></p>
       <div class="character-buttons"><button id="character-use">使用角色</button><button id="character-import">导入角色包</button><button id="character-remove" disabled>删除</button></div>
       <input id="character-file" type="file" accept=".dshpet,.zip" hidden>
-      <p id="character-status" role="status">导入角色包后可预览并使用，选择会在重启后保留。</p>
+      <p id="character-status" role="status">大肥鱼是内置形象；导入其他角色后可预览并使用，选择会在重启后保留。</p>
     </section>
-    <div id="pet" class="pet interactive" data-mood="idle" tabindex="0" role="button" aria-label="小鲸，点击互动，双击聊天，拖动移动">
+    <div id="pet" class="pet interactive" data-mood="idle" tabindex="0" role="button" aria-label="DeepSeek 大肥鱼，点击互动，双击聊天，拖动移动">
+      <button id="open-sessions" class="session-orb" type="button" aria-label="切换当前对话"><i></i><span id="current-session">等待对话</span><b id="session-count" hidden></b></button>
       <div class="pet-halo"></div>
       <canvas id="character-canvas" aria-hidden="true"></canvas>
       <div id="mood-icon" class="mood-icon" aria-hidden="true">✦</div>
-      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-sessions" aria-label="选择会话">↗</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
-      <span class="name-tag"><span id="character-name">小鲸</span> <i></i></span>
+      <div class="pet-toolbar"><button id="open-chat" aria-label="打开聊天">◌</button><button id="open-menu" aria-label="打开桌宠菜单">⋯</button></div>
+      <span class="name-tag"><span id="character-name">DeepSeek 大肥鱼</span> <i></i></span>
     </div>
     <button id="toast" class="toast interactive" hidden><span>🐳</span><div><strong id="toast-title"></strong><p id="toast-body"></p></div><b>↗</b></button>
   </main>

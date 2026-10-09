@@ -1,20 +1,21 @@
 import { CharacterAnimator, validateCharacter, PACK_LIMIT } from './character-runtime.js';
-import { builtinWhale } from './characters/whale/manifest.js';
+import { builtinDeepseekWhale } from './characters/deepseek-whale/manifest.js';
 import { browserCharacters } from './character-library.js';
+const BUILTIN_ID = 'deepseek-whale';
 const $ = id => document.getElementById(id);
 const native = window.dshPetBridge;
-const pet = $('pet'), bubble = $('bubble'), chat = $('chat'), menu = $('menu'), characters = $('characters');
+const pet = $('pet'), bubble = $('bubble'), conversations = $('conversations'), chat = $('chat'), menu = $('menu'), characters = $('characters');
 const labels = { idle: '陪你工作', thinking: '在想事情', working: '正在忙', waiting: '等你确认', happy: '完成啦', error: '需要关注', sleeping: '休息中' };
-const whale = { manifest: validateCharacter(builtinWhale), builtin: true, assets: Object.fromEntries(builtinWhale.renderer.layers.map(layer => [layer.image, new URL(`./characters/whale/${layer.image}`, import.meta.url).href])) };
+const builtinCharacter = { manifest: validateCharacter(builtinDeepseekWhale), builtin: true, assets: Object.fromEntries(builtinDeepseekWhale.renderer.layers.map(layer => [layer.image, new URL(`./characters/deepseek-whale/${layer.image}`, import.meta.url).href])) };
 const library = native?.characters ?? browserCharacters;
-let animator, previewAnimator, previewCharacter, activeName = '小鲸', libraryState, libraryBusy = false, facing = 1;
+let animator, previewAnimator, previewCharacter, activeName = 'DeepSeek 大肥鱼', libraryState, libraryBusy = false, facing = 1;
 const label = mood => `${activeName} · ${labels[mood] ?? labels.idle}`;
 const icons = { idle: '✦', thinking: '◌', working: '⚙', waiting: '!', happy: '✧', error: '!', sleeping: 'z' };
-let options = { size: 150, roam: true, notifications: true, bubbleDurationMs: 12000 };
+let options = { size: 180, roam: true, notifications: true, bubbleDurationMs: 12000 };
 let snapshot = { mood: 'idle', text: '你好。点点我，或双击和我说话。', sessionId: null, sessions: [] };
 let x = innerWidth * .68, y = innerHeight - 155, dragging, moving = false, hovered = false, asleep = false, muted = false, bubbleTimer, toastTimer, target = x, noticeSession;
 let roamAt = performance.now() + 8000;
-let presentationKey, reactionUntil = 0, reactionMood, bubbleSession, demoTimer;
+let presentationKey, renderedSessionId = null, pendingSelection, reactionUntil = 0, reactionMood, bubbleSession, demoTimer;
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 let reduced = motionPreference.matches;
 motionPreference.addEventListener('change', event => { reduced = event.matches; });
@@ -22,7 +23,7 @@ motionPreference.addEventListener('change', event => { reduced = event.matches; 
 function send(action) {
   if (native) { native.action(action); return; }
   if (action.type === 'chat') {
-    speak(`收到「${action.text}」！这是演示回复。安装到 Harness 后，我会转交给所选会话。`, 'happy');
+    speak(`收到「${action.text}」！这是演示回复。安装到 Harness 后，我会交给当前对话。`, 'happy');
   }
   if (action.type === 'select') {
     const session = snapshot.sessions.find(session => session.id === action.sessionId);
@@ -34,10 +35,10 @@ function send(action) {
 
 function position() {
   const w = pet.offsetWidth, h = pet.offsetHeight;
-  x = Math.max(8, Math.min(innerWidth - w - 28, x));
+  x = Math.max(64, Math.min(innerWidth - w - 48, x));
   y = Math.max(12, Math.min(innerHeight - h - 22, y));
   pet.style.left = `${x}px`; pet.style.top = `${y}px`;
-  for (const panel of [bubble, chat, menu, characters]) {
+  for (const panel of [bubble, conversations, chat, menu, characters]) {
     if (panel.hidden) continue;
     const pw = panel.offsetWidth, ph = panel.offsetHeight;
     const px = Math.max(8, Math.min(innerWidth - pw - 8, x + w / 2 - pw / 2));
@@ -54,7 +55,7 @@ function speak(text, mood = snapshot.mood, sessionId = null) {
   $('bubble-status').textContent = label(mood) + (source ? ` · ${source.label} · ${source.id.slice(0, 8)}` : '');
   bubbleSession = sessionId;
   $('bubble-session').hidden = !sessionId;
-  bubble.hidden = !chat.hidden || !menu.hidden || !characters.hidden;
+  bubble.hidden = !conversations.hidden || !chat.hidden || !menu.hidden || !characters.hidden;
   position();
   if (!['waiting', 'error', 'thinking', 'working'].includes(mood)) bubbleTimer = setTimeout(() => { bubble.hidden = true; }, options.bubbleDurationMs);
 }
@@ -66,29 +67,47 @@ function updateMood(now = performance.now()) {
 }
 
 function render() {
-  const previous = $('sessions').value;
-  for (const id of ['sessions', 'menu-sessions']) {
-    const select = $(id);
-    const entries = snapshot.sessions.map(session => ({ value: session.id, text: `${session.label} · ${labels[session.mood] ?? labels.idle} · ${session.id.slice(0, 8)}` }));
-    if (!entries.length) entries.push({ value: '', text: '请先在 Harness 打开一个会话' });
-    // Preserve an open native selector during unrelated Host events.
-    if (JSON.stringify([...select.options].map(option => ({ value: option.value, text: option.text }))) !== JSON.stringify(entries)) select.replaceChildren(...entries.map(entry => new Option(entry.text, entry.value)));
-    select.value = snapshot.sessionId ?? '';
-  }
+  const previous = renderedSessionId;
   const selected = snapshot.sessions.find(session => session.id === snapshot.sessionId);
+  const list = $('conversation-list');
+  const listKey = JSON.stringify(snapshot.sessions.map(session => [session.id, session.label, session.mood, session.chatAvailable, session.id === snapshot.sessionId]));
+  if (list.dataset.key !== listKey) {
+    const activeId = document.activeElement?.dataset?.sessionId;
+    const entries = snapshot.sessions.map(session => {
+      const card = document.createElement('button'); card.type = 'button'; card.className = 'conversation-card';
+      card.dataset.sessionId = session.id; card.dataset.mood = session.mood; card.setAttribute('role', 'option'); card.setAttribute('aria-selected', String(session.id === snapshot.sessionId));
+      const dot = document.createElement('i'); dot.setAttribute('aria-hidden', 'true');
+      const copy = document.createElement('span'), name = document.createElement('strong'), detail = document.createElement('small'), mark = document.createElement('b');
+      name.textContent = session.label; detail.textContent = `${labels[session.mood] ?? labels.idle} · ${session.id.slice(0, 8)}`; mark.textContent = session.id === snapshot.sessionId ? '正在听' : '听这边';
+      copy.append(name, detail); card.append(dot, copy, mark); return card;
+    });
+    if (!entries.length) {
+      const empty = document.createElement('p'); empty.className = 'conversation-empty'; empty.textContent = '还没有可用的对话。先在 Harness 中打开一段对话，我就能听见它。'; entries.push(empty);
+    }
+    list.replaceChildren(...entries); list.dataset.key = listKey;
+    if (activeId) list.querySelector(`[data-session-id="${CSS.escape(activeId)}"]`)?.focus();
+  }
+  $('current-session').textContent = selected?.label ?? '等待对话';
+  $('session-count').textContent = String(snapshot.sessions.length); $('session-count').hidden = snapshot.sessions.length < 2;
+  $('open-sessions').disabled = !snapshot.sessions.length; $('open-sessions').dataset.mood = selected?.mood ?? 'idle';
+  $('open-sessions').setAttribute('aria-label', selected ? `当前对话：${selected.label}。点击切换` : '还没有可用的对话');
+  $('chat-current').disabled = !snapshot.sessions.length; $('chat-session-name').textContent = selected?.label ?? '还没有对话';
   const enabled = !!snapshot.sessionId && selected?.chatAvailable !== false;
   $('message').disabled = !enabled; $('send').disabled = !enabled;
-  $('open-session').disabled = !snapshot.sessionId; $('chat-session').disabled = !snapshot.sessionId;
-  $('chat-help').textContent = enabled ? '消息会发送给所选会话，回复显示在气泡里。' : snapshot.sessionId ? '请先在 Harness 中打开这个会话，再发送消息。' : '桌宠仍然可以互动；AI 聊天需要一个已打开的 Harness 会话。';
-  if (previous && previous !== $('sessions').value) $('message').value = '';
+  $('conversation-open').disabled = !snapshot.sessionId; $('chat-session').disabled = !snapshot.sessionId;
+  $('chat-help').textContent = enabled ? `消息会交给「${selected.label}」，回复显示在气泡里。` : snapshot.sessionId ? '这段对话尚未在 Harness 中打开，请先回去打开它。' : '先在 Harness 中打开一段对话，就可以从这里和我说话。';
+  if (previous && previous !== snapshot.sessionId) $('message').value = '';
   const key = JSON.stringify([snapshot.sessionId, snapshot.revision, snapshot.mood, snapshot.text]);
   if (key !== presentationKey) {
-    const settled = pet.dataset.mood === 'happy' && snapshot.mood === 'idle' && previous === $('sessions').value;
-    reactionUntil = 0;
-    if (!settled) speak(snapshot.text, snapshot.mood, snapshot.sessionId);
+    const selectionArrived = pendingSelection === snapshot.sessionId;
+    const settled = pet.dataset.mood === 'happy' && snapshot.mood === 'idle' && previous === snapshot.sessionId;
+    if (!selectionArrived) reactionUntil = 0;
+    if (!settled && !selectionArrived) speak(snapshot.text, snapshot.mood, snapshot.sessionId);
     if (presentationKey !== undefined && snapshot.mood === 'idle') roamAt = performance.now();
+    if (selectionArrived) pendingSelection = undefined;
     presentationKey = key;
   }
+  renderedSessionId = snapshot.sessionId;
   updateMood(); position();
 }
 
@@ -130,8 +149,13 @@ function hit(px, py) {
   native?.hit(active);
 }
 
-function openChat() { characters.hidden = true; menu.hidden = true; bubble.hidden = true; chat.hidden = false; position(); if (!$('message').disabled) $('message').focus(); }
-function closePanels() { chat.hidden = true; menu.hidden = true; characters.hidden = true; render(); }
+function openChat() { characters.hidden = true; conversations.hidden = true; menu.hidden = true; bubble.hidden = true; chat.hidden = false; position(); if (!$('message').disabled) $('message').focus(); }
+function openConversations() {
+  if (!snapshot.sessions.length) return;
+  characters.hidden = true; chat.hidden = true; menu.hidden = true; bubble.hidden = true; conversations.hidden = false; position();
+  ($('conversation-list').querySelector('[aria-selected=true]') ?? $('conversation-list').querySelector('button'))?.focus();
+}
+function closePanels() { conversations.hidden = true; chat.hidden = true; menu.hidden = true; characters.hidden = true; render(); }
 pet.addEventListener('pointerdown', event => {
   if (event.button !== 0 || event.target.closest('button')) return;
   dragging = { pointer: event.pointerId, sx: event.clientX, sy: event.clientY, x, y, distance: 0 };
@@ -158,17 +182,25 @@ pet.addEventListener('click', event => {
 });
 pet.addEventListener('dblclick', event => { if (!event.target.closest('button')) openChat(); });
 pet.addEventListener('keydown', event => { if (event.target === pet && ['Enter', ' '].includes(event.key)) { event.preventDefault(); openChat(); } });
-pet.addEventListener('contextmenu', event => { event.preventDefault(); characters.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); });
+pet.addEventListener('contextmenu', event => { event.preventDefault(); characters.hidden = true; conversations.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); });
 pet.addEventListener('pointerenter', () => { hovered = true; }); pet.addEventListener('pointerleave', () => { hovered = false; });
 $('open-chat').onclick = openChat;
-$('open-menu').onclick = () => { characters.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); };
-$('open-sessions').onclick = () => { characters.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = false; position(); $('menu-sessions').focus(); };
+$('open-menu').onclick = () => { characters.hidden = true; conversations.hidden = true; chat.hidden = true; bubble.hidden = true; menu.hidden = !menu.hidden; position(); };
+$('open-sessions').onclick = openConversations;
+$('chat-current').onclick = openConversations;
+$('conversations-close').onclick = closePanels;
 $('chat-close').onclick = closePanels;
 $('dismiss').onclick = () => { bubble.hidden = true; };
-$('sessions').onchange = event => { $('message').value = ''; send({ type: 'select', sessionId: event.target.value }); };
-$('menu-sessions').onchange = $('sessions').onchange;
+$('conversation-list').onclick = event => {
+  const card = event.target.closest('[data-session-id]');
+  const session = card && snapshot.sessions.find(item => item.id === card.dataset.sessionId);
+  if (!session || session.id === snapshot.sessionId) { conversations.hidden = true; render(); return; }
+  const state = { thinking: '它正在想事情。', working: '它正在忙。', waiting: '它正等你确认。', happy: '它刚刚完成了。', error: '它需要你看一眼。' }[session.mood] ?? '';
+  pendingSelection = session.id; conversations.hidden = true; react('happy'); send({ type: 'select', sessionId: session.id });
+  speak(`好，我来听「${session.label}」这边。${state}`, session.mood, session.id);
+};
 function openSession(id) { if (id) { send({ type: 'open-session', sessionId: id }); closePanels(); bubble.hidden = true; } }
-$('open-session').onclick = () => openSession(snapshot.sessionId);
+$('conversation-open').onclick = () => openSession(snapshot.sessionId);
 $('chat-session').onclick = () => openSession(snapshot.sessionId);
 $('bubble-session').onclick = () => openSession(bubbleSession);
 $('chat-form').onsubmit = event => {
@@ -190,14 +222,14 @@ $('hide').onclick = () => { if (native) send({ type: 'hide' }); else { closePane
 $('toast').onclick = () => { $('toast').hidden = true; openSession(noticeSession); };
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closePanels(); });
 document.addEventListener('pointermove', event => hit(event.clientX, event.clientY));
-addEventListener('resize', () => { y = innerHeight - pet.offsetHeight - 22; target = Math.max(8, Math.min(innerWidth - pet.offsetWidth - 28, target)); position(); });
+addEventListener('resize', () => { y = innerHeight - pet.offsetHeight - 22; target = Math.max(64, Math.min(innerWidth - pet.offsetWidth - 48, target)); position(); });
 
 let last = performance.now();
 function animate(now) {
   const dt = Math.min((now - last) / 1000, .05); last = now;
   let walking = false; updateMood(now);
-  if (options.roam && !reduced && !asleep && !dragging && !hovered && chat.hidden && menu.hidden && characters.hidden && snapshot.mood === 'idle' && now >= reactionUntil) {
-    if (now > roamAt) { target = 12 + Math.random() * Math.max(1, innerWidth - pet.offsetWidth - 60); roamAt = now + 18000; }
+  if (options.roam && !reduced && !asleep && !dragging && !hovered && conversations.hidden && chat.hidden && menu.hidden && characters.hidden && snapshot.mood === 'idle' && now >= reactionUntil) {
+    if (now > roamAt) { target = 64 + Math.random() * Math.max(1, innerWidth - pet.offsetWidth - 112); roamAt = now + 18000; }
     const distance = target - x;
     if (Math.abs(distance) > 1) { facing = Math.sign(distance); walking = true; x += facing * Math.min(Math.abs(distance), dt * 25); position(); }
   }
@@ -211,7 +243,10 @@ if (native) native.subscribe(receive);
 else {
   document.body.classList.add('preview'); $('demo').hidden = false;
   options.size = 190; document.documentElement.style.setProperty('--size', '190px');
-  snapshot.sessionId = 'demo'; snapshot.sessions = [{ id: 'demo', label: '演示会话', mood: 'idle', text: snapshot.text, revision: 0 }];
+  snapshot.sessionId = 'demo'; snapshot.sessions = [
+    { id: 'demo', label: '演示会话', mood: 'idle', text: snapshot.text, revision: 0 },
+    { id: 'demo-notes', label: '另一个想法', mood: 'working', text: '正在整理刚才的想法…', revision: 0 },
+  ];
   const texts = { thinking: '让我想一想，怎样把这个功能做好…', working: '正在看文件 · src/index.ts', waiting: '下一步需要你确认。真实插件会引导你回到 Harness。', happy: '任务完成啦！要不要休息一下？🐳', error: '任务遇到了问题，请回到 Harness 查看详情。' };
   document.querySelectorAll('[data-demo]').forEach(button => { button.onclick = () => {
     clearTimeout(demoTimer);
@@ -236,14 +271,14 @@ function setBusy(value) {
   libraryBusy = value;
   for (const id of ['character-select', 'character-import', 'character-use']) $(id).disabled = value;
   $('character-use').disabled = value || !previewCharacter;
-  $('character-remove').disabled = value || $('character-select').value === 'whale';
+  $('character-remove').disabled = value || $('character-select').value === BUILTIN_ID;
 }
 async function preview(id) {
   previewCharacter = undefined; previewAnimator?.dispose(); previewAnimator = undefined;
   const canvas = $('character-preview'), context = canvas.getContext('2d');
   context?.resetTransform(); context?.clearRect(0, 0, canvas.width, canvas.height);
   $('character-about').textContent = ''; $('character-credit').textContent = '';
-  const view = id === 'whale' ? whale : await library.load(id);
+  const view = id === BUILTIN_ID ? builtinCharacter : await library.load(id);
   const next = new CharacterAnimator($('character-preview'), view); await next.load();
   previewAnimator?.dispose(); previewAnimator = next; previewCharacter = view;
   $('character-preview').style.aspectRatio = `${view.manifest.canvas.width} / ${view.manifest.canvas.height}`;
@@ -253,9 +288,9 @@ async function preview(id) {
 }
 async function refreshCharacters(selected) {
   libraryState = await library.list();
-  $('character-select').replaceChildren(...[whale.manifest, ...libraryState.characters].map(manifest => new Option(manifest.name, manifest.id)));
+  $('character-select').replaceChildren(...[builtinCharacter.manifest, ...libraryState.characters].map(manifest => new Option(manifest.name, manifest.id)));
   $('character-select').value = selected ?? libraryState.selected;
-  if (!$('character-select').value) $('character-select').value = 'whale';
+  if (!$('character-select').value) $('character-select').value = BUILTIN_ID;
   await preview($('character-select').value);
   if (libraryState.problems.length) $('character-status').textContent = libraryState.problems.join('；');
 }
@@ -290,15 +325,15 @@ $('character-use').onclick = () => void characterOperation(async () => {
 $('character-remove').onclick = () => void characterOperation(async () => {
   const id = $('character-select').value;
   await library.remove(id);
-  if (pet.dataset.character === id) await setCharacter(whale);
+  if (pet.dataset.character === id) await setCharacter(builtinCharacter);
   await refreshCharacters(); $('character-status').textContent = '已删除本地角色包。';
 });
 void (async () => {
   setBusy(true);
   try {
-    await setCharacter(whale);
+    await setCharacter(builtinCharacter);
     libraryState = await library.list();
-    if (libraryState.selected !== 'whale') await setCharacter(await library.load(libraryState.selected));
-  } catch (error) { $('character-status').textContent = `已恢复内置小鲸：${String(error.message ?? error).slice(0, 300)}`; }
+    if (libraryState.selected !== BUILTIN_ID) await setCharacter(await library.load(libraryState.selected));
+  } catch (error) { $('character-status').textContent = `已恢复内置大肥鱼：${String(error.message ?? error).slice(0, 300)}`; }
   finally { setBusy(false); }
 })();

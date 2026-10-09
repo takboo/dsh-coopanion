@@ -1,8 +1,8 @@
-# 小鲸 · dsh-coopanion
+# DeepSeek 大肥鱼 · dsh-coopanion
 
-给 [DeepSeek Harness Desktop](https://github.com/deepseek-ai/deepseek-harness) 加一只桌面小鲸鱼。它会陪你工作，在任务完成或需要确认时提醒你；双击小鲸，可以向已打开的 Harness 会话发送消息。
+给 [DeepSeek Harness Desktop](https://github.com/deepseek-ai/deepseek-harness) 加一只 DeepSeek 大肥鱼。她会陪你工作，在任务完成或需要确认时提醒你；双击角色，可以向已打开的 Harness 会话发送消息。
 
-灵感来自 [Coopanion](https://github.com/Pal-AI-Lab/Coopanion)。本项目的动画引擎独立实现，内置小鲸素材原创，代码使用 MIT 许可。另提供使用 Coopanion 拆件贴图适配的 **DeepSeek 大肥鱼** 角色包；素材署名与权利声明见 [角色包说明](characters/deepseek-whale/README.md)。
+默认形象是使用 Coopanion 拆件贴图适配的 **DeepSeek 大肥鱼**；本项目独立实现动画与宿主交互，未移植上游引擎。素材署名与权利声明见 [角色说明](characters/deepseek-whale/README.md)，应用代码使用 MIT 许可。
 
 ## 功能
 
@@ -13,27 +13,27 @@
 - Harness 原生 **Settings → 桌宠** 页面：运行状态、启动 / 重启 / 关闭、显示 / 隐藏、角色管理，以及实时保存的偏好设置。桌宠关闭后仍能从此页打开。
 - 思考、工具工作、等待确认、完成和出错的表情与气泡。
 - 完成、出错和审批提醒；支持系统通知和桌宠通知卡片。
-- 从桌宠工具栏或右键菜单选择关注的会话，显示各会话独立状态；点击任务气泡、通知卡片或菜单返回对应的 Harness 会话。
+- 大肥鱼头顶的对话气泡显示它当前正在陪伴的对话；点击气泡即可从状态卡片自然切换。当前对话只决定桌宠展示哪段任务的状态，以及从桌宠发出的消息交给哪段对话，不改变 Harness 的任务优先级；其他对话完成或需要确认时仍会提醒。
 - 完成表情播放 2.5 秒后回到待机；开启走动时继续移动，切换菜单或走动开关不会重放完成气泡。
 - 会话聊天；输入通过 `Agent.followup()` 进入 Harness 的持久会话，使用其模型、工具和现有权限。
 
-审批提示会引导你回到 Harness，桌宠不代替宿主作出审批。小鲸不自动向模型发送点击、拖动等互动，也不单独收集 API Key。
+审批提示会引导你回到 Harness，桌宠不代替宿主作出审批。大肥鱼不会因点击、拖动等互动自动向模型发送消息，也不单独收集 API Key。
 
-会话列表包含当前宿主已加载的顶层会话，忽略子代理；尚未加载的历史会话先在 Harness 中打开。多个本机客户端同时连接时，返回请求由首先领取的客户端打开；桌面版通过公开的 `dsh://open` 协议唤回主窗口，普通 Web 使用已打开的本机页面。浏览器是否允许页面抢占焦点由浏览器决定。
+对话气泡包含当前宿主已加载的顶层会话，忽略子代理；新建会话会自动成为当前对话，并让角色立即回应。尚未加载的历史会话需先在 Harness 中打开。多个本机客户端同时连接时，返回请求由首先领取的客户端打开；桌面版通过公开的 `dsh://open` 协议唤回主窗口，普通 Web 使用已打开的本机页面。浏览器是否允许页面抢占焦点由浏览器决定。
 
 ## 安装到 Desktop
 
-**v0.3.2 支持 DSH 0.2.0-rc.2 和 0.2.1-alpha.1**。v0.1.0 要求较新的 SDK，会被 0.2.0-rc.2 的安装检查拒绝；使用 rc.2 时请下载修正版。接口尚未稳定，其他版本未声明兼容。
+**v0.3.3 支持 DSH 0.2.0-rc.2 和 0.2.1-alpha.1**。v0.1.0 要求较新的 SDK，会被 0.2.0-rc.2 的安装检查拒绝；使用 rc.2 时请下载修正版。接口尚未稳定，其他版本未声明兼容。
 
-1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.3.2.tgz`，记下绝对路径。
+1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.3.3.tgz`，记下绝对路径。
 2. 打开 Harness 的侧边栏 **插件** 页，安装该压缩包路径，并启用 `dsh-coopanion`。
 3. 完全退出再重新打开 Harness。首次启用时，Electron 44 自动从 GitHub 官方发行源下载并校验桌宠运行时，需要联网；下载较大，启动可能稍慢。
-4. 打开一个会话，双击小鲸聊天。如本机必须使用代理，可先按下方开发步骤预装 Electron，或通过 `electronPath` 指定已安装的独立运行时。
+4. 打开一个会话，双击大肥鱼聊天。如本机必须使用代理，可先按下方开发步骤预装 Electron，或通过 `electronPath` 指定已安装的独立运行时。
 
 也可使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，然后执行：
 
 ```bash
-dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.3.2.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.3.3.tgz
 ```
 
 此处需要 Desktop 自带的 CLI；npm 安装的 dsh 不能管理 Desktop 所拥有的 profile。Desktop 完全退出后执行包管理命令，再重新打开应用。
@@ -49,7 +49,6 @@ npm run typecheck
 npm test
 npm run build
 npm run character:pack -- examples/star paper-star.dshpet
-npm run character:pack -- characters/deepseek-whale deepseek-whale.dshpet
 npm run dev             # 浏览器演示，事件和回复为模拟数据
 npm run demo            # 真实 Electron 窗口，事件为模拟数据
 ```
@@ -73,7 +72,7 @@ XVFB_PATH=/workspace/.cache/xvfb/usr/bin/Xvfb npm run test:install
 
 ## 自定义角色
 
-右键桌宠 → **角色与动画**，导入 `.dshpet` / `.zip` 后预览并点击 **使用角色**。Release 附带 `paper-star.dshpet` 和 **`deepseek-whale.dshpet`（DeepSeek 大肥鱼）**；选择会在重启后保留。已有 v0.2.0 插件也能直接导入大肥鱼角色包。
+DeepSeek 大肥鱼已内置且不可删除。右键桌宠 → **角色与动画**，仍可导入 `.dshpet` / `.zip` 自定义角色；预览并点击 **使用角色** 后，选择会在重启后保留。删除正在使用的自定义角色会回到大肥鱼。
 
 大肥鱼使用 Coopanion 的 DeepSeek 原配色拆件贴图，动作由本项目重新编写，支持眨眼、摆尾、挥手、走路、坐姿睡眠和任务表情。素材署名、权利说明、适配范围与重建方法见 [角色包说明](https://github.com/takboo/dsh-coopanion/blob/main/characters/deepseek-whale/README.md)。
 
@@ -86,7 +85,7 @@ npm run build
 npm run character:pack -- examples/star paper-star.dshpet
 ```
 
-完整字段、动作映射、分层规则、大小限制及 JSON Schema 见 [角色包规范](docs/characters.md)。内置小鲸也是分层角色包；v1 尚不包含网格变形、Live2D / VRM、音效、换装或商店。
+完整字段、动作映射、分层规则、大小限制及 JSON Schema 见 [角色包规范](docs/characters.md)。内置大肥鱼是分层关键帧角色；v1 尚不包含网格变形、Live2D / VRM、音效、换装或商店。
 
 ## 配置
 
@@ -105,7 +104,7 @@ npm run character:pack -- examples/star paper-star.dshpet
 - id: dsh-coopanion
   config:
     autoStart: true
-    size: 150
+    size: 180
     roam: true
     notifications: true
     bubbleDurationMs: 12000
@@ -116,11 +115,11 @@ npm run character:pack -- examples/star paper-star.dshpet
 
 ## CI 与发布
 
-main 的 push、PR 和手动运行执行类型检查、插件测试、浏览器交互测试、Electron 桌面测试、压缩包检查，并在两个支持的 DSH 版本中安装和加载同一压缩包。推送与 `package.json.version` 一致的 `v*` 标签时，只有全部测试及安装矩阵成功后才创建 GitHub Release，附带插件 `.tgz`、`paper-star.dshpet`、`deepseek-whale.dshpet` 和 `SHA256SUMS`；不自动发布到 npm。
+main 的 push、PR 和手动运行执行类型检查、插件测试、浏览器交互测试、Electron 桌面测试、压缩包检查，并在两个支持的 DSH 版本中安装和加载同一压缩包。推送与 `package.json.version` 一致的 `v*` 标签时，只有全部测试及安装矩阵成功后才创建 GitHub Release，附带插件 `.tgz`、`paper-star.dshpet` 和 `SHA256SUMS`；不自动发布到 npm。
 
 ```bash
-git tag v0.3.2
-git push origin v0.3.2
+git tag v0.3.3
+git push origin v0.3.3
 ```
 
 插件本身没有遥测或额外联网 API；模型请求与权限管理由 Harness 负责。Electron 首次准备时从官方发行源下载运行时并执行校验。Node 24 的代理下载可通过 `NODE_USE_ENV_PROXY=1` 使用现有 HTTP(S) 代理变量，TLS 与校验保持开启。

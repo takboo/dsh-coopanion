@@ -6,6 +6,7 @@ import { ACTIONS, assetPaths, validateCharacter, createCharacterPack, readCharac
 import { AnimationClock, sampleKeys } from '../src/animation.ts';
 
 const root = 'characters/deepseek-whale/';
+const builtinRoot = 'web/characters/deepseek-whale/';
 const manifest = validateCharacter(JSON.parse(readFileSync(root + 'character.json', 'utf8')));
 const assets = Object.fromEntries(assetPaths(manifest).map(path => [path, new Uint8Array(readFileSync(root + path))]));
 
@@ -24,6 +25,15 @@ it('packages the attributed DeepSeek artwork with its rights notice and pinned s
   expect(Buffer.from(unzipSync(bytes).LICENSE).toString()).toContain(source.commit);
   expect(license).toContain('溟月'); expect(license).toContain('AGPL 授权之外');
   expect(Object.keys(parsed.assets)).toHaveLength(31);
+});
+
+it('ships the attributed DeepSeek character as the exact built-in default', () => {
+  const builtin = validateCharacter(JSON.parse(readFileSync(builtinRoot + 'character.json', 'utf8')));
+  expect(builtin).toEqual(manifest);
+  expect(readFileSync(builtinRoot + 'LICENSE', 'utf8')).toContain('AGPL 授权之外');
+  for (const path of assetPaths(manifest)) {
+    expect(createHash('sha256').update(readFileSync(builtinRoot + path)).digest('hex')).toBe(createHash('sha256').update(assets[path]).digest('hex'));
+  }
 });
 
 it('supplies every Harness action with matching expressions and a seated sleeping pose', () => {

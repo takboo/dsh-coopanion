@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Notification, screen, Menu, Tray, nativeImage, shell } = require('electron');
 const { join } = require('node:path');
 const { CharacterStore } = require('../dist/character-store.cjs');
-app.setName('小鲸');
+app.setName('DeepSeek 大肥鱼');
 if (process.env.DSH_PET_TEST_DATA_DIR) {
   app.setPath('userData', process.env.DSH_PET_TEST_DATA_DIR);
   app.setPath('crashDumps', join(process.env.DSH_PET_TEST_DATA_DIR, 'crashes'));
@@ -103,9 +103,9 @@ app.whenReady().then(async () => {
     const p = screen.getCursorScreenPoint(), b = win.getBounds();
     forward({ type: 'cursor', x: p.x - b.x, y: p.y - b.y });
   }, 100);
-  const icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).resize({ width: 24, height: 20 });
-  tray = new Tray(icon); tray.setToolTip('小鲸 · DeepSeek Harness');
-  tray.setContextMenu(Menu.buildFromTemplate([{ label: '显示小鲸', click: show }, { label: '隐藏小鲸', click: () => win.hide() }, { type: 'separator' }, { label: '关闭桌宠', click: () => app.quit() }]));
+  const icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).resize({ height: 24 });
+  tray = new Tray(icon); tray.setToolTip('DeepSeek 大肥鱼 · Harness');
+  tray.setContextMenu(Menu.buildFromTemplate([{ label: '显示大肥鱼', click: show }, { label: '隐藏大肥鱼', click: () => win.hide() }, { type: 'separator' }, { label: '关闭桌宠', click: () => app.quit() }]));
   tray.on('click', show);
   screen.on('display-removed', () => { win.setBounds(screen.getPrimaryDisplay().workArea); forward({ type: 'display-changed' }); });
   screen.on('display-metrics-changed', () => { const b = win.getBounds(); win.setBounds(screen.getDisplayMatching(b).workArea); forward({ type: 'display-changed' }); });

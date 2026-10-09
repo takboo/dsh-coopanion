@@ -32,6 +32,19 @@ export class PetModel {
     return item;
   }
 
+  /** A newly-created foreground conversation should immediately become visible. */
+  created(session: Pick<Session, 'id' | 'header'>): boolean {
+    const item = this.observe(session);
+    if (!item) return false;
+    this.selected = item.id;
+    const task = this.tasks.get(item.id)!;
+    if (!task.active && item.mood === 'idle') {
+      this.present(item, 'happy', '发现新会话啦！我已经准备好了。');
+      task.celebrateUntil = this.now() + 2500;
+    }
+    return true;
+  }
+
   /** Baseline already-running agents without replaying old completion notifications. */
   running(session: Pick<Session, 'id' | 'header'>): void {
     const item = this.observe(session);

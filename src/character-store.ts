@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { readCharacterPack, validateCharacter, imageInfo, PACK_LIMIT, type CharacterManifest, type CharacterView } from './character-pack.ts';
 
 export interface CharacterLibrary { characters: CharacterManifest[]; selected: string; problems: string[]; }
-const validId = (id: string) => /^[a-z][a-z0-9-]{0,47}$/.test(id) && id !== 'whale';
+const BUILTIN_ID = 'deepseek-whale';
+const LEGACY_BUILTIN_ID = 'whale';
+const validId = (id: string) => /^[a-z][a-z0-9-]{0,47}$/.test(id) && id !== BUILTIN_ID && id !== LEGACY_BUILTIN_ID;
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
 /** Stores data-only archives in the pet's own userData directory; all paths derive from validated ids and hashes. */
@@ -34,19 +36,20 @@ export class CharacterStore {
       try { characters.push((await this.metadata(file.slice(0, -5))).manifest); }
       catch (error) { problems.push(`无法读取角色 ${file.slice(0, -5)}：${error instanceof Error ? error.message : '索引错误'}`); }
     }
-    let selected = 'whale';
+    let selected = BUILTIN_ID;
     try {
       const path = join(this.directory, '.selection.json');
       if ((await stat(path)).size <= 256) {
         const value = JSON.parse(await readFile(path, 'utf8'));
-        if (value.id === 'whale' || characters.some(item => item.id === value.id)) selected = value.id;
+        if (value.id === BUILTIN_ID || value.id === LEGACY_BUILTIN_ID) selected = BUILTIN_ID;
+        else if (characters.some(item => item.id === value.id)) selected = value.id;
       }
-    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') problems.push('角色选择记录损坏，已恢复小鲸'); }
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') problems.push('角色选择记录损坏，已恢复大肥鱼'); }
     return { characters: characters.sort((a, b) => a.name.localeCompare(b.name)), selected, problems };
   }
   async import(bytes: Uint8Array): Promise<CharacterLibrary & { importedId: string }> {
     const { manifest } = readCharacterPack(bytes);
-    if (!validId(manifest.id)) throw new Error('whale 是内置角色的保留 id');
+    if (!validId(manifest.id)) throw new Error('该 id 是内置角色的保留 id');
     let previous: Awaited<ReturnType<CharacterStore['metadata']>> | undefined;
     try { previous = await this.metadata(manifest.id); }
     catch (error) {
@@ -70,10 +73,12 @@ export class CharacterStore {
     return { manifest, assets: Object.fromEntries(Object.entries(assets).map(([path, data]) => [path, `data:${imageInfo(data).mime};base64,${Buffer.from(data).toString('base64')}`])) };
   }
   async select(id: string): Promise<void> {
-    if (id !== 'whale') await this.metadata(id);
-    await this.atomic(join(this.directory, '.selection.json'), JSON.stringify({ id }));
+    const selected = id === LEGACY_BUILTIN_ID ? BUILTIN_ID : id;
+    if (selected !== BUILTIN_ID) await this.metadata(selected);
+    await this.atomic(join(this.directory, '.selection.json'), JSON.stringify({ id: selected }));
   }
   async remove(id: string): Promise<CharacterLibrary> {
+    if (id === BUILTIN_ID || id === LEGACY_BUILTIN_ID) throw new Error('不能删除内置大肥鱼');
     const { hash } = await this.metadata(id);
     await rm(join(this.directory, `${id}.json`));
     await rm(this.archive(id, hash), { force: true });

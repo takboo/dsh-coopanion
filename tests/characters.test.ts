@@ -85,7 +85,11 @@ it('persists selection and credits, repairs imports, rejects modified archives, 
     await writeFile(join(directory, 'paper-star.json'), '{');
     expect((await reopened.list()).problems).toHaveLength(1);
     await reopened.import(archive()); expect((await reopened.list()).problems).toEqual([]);
+    const reserved = createCharacterPack({ ...star, id: 'deepseek-whale' }, { 'assets/star.png': image });
+    await expect(reopened.import(reserved)).rejects.toThrow(/内置角色/);
     await expect(reopened.load('../secret')).rejects.toThrow(/无效/);
-    expect(await reopened.remove('paper-star')).toMatchObject({ characters: [], selected: 'whale' });
+    expect(await reopened.remove('paper-star')).toMatchObject({ characters: [], selected: 'deepseek-whale' });
+    await writeFile(join(directory, '.selection.json'), JSON.stringify({ id: 'whale' }));
+    expect((await reopened.list()).selected).toBe('deepseek-whale');
   } finally { await rm(directory, { recursive: true, force: true }); }
 });

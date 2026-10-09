@@ -8,7 +8,8 @@ const browser = await chromium.launch({ executablePath, headless: true, args: ['
 try {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 2 });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.waitForSelector('#pet[data-character=deepseek-whale]');
   await page.evaluate(() => { document.body.classList.remove('preview'); document.getElementById('demo').hidden = true; });
   await page.addStyleTag({ content: '* { animation: none !important; } .pet { filter: none; } .ground { opacity: 0; }' });
-  await page.locator('#whale').screenshot({ path: 'desktop/icon.png', omitBackground: true });
+  await page.locator('#character-canvas').screenshot({ path: 'desktop/icon.png', omitBackground: true });
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

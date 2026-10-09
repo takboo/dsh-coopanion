@@ -31,6 +31,16 @@ describe('Harness task presentation', () => {
     m.select('two'); expect(m.snapshot().mood).toBe('happy');
     m.remove('two'); expect(m.snapshot().sessionId).toBe('one');
   });
+  it('focuses and acknowledges a newly created session before its first turn starts', () => {
+    const m = new PetModel(), old = session('old'), fresh = session('fresh');
+    m.observe(old);
+    expect(m.created(fresh)).toBe(true);
+    expect(m.snapshot()).toMatchObject({ sessionId: 'fresh', mood: 'happy', text: '发现新会话啦！我已经准备好了。' });
+    m.consume(fresh, event('turn/start', { turn: 1 }));
+    expect(m.snapshot()).toMatchObject({ sessionId: 'fresh', mood: 'thinking', text: '让我想一想…' });
+    expect(m.created(session('child', 'subagent'))).toBe(false);
+    expect(m.snapshot().sessionId).toBe('fresh');
+  });
   it('distinguishes canceled, blocked and failed turns from successful completion', () => {
     const m = new PetModel(), s = session('one');
     m.consume(s, event('turn/start', { turn: 1 }));

@@ -3,7 +3,7 @@ const pet = new ElectronBridge();
 let timer;
 pet.on('failure', error => { console.error(error.message); process.exitCode = 1; clearInterval(timer); });
 const phases = [
-  ['idle', '你好，我是小鲸。这是桌面演示，任务事件是模拟的。'],
+  ['idle', '你好，我是大肥鱼。这是桌面演示，任务事件是模拟的。'],
   ['thinking', '让我想想，接下来该怎么做…'],
   ['working', '正在看文件 · src/index.ts'],
   ['waiting', '这一步需要你确认，真实插件会引导你回到 Harness。'],

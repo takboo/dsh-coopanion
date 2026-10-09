@@ -21,8 +21,13 @@ it('uses the real Cordis event bus, delegates approval, logs user input through 
   const fiber = ctx.plugin(async ctx => mountPet(ctx, Config(), bridge));
   await fiber.await();
   expect(bridge.start).toHaveBeenCalledOnce();
+  const fresh = { id: SessionId('fresh'), header: { origin: undefined, version: 4, id: SessionId('fresh'), createdAt: 1, isSeeded: false, cwd: '/project/fresh' } } as Session;
+  ctx.emit('session/created', fresh);
+  expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', mood: 'happy' }));
   ctx.emit('session/event', session, { seq: SessionSeq(0), type: 'turn/start', data: { turn: 1 }, time: 0 });
-  expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ mood: 'thinking' }));
+  expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', mood: 'happy' }));
+  ctx.emit('session/event', fresh, { seq: SessionSeq(0), type: 'turn/start', data: { turn: 1 }, time: 0 });
+  expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', mood: 'thinking' }));
   const delegated = vi.fn(async () => ({ status: 'denied' }));
   const outcome = await ctx.waterfall('approval/request', { agent, toolName: 'bash' }, delegated as never);
   expect(outcome).toEqual({ status: 'denied' }); expect(delegated).toHaveBeenCalledOnce();

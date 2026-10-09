@@ -1,14 +1,14 @@
 # Third-party notices
 
-The animation engine, built-in whale and paper-star example are original implementations in this repository. Bundled libraries retain their MIT licenses below. Coopanion inspired the separation between character presentation and host interaction; its engine source is not included.
+The animation engine and paper-star example are original implementations in this repository. Bundled libraries retain their MIT licenses below. Coopanion inspired the separation between character presentation and host interaction; its engine source is not included.
 
-## Optional DeepSeek Whale character pack
+## Built-in DeepSeek Whale character
 
-The separately distributed `deepseek-whale.dshpet`, source directory `characters/deepseek-whale/` and rendered preview `docs/images/deepseek-actions.png` use PNG artwork from Pal-AI-Lab/Coopanion, commit `d7b1a0026fed3eb1975a6e0387527d806192cdbf`. Original character: 溟月（上善无形）; DeepSeek maid reinterpretation: ZipZipPipe; generated/split artwork: Pal-AI-Lab using OpenAI's image model. DeepSeek's mark belongs to its owner and does not imply endorsement.
+The built-in character under `web/characters/deepseek-whale/`, its source directory `characters/deepseek-whale/`, and the rendered preview `docs/images/deepseek-actions.png` use PNG artwork from Pal-AI-Lab/Coopanion, commit `d7b1a0026fed3eb1975a6e0387527d806192cdbf`. Original character: 溟月（上善无形）; DeepSeek maid reinterpretation: ZipZipPipe; generated/split artwork: Pal-AI-Lab using OpenAI's image model. DeepSeek's mark belongs to its owner and does not imply endorsement.
 
 Upstream excludes these textures from its AGPL grant and does not provide a separate standard open-source license. This adaptation follows the project user's statement that the character is community-created and reusable, while preserving upstream's rights notice. The project's MIT license does not relicense upstream artwork or composited facial textures. See the character pack's `LICENSE` and the [upstream notice](https://github.com/Pal-AI-Lab/Coopanion/blob/d7b1a0026fed3eb1975a6e0387527d806192cdbf/packages/cortico-world-desktop-pet/THIRD_PARTY_NOTICES.md).
 
-The adaptation script and newly authored keyframe manifest are MIT. No upstream model, JavaScript entry point or animation engine is embedded in the pack or plugin.
+The adaptation script and newly authored keyframe manifest are MIT. No upstream model, JavaScript entry point or animation engine is embedded in the plugin.
 
 ## fflate 0.8.3
 

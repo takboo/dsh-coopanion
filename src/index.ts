@@ -17,7 +17,7 @@ export interface Config {
   bubbleDurationMs: Volatile<number>; autoStart: Volatile<boolean>; electronPath?: string;
 }
 export const Config = z.object({
-  size: z.number().min(90).max(240).default(150).volatile(),
+  size: z.number().min(90).max(240).default(180).volatile(),
   roam: z.boolean().default(true).volatile(),
   notifications: z.boolean().default(true).volatile(),
   bubbleDurationMs: z.number().min(2000).max(60000).default(12000).volatile(),
@@ -83,7 +83,7 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
   });
   ctx.inject(['sessions'], child => { for (const session of child.sessions.list()) model.observe(session); update(); });
   for (const agent of ctx.agents.list()) { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); }
-  ctx.on('session/created', session => { model.observe(session); update(); });
+  ctx.on('session/created', session => { model.created(session); update(); });
   ctx.on('agent/created', ({ agent }) => { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); update(); return undefined; });
   ctx.on('agent/disposed', () => { update(); });
   ctx.on('session/event', (session, event) => { notice(model.consume(session, event)); update(); });

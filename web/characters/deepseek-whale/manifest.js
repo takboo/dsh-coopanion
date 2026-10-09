@@ -1,0 +1,1909 @@
+export const builtinDeepseekWhale = {
+  "format": "dsh-character",
+  "formatVersion": 1,
+  "id": "deepseek-whale",
+  "name": "DeepSeek 大肥鱼",
+  "author": "Pal-AI-Lab；原设：溟月（上善无形）；女仆二创：ZipZipPipe",
+  "license": "素材权利沿用上游声明，见随包 LICENSE；动画适配 MIT",
+  "description": "Coopanion 的 DeepSeek 原配色鲸鱼女仆。适配本项目的分层关键帧：眨眼、摆尾、挥手、走路、坐姿睡眠及任务表情。",
+  "canvas": {
+    "width": 216,
+    "height": 272
+  },
+  "motion": {
+    "breathe": 0.008,
+    "bob": 1,
+    "walkBounce": 4,
+    "happyBounce": 5
+  },
+  "renderer": {
+    "type": "layers",
+    "layers": [
+      {
+        "id": "hair-back",
+        "image": "assets/hair-back.png",
+        "parent": "head",
+        "x": -61,
+        "y": -26,
+        "width": 144,
+        "height": 174,
+        "pivotX": 0.64,
+        "pivotY": 0.2,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "tail",
+        "image": "assets/tail.png",
+        "x": 8,
+        "y": 164,
+        "width": 83,
+        "height": 40,
+        "pivotX": 0.88,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "hair-back-curl",
+        "image": "assets/hair-back-curl.png",
+        "parent": "head",
+        "x": -26,
+        "y": 98,
+        "width": 41,
+        "height": 48,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "leg-front",
+        "image": "assets/leg-front.png",
+        "x": 104,
+        "y": 161,
+        "width": 44,
+        "height": 87,
+        "pivotX": 0.55,
+        "pivotY": 0.12,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "leg-back",
+        "image": "assets/leg-back.png",
+        "x": 80,
+        "y": 165,
+        "width": 40,
+        "height": 85,
+        "pivotX": 0.5,
+        "pivotY": 0.12,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "arm-far",
+        "image": "assets/arm-far.png",
+        "x": 129,
+        "y": 155,
+        "width": 29,
+        "height": 40,
+        "pivotX": 0.3,
+        "pivotY": 0.15,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "torso",
+        "image": "assets/torso.png",
+        "x": 90,
+        "y": 140,
+        "width": 49,
+        "height": 47,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "hair-right",
+        "image": "assets/hair-right.png",
+        "parent": "head",
+        "x": 47,
+        "y": 74,
+        "width": 30,
+        "height": 43,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "arm-far-hand",
+        "image": "assets/arm-far-hand.png",
+        "parent": "arm-far",
+        "x": 12,
+        "y": 21,
+        "width": 17,
+        "height": 19,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "skirt",
+        "image": "assets/skirt.png",
+        "x": 64,
+        "y": 160,
+        "width": 98,
+        "height": 61,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "skirt-sitting",
+        "image": "assets/skirt-sitting.png",
+        "x": 31,
+        "y": 161,
+        "width": 152,
+        "height": 69,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "hair-left",
+        "image": "assets/hair-left.png",
+        "parent": "head",
+        "x": -39,
+        "y": 45,
+        "width": 45,
+        "height": 77,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "waist-bow",
+        "image": "assets/waist-bow.png",
+        "x": 69,
+        "y": 160,
+        "width": 30,
+        "height": 33,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "bow-sitting",
+        "image": "assets/bow-sitting.png",
+        "x": 64,
+        "y": 161,
+        "width": 40,
+        "height": 29,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "arm-near",
+        "image": "assets/arm-near.png",
+        "x": 78,
+        "y": 150,
+        "width": 29,
+        "height": 55,
+        "pivotX": 0.68,
+        "pivotY": 0.15,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "fin-far",
+        "image": "assets/fin-far.png",
+        "parent": "head",
+        "x": 66,
+        "y": 30,
+        "width": 39,
+        "height": 39,
+        "pivotX": 0.16,
+        "pivotY": 0.52,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "sidelocks",
+        "image": "assets/sidelocks.png",
+        "parent": "head",
+        "x": -12,
+        "y": 50,
+        "width": 98,
+        "height": 49,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "head",
+        "image": "assets/head.png",
+        "x": 84,
+        "y": 66,
+        "width": 76,
+        "height": 82,
+        "pivotX": 0.4,
+        "pivotY": 0.98,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "face-neutral",
+        "image": "assets/face-neutral.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "face-blink",
+        "image": "assets/face-blink.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-happy",
+        "image": "assets/face-happy.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-sleeping",
+        "image": "assets/face-sleeping.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-dragged",
+        "image": "assets/face-dragged.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-error",
+        "image": "assets/face-error.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-waiting",
+        "image": "assets/face-waiting.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "face-poke",
+        "image": "assets/face-poke.png",
+        "parent": "head",
+        "x": -84,
+        "y": -66,
+        "width": 216,
+        "height": 272,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 0
+      },
+      {
+        "id": "fin-near",
+        "image": "assets/fin-near.png",
+        "parent": "head",
+        "x": -63,
+        "y": 26,
+        "width": 60,
+        "height": 43,
+        "pivotX": 0.83,
+        "pivotY": 0.44,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "headdress",
+        "image": "assets/headdress.png",
+        "parent": "head",
+        "x": -27,
+        "y": -35,
+        "width": 115,
+        "height": 72,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "bangs",
+        "image": "assets/bangs.png",
+        "parent": "head",
+        "x": -19,
+        "y": -22,
+        "width": 112,
+        "height": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "bow",
+        "image": "assets/bow.png",
+        "parent": "head",
+        "x": -34,
+        "y": 21,
+        "width": 29,
+        "height": 24,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      {
+        "id": "ahoge",
+        "image": "assets/ahoge.png",
+        "parent": "head",
+        "x": -13,
+        "y": -54,
+        "width": 53,
+        "height": 36,
+        "pivotX": 0.62,
+        "pivotY": 0.92,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      }
+    ],
+    "animations": {
+      "idle": {
+        "durationMs": 5000,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.8,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 0.8,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.8,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.58,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.6,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.64,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.66,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-blink",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.58,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.6,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.64,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.66,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "thinking": {
+        "durationMs": 3500,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.58,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.6,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.64,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.66,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-blink",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.58,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.6,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.64,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.66,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -4,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -4,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -15,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "working": {
+        "durationMs": 1400,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 2,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -8,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -8,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "waiting": {
+        "durationMs": 2500,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-waiting",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -5,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "happy": {
+        "durationMs": 1200,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.8,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 0.8,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.8,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-happy",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": 75,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 115,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 75,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-far",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 5,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -5,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "error": {
+        "durationMs": 600,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-error",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -4,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -4,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "walk": {
+        "durationMs": 800,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -3,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 4,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -3,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "hair-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -0.5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -0.5,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "leg-front",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -9,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 9,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -9,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "leg-back",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": 9,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -9,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 9,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 6,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -1,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 1,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -1,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "dragged": {
+        "durationMs": 1200,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-dragged",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -22,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -12,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -22,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -12,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 8,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -12,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "ahoge",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -10,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 6,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -10,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "poke": {
+        "durationMs": 700,
+        "loop": false,
+        "tracks": [
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-poke",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.3,
+                "value": -5,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.7,
+                "value": 3,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "fin-near",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -7,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 7,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -7,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      },
+      "sleeping": {
+        "durationMs": 4000,
+        "loop": true,
+        "tracks": [
+          {
+            "layer": "face-neutral",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "face-sleeping",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "skirt",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "waist-bow",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "skirt-sitting",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "bow-sitting",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 1,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "leg-front",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "leg-back",
+            "property": "opacity",
+            "keys": [
+              {
+                "at": 0,
+                "value": 0,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 90,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "torso",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 164,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-far",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 179,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "arm-near",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 174,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "skirt-sitting",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 185,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "bow-sitting",
+            "property": "y",
+            "keys": [
+              {
+                "at": 0,
+                "value": 185,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "head",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -4,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -4,
+                "easing": "smooth"
+              }
+            ]
+          },
+          {
+            "layer": "tail",
+            "property": "rotation",
+            "keys": [
+              {
+                "at": 0,
+                "value": -2,
+                "easing": "smooth"
+              },
+              {
+                "at": 0.5,
+                "value": 0,
+                "easing": "smooth"
+              },
+              {
+                "at": 1,
+                "value": -2,
+                "easing": "smooth"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+};

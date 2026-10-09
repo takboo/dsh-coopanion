@@ -1,7 +1,7 @@
 {
   "name": "dsh-coopanion",
-  "version": "0.3.2",
-  "description": "An interactive whale desktop pet and task notifications for DeepSeek Harness",
+  "version": "0.3.3",
+  "description": "DeepSeek Whale desktop companion and task notifications for DeepSeek Harness",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -50,6 +50,7 @@
     "test:install": "node tests/install.mjs",
     "character:pack": "node scripts/pack-character.mjs",
     "character:deepseek": "node scripts/import-deepseek-whale.mjs",
+    "character:sync": "node scripts/sync-deepseek-builtin.mjs",
     "character:schema": "node scripts/character-schema.mjs",
     "dev": "node scripts/preview.mjs",
     "demo": "node scripts/demo.mjs",
