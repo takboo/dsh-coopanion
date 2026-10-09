@@ -21,7 +21,8 @@ try {
   const petClick = async (options = {}, twice = false) => {
     const box = await page.locator('#pet').boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.locator('#pet')[twice ? 'dblclick' : 'click'](options);
+    // Breathing keeps the bounds moving; send real mouse input without waiting for a stable element.
+    await page.locator('#pet')[twice ? 'dblclick' : 'click']({ ...options, force: true });
   };
   const openSessionPicker = async () => { await petClick({}, true); await page.locator('#chat-current').click(); };
   await page.goto(`http://127.0.0.1:${server.address().port}`);
