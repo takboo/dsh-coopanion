@@ -7,7 +7,7 @@
 - 气泡、聊天框和菜单可返回对应 Harness 会话；点击通知直接打开产生通知的会话。使用公开 `uiWorkspace.openSession()` 接口，桌面唤回使用固定的 `dsh://open` 协议。多个本机客户端同时连接时，由首先领取请求的客户端打开。
 - 保留中英文原生设置页、启动 / 重启入口和自定义角色导入。
 
-下载 `dsh-coopanion-0.3.3.tgz` 安装或升级，然后完全退出并重新打开 Harness。支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**；Release 附带纸片星星示例角色包与 SHA256SUMS。
+下载 `dsh-coopanion-0.3.4.tgz` 安装或升级，然后完全退出并重新打开 Harness。支持 DSH **0.2.0-rc.2 / 0.2.1-alpha.1**；Release 附带纸片星星示例角色包与 SHA256SUMS。
 
 验证包括类型检查、状态和审批回归、浏览器实际走动及气泡不重放、真实 Electron IPC、两个官方 DSH 版本的实际安装及官方前端的双会话选择和通知返回。Linux 测试不调用模型 API；Windows/macOS 实机协议唤回与系统通知仍需验收。
 
