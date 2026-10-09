@@ -16,9 +16,9 @@
 
 ## 安装到 Desktop
 
-当前开发与验证针对官方仓库的 **0.2.1-alpha.1** 接口；这些接口尚未稳定，旧版本可能不兼容。
+**v0.1.1 支持 DSH 0.2.0-rc.2 和 0.2.1-alpha.1**。v0.1.0 要求较新的 SDK，会被 0.2.0-rc.2 的安装检查拒绝；使用 rc.2 时请下载修正版。接口尚未稳定，其他版本未声明兼容。
 
-1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.1.0.tgz`，记下绝对路径。
+1. 从 [Releases](https://github.com/takboo/dsh-coopanion/releases) 下载 `dsh-coopanion-0.1.1.tgz`，记下绝对路径。
 2. 打开 Harness 的侧边栏 **插件** 页，安装该压缩包路径，并启用 `dsh-coopanion`。
 3. 完全退出再重新打开 Harness。首次启用时，Electron 44 自动从 GitHub 官方发行源下载并校验桌宠运行时，需要联网；下载较大，启动可能稍慢。
 4. 打开一个会话，双击小鲸聊天。如本机必须使用代理，可先按下方开发步骤预装 Electron，或通过 `electronPath` 指定已安装的独立运行时。
@@ -26,7 +26,7 @@
 也可使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，然后执行：
 
 ```bash
-dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.1.0.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.1.1.tgz
 ```
 
 此处需要 Desktop 自带的 CLI；npm 安装的 dsh 不能管理 Desktop 所拥有的 profile。Desktop 完全退出后执行包管理命令，再重新打开应用。
@@ -52,11 +52,12 @@ npm run test:ui         # 使用 CHROMIUM_PATH 或系统 Chromium
 XVFB_PATH=/workspace/.cache/xvfb/usr/bin/Xvfb npm run test:desktop
 npm pack
 node scripts/check-package.mjs
+XVFB_PATH=/workspace/.cache/xvfb/usr/bin/Xvfb npm run test:install
 ```
 
 桌面测试会在缺少 DISPLAY 时启动 Xvfb，并在结束后关闭它；有桌面的机器无需 XVFB_PATH。CI 下载 Playwright Chromium 并执行同样的检查。窗口测试仅在虚拟显示中使用测试沙箱设置，普通插件启动保持渲染器 sandbox、contextIsolation，关闭 Node integration。
 
-`test:desktop` 验证真实 Electron 窗口、启动握手、双向 IPC 聊天、宿主回复和通知卡片。单元测试使用发布的 Harness 类型和真实 Cordis 事件总线；没有调用真实模型 API。macOS / Windows 的实机窗口、系统通知、桌面插件安装及真实模型聊天仍需验收。
+`test:desktop` 验证真实 Electron 窗口、启动握手、双向 IPC 聊天、宿主回复和通知卡片。`test:install` 在临时目录安装官方发布的 DSH，使用它的 `dsh plugin add` 安装实际 `.tgz`，检查兼容校验、bundle 激活、真实 profile loader、桌宠窗口、会话事件通知和正常关闭；不使用版本豁免。默认测试 0.2.0-rc.2，`DSH_TEST_VERSION=0.2.1-alpha.1` 测试另一支持版本。测试 overlay 挂载实际会话服务与 agent registry，不运行模型请求。桌面端使用相同的安装服务与 profile loader；macOS / Windows 的桌面安装页、实机窗口和系统通知，以及真实模型聊天仍需验收。
 
 ## 配置
 
@@ -76,11 +77,11 @@ node scripts/check-package.mjs
 
 ## CI 与发布
 
-main 的 push、PR 和手动运行执行类型检查、插件测试、浏览器交互测试、Electron 桌面测试以及压缩包检查。推送与 `package.json.version` 一致的 `v*` 标签时，只有测试任务成功后才创建 GitHub Release，附带插件 `.tgz` 和 `SHA256SUMS`；不自动发布到 npm。
+main 的 push、PR 和手动运行执行类型检查、插件测试、浏览器交互测试、Electron 桌面测试、压缩包检查，并在两个支持的 DSH 版本中安装和加载同一压缩包。推送与 `package.json.version` 一致的 `v*` 标签时，只有全部测试及安装矩阵成功后才创建 GitHub Release，附带插件 `.tgz` 和 `SHA256SUMS`；不自动发布到 npm。
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 插件本身没有遥测或额外联网 API；模型请求与权限管理由 Harness 负责。Electron 首次准备时从官方发行源下载运行时并执行校验。Node 24 的代理下载可通过 `NODE_USE_ENV_PROXY=1` 使用现有 HTTP(S) 代理变量，TLS 与校验保持开启。

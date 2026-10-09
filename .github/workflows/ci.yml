@@ -36,9 +36,43 @@ jobs:
             artifacts/*.png
             dsh-coopanion-*.tgz
             SHA256SUMS
+  install:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ['0.2.0-rc.2', '0.2.1-alpha.1']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-pet
+          path: release
+      - name: Verify package and install into the published DSH host
+        env:
+          DSH_TEST_VERSION: ${{ matrix.dsh }}
+          DSH_TEST_PACKAGE_DIR: ${{ github.workspace }}/release
+        run: |
+          cd release
+          sha256sum --check SHA256SUMS
+          cd ..
+          npm run test:install
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installation-${{ matrix.dsh }}
+          path: |
+            artifacts/install-*.json
+            artifacts/installed-*.png
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
+    needs: [test, install]
     runs-on: ubuntu-latest
     permissions:
       contents: write

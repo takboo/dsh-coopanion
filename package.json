@@ -1,14 +1,30 @@
 {
   "name": "dsh-coopanion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An interactive whale desktop pet and task notifications for DeepSeek Harness",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22.19" },
+  "engines": {
+    "node": ">=22.19"
+  },
   "main": "./dist/index.js",
-  "exports": { ".": "./dist/index.js", "./cordis.patch.yml": "./cordis.patch.yml" },
-  "files": ["dist", "desktop", "web", "cordis.patch.yml", "README.md", "LICENSE"],
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "exports": {
+    ".": "./dist/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "dist",
+    "desktop",
+    "web",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "setup:electron": "node node_modules/electron/install.js",
@@ -16,29 +32,33 @@
     "test": "vitest run",
     "test:ui": "node tests/ui.mjs",
     "test:desktop": "node tests/desktop.mjs",
+    "test:install": "node tests/install.mjs",
     "dev": "node scripts/preview.mjs",
     "demo": "node scripts/demo.mjs",
     "prepack": "npm run build"
   },
-  "dependencies": { "electron": "44.7.0" },
+  "dependencies": {
+    "electron": "44.7.0"
+  },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.5-alpha.1",
-    "@deepseek-ai/schemastery": ">=3.18.4 <4",
-    "@deepseek-ai/dsh-agent": "^0.2.1-alpha.1",
-    "@deepseek-ai/dsh-session": "^0.2.1-alpha.1",
-    "@deepseek-ai/dsh-llm": "^0.2.1-alpha.1",
-    "@deepseek-ai/dsh-user-approval": "^0.2.1-alpha.1"
+    "@deepseek-ai/cordis": "~4.0.4 || 4.0.5-alpha.1",
+    "@deepseek-ai/dsh-agent": "0.2.0-rc.2 || 0.2.1-alpha.1",
+    "@deepseek-ai/dsh-llm": "0.2.0-rc.2 || 0.2.1-alpha.1",
+    "@deepseek-ai/dsh-session": "0.2.0-rc.2 || 0.2.1-alpha.1",
+    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2 || 0.2.1-alpha.1",
+    "@deepseek-ai/schemastery": ">=3.18.4 <4"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.5-alpha.1",
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/dsh-agent": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2",
     "@deepseek-ai/schemastery": "3.18.4",
-    "@deepseek-ai/dsh-agent": "0.2.1-alpha.1",
-    "@deepseek-ai/dsh-session": "0.2.1-alpha.1",
-    "@deepseek-ai/dsh-llm": "0.2.1-alpha.1",
-    "@deepseek-ai/dsh-user-approval": "0.2.1-alpha.1",
     "@types/node": "^24.0.0",
     "esbuild": "^0.25.12",
     "playwright-core": "^1.56.0",
+    "pnpm": "11.7.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
