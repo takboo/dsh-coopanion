@@ -29,6 +29,10 @@ const environment = {
   PATH: `${join(project, 'node_modules', '.bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`,
   DSH_PET_TEST_DATA_DIR: join(root, 'pet'), DSH_PET_TEST_NO_SANDBOX: '1',
 };
+// Windows environment keys are case-insensitive; keep one PATH entry for spawn.
+if (process.platform === 'win32') {
+  for (const key of Object.keys(environment)) if (key !== 'PATH' && key.toLowerCase() === 'path') delete environment[key];
+}
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function waitProfile(pattern) {
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -93,7 +97,9 @@ try {
   if (!process.env.DSH_TEST_RUNTIME) {
     console.log(`Preparing published DSH ${version} in an isolated test directory…`);
     await mkdir(runtime, { recursive: true });
-    await run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['install', '--prefix', runtime, '--no-audit', '--no-fund', `@deepseek-ai/dsh@${version}`]);
+    assert.ok(process.env.npm_execpath, 'run this test through npm run test:install');
+    // Invoke npm's JavaScript entry directly: Windows cannot exec a .cmd without a shell.
+    await run(process.execPath, [process.env.npm_execpath, 'install', '--prefix', runtime, '--no-audit', '--no-fund', `@deepseek-ai/dsh@${version}`]);
   }
   const cliDir = join(runtime, 'node_modules', '@deepseek-ai', 'dsh');
   assert.equal(JSON.parse(await readFile(join(cliDir, 'package.json'), 'utf8')).version, version);
