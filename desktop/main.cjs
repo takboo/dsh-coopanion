@@ -160,14 +160,20 @@ app.whenReady().then(async () => {
     if (action.type !== 'chat' && action.type !== 'select' && action.type !== 'open-session' && action.type !== 'preference') return;
     process.send?.({ type: 'action', action });
   });
+  hit(false);
   await win.loadURL(`http://127.0.0.1:${assetServer.address().port}${prefix}`);
-  hit(false); show();
-  // Pointer polling restores hit testing even when a click-through page receives no mousemove.
-  poll = setInterval(() => {
+  show();
+  // Restore input when a click-through window misses movement, without repeatedly
+  // overriding the renderer's newer pointer event with a stationary OS cursor.
+  let lastCursor;
+  const pollCursor = () => {
     if (!win || win.isDestroyed() || !win.isVisible()) return;
     const p = screen.getCursorScreenPoint(), b = win.getBounds();
-    forward({ type: 'cursor', x: p.x - b.x, y: p.y - b.y });
-  }, 100);
+    const next = { x: p.x - b.x, y: p.y - b.y };
+    if (next.x === lastCursor?.x && next.y === lastCursor?.y) return;
+    lastCursor = next; forward({ type: 'cursor', ...next });
+  };
+  pollCursor(); poll = setInterval(pollCursor, 100);
   const icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).resize({ height: 24 });
   tray = new Tray(icon); syncTray();
   tray.on('click', show);

@@ -19,6 +19,7 @@ const label = mood => `${activeName} · ${labels[mood] ?? labels.idle}`;
 let options = { size: 180, roam: true, notifications: true, bubbleDurationMs: 12000 };
 let snapshot = { mood: 'idle', text: '你好。点点我，或双击和我说话。', sessionId: null, sessions: [] };
 let x = innerWidth * .68, y = innerHeight - 155, hovered = false, asleep = false, toastTimer, noticeSession;
+let cursorPoint, lastHit;
 let presentationKey, renderedSessionId = null, pendingSelection, reactionUntil = 0, reactionMood, bubbleSession, demoTimer, speakingKey, dismissedSpeechKey, trayKey, touchTimer, touchBlockedUntil = 0;
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 let reduced = motionPreference.matches;
@@ -207,12 +208,13 @@ function receive(message) {
 }
 
 function hit(px, py) {
+  cursorPoint = { x: px, y: py };
   const active = pressing || body?.hit({ x: px, y: py }) || [...document.querySelectorAll('.interactive')].some(el => {
     if (el === pet || el.closest('[hidden]')) return false;
     const b = el.getBoundingClientRect();
     return px >= b.left - 2 && px <= b.right + 2 && py >= b.top - 2 && py <= b.bottom + 2;
   });
-  native?.hit(!!active);
+  if (!!active !== lastHit) { lastHit = !!active; native?.hit(lastHit); }
 }
 
 function openChat() { clearTimeout(touchTimer); touchBlockedUntil = performance.now() + 1000; characters.hidden = true; conversations.hidden = true; menu.hidden = true; bubble.hidden = true; chat.hidden = false; updateMood(); position(); if (!$('message').disabled) $('message').focus(); }
@@ -330,7 +332,10 @@ document.addEventListener('pointermove', event => {
   }
   body?.pointer('move', point); hit(point.x, point.y);
 });
-document.addEventListener('pointerleave', () => body?.pointer('leave', {}));
+document.addEventListener('pointerleave', () => {
+  body?.pointer('leave', {});
+  if (!pressing) { cursorPoint = undefined; lastHit = false; native?.hit(false); }
+});
 addEventListener('resize', () => { body?.set({ bounds: bounds() }); previewBody?.set({ bounds: previewBounds() }); position(); });
 $('toggle-sound').onclick = () => { sfx.set(!sfx.isOn()); updateMood(); };
 
@@ -347,7 +352,10 @@ function animate(now) {
     if (speech.done && speechExpires === Infinity && bubble.dataset.persistent !== 'true') speechExpires = now + options.bubbleDurationMs;
     if (now >= speechExpires) bubble.hidden = true;
   }
-  position(); requestAnimationFrame(animate);
+  position();
+  // The character can walk beneath a stationary cursor, or away from it.
+  if (cursorPoint) hit(cursorPoint.x, cursorPoint.y);
+  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
 
@@ -377,6 +385,9 @@ async function setCharacter(view, scheme = '') {
     onError: error => { $('character-status').textContent = `角色运行失败：${error.message}`; if (body === next && view.id !== BUILTIN_ID) void restoreBuiltin(); },
   });
   body?.dispose(); body = next; activeView = view; activeScheme = knownScheme(view, scheme); activeName = nameIn(view.name);
+  // A new body has not reported its geometry yet. Retire the previous body's
+  // input region until position() receives the new body's first frame.
+  pet.hidden = true; delete pet.dataset.mode; delete pet.dataset.pressing;
   appliedMood = appliedControls = undefined;
   sfx.usePack(view.base, view.sounds);
   pet.dataset.character = view.id; pet.dataset.scheme = activeScheme;

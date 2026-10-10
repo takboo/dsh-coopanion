@@ -19,6 +19,7 @@ try {
   page.setDefaultTimeout(12000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const petClick = async (options = {}, twice = false) => {
+    await page.waitForSelector('#pet[data-mode]');
     if (options.button !== 'right') {
       // The original body ignores taps while a poke's jump is still in flight.
       await page.waitForFunction(() => !['air', 'drag', 'crouch'].includes(document.getElementById('pet').dataset.mode));
@@ -164,7 +165,9 @@ try {
   assert.equal(await page.locator('#character-preview iframe').contentFrame().locator('#root').getAttribute('data-isolated'), 'true');
   await page.locator('#character-select').selectOption('whale'); await page.waitForFunction(() => !document.getElementById('character-use').disabled);
   await page.locator('#character-scheme').selectOption('deepseek'); await page.waitForFunction(() => !document.getElementById('character-use').disabled);
-  await page.locator('#character-use').click(); await page.locator('#characters-close').click();
+  await page.locator('#character-use').click();
+  await page.waitForSelector('#pet[data-character=whale][data-scheme=deepseek]');
+  await page.locator('#characters-close').click();
   await petClick(); await speechDone(page); await page.screenshot({ path: 'artifacts/desktop-pet.png' });
   assert.deepEqual(errors, []);
   console.log('UI passed: native WebGL animation, speech/mouth synchronization, physics, sessions, chat, outfits, API 2 import, persistence, rejection and sandbox isolation.');
