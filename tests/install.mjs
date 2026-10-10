@@ -197,7 +197,7 @@ try {
   assert.equal(await page.locator('#toast').isVisible(), false);
   assert.equal(await page.locator('#attention-count').innerText(), '1', 'a delivered final reply remains unread until the user acknowledges it');
   await page.locator('#dismiss').click();
-  await page.waitForSelector('#attention[hidden]', { state: 'hidden' });
+  await page.waitForFunction(() => document.getElementById('attention').hidden);
   assert.ok((await logged).includes('turn/end'), 'notification comes from the real host session log');
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
   host.send({ type: 'start-task', sessionId: 'host-other' });
