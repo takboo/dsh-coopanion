@@ -133,6 +133,7 @@ try {
   await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); page = browser.contexts()[0].pages()[0];
   await page.waitForSelector('#pet[data-character=paper-star][data-scheme=night]');
+  await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '真实 IPC 桌面测试');
   await petClick(page, { button: 'right' }); await page.locator('#open-characters').click();
   await page.waitForFunction(() => !document.getElementById('character-remove').disabled);
   assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 1);

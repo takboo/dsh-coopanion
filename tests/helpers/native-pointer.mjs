@@ -20,6 +20,16 @@ x11.XCloseDisplay(display)
 
 /** Exercise real click-through hit testing, including the OS cursor on X11. */
 export async function petClick(page, options = {}, twice = false) {
+  await page.evaluate(() => {
+    if (window.__nativeInputTrace) { window.__nativeInputTrace.length = 0; return; }
+    window.__nativeInputTrace = [];
+    const record = entry => { window.__nativeInputTrace.push({ t: Math.round(performance.now()), ...entry }); if (window.__nativeInputTrace.length > 100) window.__nativeInputTrace.shift(); };
+    window.dshPetBridge.subscribe(message => { if (['cursor', 'hit-state'].includes(message.type)) record(message); });
+    for (const type of ['pointermove', 'pointerdown', 'pointerup', 'contextmenu']) document.addEventListener(type, event => {
+      const pet = document.getElementById('pet'), box = pet.getBoundingClientRect();
+      record({ type, target: `${event.target.tagName}#${event.target.id}`, x: event.clientX, y: event.clientY, nativeHit: pet.dataset.nativeHit, mode: pet.dataset.mode, hidden: pet.hidden, focus: document.hasFocus(), box: { x: box.x, y: box.y, w: box.width, h: box.height } });
+    }, true);
+  });
   const pet = page.locator('#pet');
   await pet.waitFor({ state: 'visible' });
   if (process.platform === 'linux' && process.env.DISPLAY) {
@@ -34,4 +44,8 @@ export async function petClick(page, options = {}, twice = false) {
   await pet.hover();
   await page.waitForSelector('#pet[data-native-hit=true]');
   await pet[twice ? 'dblclick' : 'click'](options);
+  if (options.button === 'right') {
+    try { await page.locator('#menu').waitFor({ state: 'visible', timeout: 3000 }); }
+    catch (error) { console.log('Native pointer failure:', JSON.stringify(await page.evaluate(() => window.__nativeInputTrace))); throw error; }
+  }
 }
