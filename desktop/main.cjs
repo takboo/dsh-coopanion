@@ -22,7 +22,7 @@ if (process.env.DSH_PET_TEST_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.DSH_PET_TEST_DEBUG_PORT);
 }
 let win, tray, options, lastFrame, poll, assetServer, characters;
-let presentation = {}, lastTrayKey, lastIconKey;
+let presentation = {}, lastTrayKey, lastIconKey, iconBase, iconAppearance;
 let interactive = null;
 const notices = new Set();
 function forward(message) { if (win && !win.isDestroyed()) win.webContents.send('pet:update', message); }
@@ -43,10 +43,11 @@ function syncTray() {
   tray.setToolTip(state.tooltip);
   if (process.platform === 'darwin') tray.setTitle(state.title);
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: `${state.name} · ${state.title || '陪伴中'}`, enabled: false },
+    { label: `${state.name} · ${state.stateLabel}`, enabled: false },
     { label: state.sessionLabel, enabled: false },
     { label: '回到当前会话', enabled: !!state.sessionId, click: () => act({ type: 'open-session', sessionId: state.sessionId }) },
-    { label: '切换陪伴会话', enabled: !!state.sessions.length, submenu: state.sessions.slice(0, 20).map(session => ({ type: 'radio', label: `${session.label} · ${session.id.replace(/^session[-_:]/, '').slice(-8)}`, checked: session.selected, click: () => act({ type: 'select', sessionId: session.id }) })) },
+    { label: '切换陪伴会话', enabled: !!state.sessions.length, submenu: state.sessions.slice(0, 20).map(session => ({ type: 'radio', label: `${session.label} · ${session.id.replace(/^session[-_:]/, '').slice(-8)}${session.unread ? ` · ${session.unread} 份未读` : ''}${['waiting', 'error'].includes(session.mood) ? ' · 需要你' : ''}`, checked: session.selected, click: () => act({ type: 'select', sessionId: session.id }) })) },
+    { label: `待查看 · ${state.activity.unread} 份回复 · ${state.activity.waiting + state.activity.errors} 段需要你`, click: () => { show(); forward({ type: 'ui-control', command: 'sessions' }); } },
     { type: 'separator' },
     { label: '说句话', click: () => { show(); forward({ type: 'ui-control', command: 'chat' }); } },
     { label: '角色与配色', click: () => { show(); forward({ type: 'characters' }); } },
@@ -59,24 +60,35 @@ function syncTray() {
     { label: '关闭桌宠', click: () => app.quit() },
   ]));
   process.send?.({ type: 'tray-state', state });
-  const iconKey = `${state.characterId}:${state.scheme}:${state.iconReady}`;
+  const iconKey = `${state.characterId}:${state.scheme}:${state.iconReady}:${state.icon}`;
   if (iconKey !== lastIconKey) { lastIconKey = iconKey; void syncIcon(state, iconKey); }
 }
 async function syncIcon(state, key) {
   try {
-    const view = await characters.load(state.characterId);
-    const thumb = view.presets.find(preset => preset.id === state.scheme)?.thumb ?? view.thumb;
-    let icon = nativeImage.createFromPath(join(__dirname, 'icon.png'));
-    if (thumb && /\.(png|webp|jpe?g)$/i.test(thumb)) {
-      const response = await fetch(new URL(view.base + thumb, win.webContents.getURL()));
-      const bytes = Buffer.from(await response.arrayBuffer());
-      if (response.ok && bytes.length < 2 * 1024 * 1024) { const image = nativeImage.createFromBuffer(bytes); if (!image.isEmpty()) icon = image; }
-    } else if (win?.isVisible() && state.iconReady) {
-      const box = await win.webContents.executeJavaScript("(() => { const b = document.getElementById('pet').getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.width), height: Math.round(b.height) }; })()");
-      if (box.width > 0 && box.height > 0) { const image = await win.webContents.capturePage(box); if (!image.isEmpty()) icon = image; }
+    const appearance = `${state.characterId}:${state.scheme}:${state.iconReady}`;
+    let icon = iconAppearance === appearance ? iconBase : undefined;
+    if (!icon) {
+      const view = await characters.load(state.characterId);
+      const thumb = view.presets.find(preset => preset.id === state.scheme)?.thumb ?? view.thumb;
+      icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).toDataURL();
+      if (thumb && /\.(png|webp|jpe?g|svg)$/i.test(thumb)) {
+        const response = await fetch(new URL(view.base + thumb, win.webContents.getURL()));
+        const bytes = Buffer.from(await response.arrayBuffer());
+        if (response.ok && bytes.length < 2 * 1024 * 1024) {
+          if (/\.svg$/i.test(thumb)) icon = `data:image/svg+xml;base64,${bytes.toString('base64')}`;
+          else { const image = nativeImage.createFromBuffer(bytes); if (!image.isEmpty()) icon = image.toDataURL(); }
+        }
+      }
+      iconBase = icon; iconAppearance = appearance;
     }
-    if (tray && !tray.isDestroyed() && lastIconKey === key) tray.setImage(icon.resize({ height: process.platform === 'darwin' ? 20 : 24 }));
-  } catch { /* Keep the packaged icon when a custom pack has no raster thumbnail. */ }
+    const template = process.platform === 'darwin';
+    const url = await win.webContents.executeJavaScript(`import('./tray-icon.js').then(m => m.trayIcon(${JSON.stringify(icon)}, ${JSON.stringify({ icon: state.icon })}, ${template}))`);
+    const rendered = nativeImage.createFromDataURL(url).resize({ height: template ? 20 : 24 }); rendered.setTemplateImage(template);
+    if (tray && !tray.isDestroyed() && lastIconKey === key) {
+      tray.setImage(rendered);
+      process.send?.({ type: 'tray-icon', icon: state.icon, template: rendered.isTemplateImage(), title: state.title });
+    }
+  } catch { /* Keep the packaged icon when a pack thumbnail cannot be rendered. */ }
 }
 function bounds() {
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
@@ -95,7 +107,7 @@ process.on('message', message => {
     // Fixed public Desktop protocol; no renderer-supplied URL or private shell IPC.
     if (message.command === 'focus-harness' && process.env.DSH_PET_TEST_NO_SANDBOX !== '1') void shell.openExternal('dsh://open').catch(() => {});
   }
-  if (message.type === 'snapshot') { lastFrame = { type: 'init', options, snapshot: message.snapshot }; forward(message); syncTray(); }
+  if (message.type === 'snapshot') { lastFrame = { type: 'init', options, snapshot: { ...message.snapshot, results: message.snapshot.results ?? lastFrame?.snapshot?.results ?? [] } }; forward(message); syncTray(); }
   if (message.type === 'notice') {
     forward(message);
     if (options?.notifications && Notification.isSupported()) {
@@ -157,7 +169,7 @@ app.whenReady().then(async () => {
       if (typeof action.characterId !== 'string' || !/^[a-z0-9-]{1,32}$/.test(action.characterId) || typeof action.scheme !== 'string' || action.scheme.length > 200 || typeof action.name !== 'string' || action.name.length > 200 || typeof action.sleeping !== 'boolean' || typeof action.sound !== 'boolean') return;
       presentation = { characterId: action.characterId, scheme: action.scheme, name: action.name, sleeping: action.sleeping, sound: action.sound, ready: action.ready === true }; syncTray(); return;
     }
-    if (action.type !== 'chat' && action.type !== 'select' && action.type !== 'open-session' && action.type !== 'preference') return;
+    if (action.type !== 'chat' && action.type !== 'select' && action.type !== 'open-session' && action.type !== 'preference' && action.type !== 'read') return;
     process.send?.({ type: 'action', action });
   });
   hit(false);

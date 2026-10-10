@@ -28,15 +28,17 @@ describe('Harness task presentation', () => {
     expect(m.snapshot()).toMatchObject({ mood: 'thinking', active: true, streaming: true });
     expect(m.snapshot().text).not.toContain('private');
     for (const [index, text] of ['你好', '，正在输出'].entries()) m.stream(s, { type: 'chunk', attemptId, revision: 1, index: index + 1, time: 2, chunk: { type: 'text-delta', index: 1, text } });
-    expect(m.snapshot()).toMatchObject({ mood: 'talking', text: '你好，正在输出', speechId: attemptId });
+    expect(m.snapshot()).toMatchObject({ mood: 'talking', speechId: attemptId, results: [] });
+    expect(m.snapshot().sessions[0].reply).toBe('');
     expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 1, time: 1, chunk: { type: 'text-delta', index: 1, text: '重复' } })).toBe(false);
     m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'block-end', index: 1, block: { type: 'text', text: '你好，正在输出' } } });
     m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 4, time: 4, chunk: { type: 'text-delta', index: 2, text: '第二段' } });
-    expect(m.snapshot().text).toBe('你好，正在输出\n第二段');
+    expect(m.snapshot().results).toEqual([]);
     m.consume(s, event('assistant/message', { turn: 1, step: 1, message: createAssistantMessage({ content: [{ type: 'text', text: '你好，正在输出' }, { type: 'text', text: '第二段' }], source: { provider: 'test', model: 'test' } }), stream: [] }));
     expect(m.snapshot()).toMatchObject({ mood: 'talking', streaming: false, speechId: attemptId });
     m.consume(s, event('turn/end', { turn: 1, reason: { kind: 'completed' } }));
     expect(m.snapshot()).toMatchObject({ mood: 'happy', active: false });
+    expect(m.snapshot().results[0].text).toBe('你好，正在输出\n第二段');
     expect(m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 })).toBe(false);
     expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'text-delta', index: 1, text: '迟到' } })).toBe(false);
     m.consume(s, event('turn/start', { turn: 2 }));
@@ -62,15 +64,42 @@ describe('Harness task presentation', () => {
     m.select('two'); expect(m.snapshot().mood).toBe('happy');
     m.remove('two'); expect(m.snapshot().sessionId).toBe('one');
   });
-  it('focuses and acknowledges a newly created session before its first turn starts', () => {
+  it('keeps explicit focus when new sessions start, and selects the first available session', () => {
     const m = new PetModel(), old = session('old'), fresh = session('fresh');
     m.observe(old);
     expect(m.created(fresh)).toBe(true);
-    expect(m.snapshot()).toMatchObject({ sessionId: 'fresh', mood: 'happy', text: '发现新会话啦！我已经准备好了。' });
+    expect(m.snapshot()).toMatchObject({ sessionId: 'old', mood: 'idle' });
     m.consume(fresh, event('turn/start', { turn: 1 }));
-    expect(m.snapshot()).toMatchObject({ sessionId: 'fresh', mood: 'thinking', text: '让我想一想…' });
+    expect(m.snapshot()).toMatchObject({ sessionId: 'old', mood: 'idle' });
+    expect(m.snapshot().sessions.find(s => s.id === 'fresh')?.mood).toBe('thinking');
     expect(m.created(session('child', 'subagent'))).toBe(false);
-    expect(m.snapshot().sessionId).toBe('fresh');
+    expect(m.snapshot().sessionId).toBe('old');
+    m.select('fresh'); expect(m.snapshot().mood).toBe('thinking');
+    const empty = new PetModel(); empty.created(fresh); expect(empty.snapshot().sessionId).toBe('fresh');
+  });
+  it('retains complete confirmed results and acknowledges each completion independently', () => {
+    const m = new PetModel(), a = session('focus'), b = session('background');
+    m.observe(a); m.created(b);
+    const finish = (turn: number, text: string) => {
+      m.consume(b, event('turn/start', { turn }));
+      m.consume(b, event('assistant/message', { turn, step: 1, message: createAssistantMessage({ content: [{ type: 'text', text }], source: { provider: 'test', model: 'test' } }), stream: [] }));
+      expect(m.snapshot().results).toHaveLength(turn - 1);
+      m.consume(b, event('turn/end', { turn, reason: { kind: 'completed' } }));
+    };
+    const long = '长回复🐳\n'.repeat(800) + '完整结尾';
+    finish(1, long); finish(2, '第二份');
+    expect(m.snapshot().sessionId).toBe('focus');
+    expect(m.snapshot().results.map(r => r.text)).toEqual([long, '第二份']);
+    expect(m.snapshot().sessions.find(s => s.id === 'background')?.unread).toBe(2);
+    const id = m.snapshot().results[0].id;
+    expect(m.read(id)).toBe(true); expect(m.read(id)).toBe(false); expect(m.read('missing')).toBe(false);
+    expect(m.snapshot().sessions.find(s => s.id === 'background')?.unread).toBe(1);
+    m.select('background'); expect(m.snapshot().results[1].read).toBe(false);
+    m.consume(b, event('turn/start', { turn: 3 }));
+    m.consume(b, event('assistant/message', { turn: 3, step: 1, message: createAssistantMessage({ content: [{ type: 'text', text: '未完成的内容' }], source: { provider: 'test', model: 'test' } }), stream: [] }));
+    m.consume(b, event('turn/end', { turn: 3, reason: { kind: 'interrupted' } }));
+    expect(m.snapshot().results).toHaveLength(2);
+    expect(m.snapshot().sessions.find(s => s.id === 'background')?.reply).toBe('第二份');
   });
   it('distinguishes canceled, blocked and failed turns from successful completion', () => {
     const m = new PetModel(), s = session('one');

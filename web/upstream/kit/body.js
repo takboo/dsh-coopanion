@@ -312,6 +312,8 @@ export function createPet(els, opts) {
     if (pet.listening && m !== 'sleep') return 'listening';
     if (m === 'sleep') return 'sleep';
     if (pet.expr && T < pet.exprUntil) return pet.expr;
+    // Harness holds task expressions without replaying expression sounds or bounces.
+    if (pet.stateExpression) return pet.stateExpression;
     if (pet.thinking) return 'thinking';
     if (m === 'sit') return 'content';
     if (m === 'run') return 'run';
@@ -933,6 +935,7 @@ export function createBody(host, opts) {
       if (typeof s.listening === 'boolean') ctl.setListening(s.listening);
       if (typeof s.thinking === 'boolean') ctl.setThinking(s.thinking);
       if (typeof s.thoughtShown === 'boolean') ctl.setThoughtShown(s.thoughtShown);
+      if (s.expression === null || KIT_EXPRESSIONS.includes(s.expression)) ctl.pet.stateExpression = s.expression;
       if (s.skin) { ctl.setSkin(s.skin); if (opts.skinCss) skinStyle.textContent = opts.skinCss(s.skin); }
       if (s.theme) doc.documentElement.dataset.theme = s.theme;
     },

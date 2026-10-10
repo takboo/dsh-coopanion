@@ -183,28 +183,33 @@ try {
   await page.locator('#character-select').selectOption('whale');
   await page.waitForFunction(() => document.getElementById('character-select').value === 'whale' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=whale]');
+  await page.locator('#characters-close').click();
   host.send({ type: 'start-task' });
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'real Harness thinking uses animation without status speech');
   const logged = new Promise(resolveLog => {
     const receive = message => { if (message?.type === 'session-log') { host.off('message', receive); resolveLog(message.events); } };
     host.on('message', receive);
   });
   host.send({ type: 'finish-task' });
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'happy');
-  await page.waitForSelector('#toast:not([hidden])');
-  assert.match(await page.locator('#toast-title').innerText(), /任务完成/);
+  await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '安装验证的最终回复。任务已完成。');
+  assert.equal(await page.locator('#toast').isVisible(), false);
   assert.ok((await logged).includes('turn/end'), 'notification comes from the real host session log');
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
   host.send({ type: 'start-task', sessionId: 'host-other' });
   await page.waitForFunction(() => document.querySelector('#conversation-list [data-session-id="host-other"]'));
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'thinking');
-  assert.equal(await page.locator('#chat-session-name').innerText(), '第二会话', 'a newly created session becomes the conversation the character is accompanying');
+  assert.equal(await page.locator('#chat-session-name').innerText(), '安装验证', 'a new background session preserves the explicit focus');
   await openSessionPicker(page);
-  assert.equal(await page.locator('#conversation-list [data-session-id="host-other"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#conversation-list [data-session-id="host-other"]').getAttribute('aria-selected'), 'false');
+  await page.locator('#conversation-list [data-session-id="host-other"]').click();
+  await page.waitForFunction(() => document.getElementById('chat-session-name').textContent === '第二会话');
+  await openSessionPicker(page);
   await mkdir(join(project, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(project, 'artifacts', `installed-sessions-${version}.png`) });
   await page.locator('#conversation-list [data-session-id="host-install"]').click();
-  await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
+  await page.waitForFunction(() => document.getElementById('chat-session-name').textContent === '安装验证');
   await page.keyboard.press('Escape');
   await mkdir(join(project, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(project, 'artifacts', `installed-${version}.png`) });
@@ -216,10 +221,14 @@ try {
   settings.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
   await settings.goto(hostUrl);
   await settings.getByRole('button', { name: /^(继续|Continue)$/, exact: true }).click();
-  // A background completion opens its own session in the actual Harness client.
+  // A queued background result opens its source in the actual Harness client.
   host.send({ type: 'finish-task', sessionId: 'host-other' });
-  await page.waitForFunction(() => document.getElementById('toast-title').textContent.includes('第二会话'));
-  await page.locator('#toast').click();
+  await page.waitForSelector('#attention:not([hidden])');
+  assert.equal(await page.locator('#chat-session-name').innerText(), '安装验证');
+  await page.locator('#attention').click();
+  await page.locator('#conversation-list [data-session-id="host-other"]').click();
+  await page.waitForFunction(() => document.getElementById('reader-text').textContent === '第二会话的最终回复。任务已完成。');
+  await page.locator('#reader-session').click();
   await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '第二会话' }).waitFor();
   await openSessionPicker(page); await page.locator('#conversation-list [data-session-id="host-install"]').click();
   await openSessionPicker(page); await page.locator('#conversation-open').click();

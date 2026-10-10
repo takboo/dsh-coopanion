@@ -85,11 +85,13 @@ talk(), setScheme(id, {fade}), dispose()
 |---|---|---|
 | 待机 | neutral | 可进行闲时活动 |
 | 思考 | thinking | thinking=true |
-| 工具工作 | determined | thinking=true |
-| 等待确认 | worried | 停止闲时活动 |
+| 生成 / 工具工作 | determined | expression=determined，生成时嘴部脉冲 |
+| 等待确认 | worried | expression=worried，停止闲时活动 |
 | 完成 | happy | 2.5 秒后回待机 |
-| 出错 | sad | 停止闲时活动 |
+| 出错 | sad | expression=sad，停止闲时活动 |
 | 用户休息 | sleep | 唤醒时 stand |
+
+共享 kit 支持可选 `set({ expression })`（kit 表情名或 null）来保持任务神态，不重复触发表情音效；独立实现的 API 2 body 可处理或忽略该扩展。状态文字与流式片段不会进入气泡，仅完成的最终回复用于说话。
 
 未声明的词不会调用。拖动或空中动作结束后再应用待处理的任务表情。逐字显示每个非标点字符时调用 `body.talk()`，共享 kit 将其转换为嘴部脉冲；配合 Web Audio 合成音效，不是 TTS。点击、换装及动作预览不会发模型消息。
 

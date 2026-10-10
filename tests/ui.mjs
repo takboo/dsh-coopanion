@@ -45,15 +45,18 @@ try {
   assert.equal(await page.locator('#conversation-list .conversation-card').count(), 1, 'search identifies sessions by their real prompt, including shared projects');
   assert.match(await page.locator('.session-detail').innerText(), /\/workspace\/dsh-coopanion.*#demo-n/);
   await page.locator('#conversation-search').fill('');
-  await page.locator('#conversation-list [data-session-id=demo-notes]').click(); await speechDone(page);
-  assert.match(await page.locator('#bubble-text').innerText(), /好，我来听.*另一个想法.*正在忙/);
+  await page.locator('#conversation-list [data-session-id=demo-notes]').click();
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'selection has no fabricated status speech');
   await openSessionPicker(); await page.locator('#conversation-list [data-session-id=demo]').click();
   console.log('UI: sessions passed'); await petClick();
-  await page.waitForFunction(() => /^(我在|摸摸头)/.test(document.getElementById('bubble-text').textContent));
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'touch interacts through the upstream body without a canned bubble');
+  await page.locator('[data-demo=happy]').click();
+  await page.waitForSelector('#bubble:not([hidden])');
   const partial = await page.locator('#bubble-text').textContent();
   await speechDone(page); const completed = await page.locator('#bubble-text').textContent();
   assert.ok(completed.length > partial.length, 'speech is typed progressively');
-  assert.match(completed, /摸摸头|我在呢|小星星/);
+  assert.match(completed, /任务完成/);
+  await page.locator('#dismiss').click();
 
   console.log('UI: speech passed'); const before = await page.locator('#pet').boundingBox();
   await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
@@ -63,7 +66,9 @@ try {
   await page.waitForFunction(() => document.getElementById('pet').dataset.mode !== 'drag' && document.getElementById('pet').dataset.mode !== 'air');
   const after = await page.locator('#pet').boundingBox(); assert.ok(after.x < before.x - 100, 'upstream drag/drop physics moves the body');
   console.log('UI: physics passed'); await page.locator('[data-demo=thinking]').click(); assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'thinking');
-  await page.locator('[data-demo=waiting]').click(); assert.match(await page.locator('#toast-title').innerText(), /等你确认/);
+  await page.locator('[data-demo=waiting]').click(); assert.equal(await page.locator('#bubble').isVisible(), false);
+  assert.equal(await page.locator('#attention').isVisible(), true, 'approval attention remains discoverable without a status bubble');
+  await page.locator('[data-demo=error]').click(); assert.equal(await page.locator('#bubble').isVisible(), false);
   await page.locator('[data-demo=happy]').click(); assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'happy');
   await petClick({}, true); await page.locator('#message').fill('<img src=x onerror="throw 1">'); await page.locator('#send').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('这是演示回复')); await speechDone(page);
@@ -103,13 +108,16 @@ try {
   await page.waitForTimeout(3800);
   assert.equal(await mainFrame(page).locator('[data-face]').getAttribute('data-face'), 'thinking', 'the thinking state survives the initial expression timeout');
   await page.locator('[data-demo=talking]').click();
-  await mainFrame(page).locator('[data-face=neutral]').waitFor();
+  await mainFrame(page).locator('[data-face=determined]').waitFor();
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'live output animates the mouth without exposing partial text');
   await mainFrame(page).locator('[data-talk]').evaluate(async () => {
     await new Promise((resolve, reject) => { const start = performance.now(); const check = () => { if (+document.querySelector('[data-talk]').dataset.talk > .2) resolve(); else if (performance.now() - start > 3000) reject(new Error('no mouth pulses')); else requestAnimationFrame(check); }; check(); });
   });
   await page.reload(); await page.waitForSelector('#pet[data-character=paper-star]');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator('[data-demo=waiting]').click();
+  assert.equal(await page.locator('#bubble').isVisible(), false);
+  await page.locator('[data-demo=happy]').click();
   assert.equal(await page.locator('#bubble').getAttribute('data-typing'), 'false', 'reduced motion shows speech immediately');
   await petClick({ button: 'right' }); await page.locator('#open-characters').click();
   await page.waitForFunction(() => !document.getElementById('character-use').disabled);
@@ -168,7 +176,22 @@ try {
   await page.locator('#character-use').click();
   await page.waitForSelector('#pet[data-character=whale][data-scheme=deepseek]');
   await page.locator('#characters-close').click();
-  await petClick(); await speechDone(page); await page.screenshot({ path: 'artifacts/desktop-pet.png' });
+  await page.locator('[data-demo=idle]').click();
+  await page.locator('[data-demo=long]').click(); await speechDone(page);
+  assert.ok((await page.locator('#bubble-text').textContent()).length < 200, 'a long final reply has a bounded preview');
+  await page.locator('#bubble-expand').click();
+  const fullReply = await page.locator('#reader-text').textContent();
+  assert.ok(fullReply.length > 1200); assert.ok(fullReply.endsWith('最后一句：这份回复完整地保留下来了。'));
+  await page.locator('[data-demo=background]').click();
+  assert.equal(await page.locator('#reader-text').textContent(), fullReply, 'a background reply cannot interrupt reading');
+  assert.equal(await page.locator('#chat-session-name').innerText(), '演示会话', 'background completion keeps the chat target fixed');
+  await page.keyboard.press('Escape');
+  await page.locator('#attention').click();
+  assert.equal(await page.locator('#sessions-pending').getAttribute('aria-pressed'), 'true');
+  await page.locator('#conversation-list [data-session-id=demo-notes]').click();
+  assert.equal(await page.locator('#reader-text').textContent(), '后台会话已经完成，这是它的最终回复。');
+  await page.keyboard.press('Escape');
+  await page.locator('[data-demo=happy]').click(); await speechDone(page); await page.screenshot({ path: 'artifacts/desktop-pet.png' });
   assert.deepEqual(errors, []);
   console.log('UI passed: native WebGL animation, speech/mouth synchronization, physics, sessions, chat, outfits, API 2 import, persistence, rejection and sandbox isolation.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); await rm(directory, { recursive: true, force: true }); }

@@ -17,6 +17,7 @@
     <div class="demo-status"><i></i> 浏览器演示 · 模拟 Harness 事件</div>
     <div class="demo-buttons">
       <button data-demo="thinking">思考</button><button data-demo="talking">回复</button><button data-demo="working">工作</button><button data-demo="waiting">等你确认</button><button data-demo="happy">任务完成</button><button data-demo="error">遇到问题</button>
+      <button data-demo="idle">空闲</button><button data-demo="long">长回复</button><button data-demo="background">后台完成</button>
     </div>
     <p class="hint">桌面插件会订阅真实任务，无需另填 API Key。</p>
     <div class="demo-footer">DEEPSEEK HARNESS PLUGIN <span>01 / THE WHALE</span></div>
@@ -26,11 +27,19 @@
     <section id="bubble" class="bubble interactive" hidden aria-live="polite">
       <button id="dismiss" class="b-close" aria-label="收起气泡">×</button>
       <p id="bubble-text" class="b-text"></p>
-      <div class="bubble-footer"><span id="bubble-activity" class="activity"></span><span id="bubble-status"></span><button id="bubble-session" hidden>回到会话 ↗</button></div>
+      <div class="reply-actions"><button id="bubble-reveal">立即显示</button><button id="bubble-expand" hidden>展开完整回复 ↗</button></div>
+      <div class="bubble-footer"><span id="bubble-status"></span><button id="bubble-session" hidden>回到会话 ↗</button></div>
+    </section>
+    <section id="reader" class="panel reader interactive" hidden role="dialog" aria-labelledby="reader-title">
+      <header><span class="conversation-heading"><small>捎回来的回复</small><strong id="reader-title"></strong></span><button id="reader-close" aria-label="收起完整回复">×</button></header>
+      <small id="reader-detail" class="reader-detail"></small>
+      <div id="reader-text" class="reader-text" tabindex="0"></div>
+      <footer class="reader-footer"><button id="reader-prev" aria-label="上一份回复">‹</button><span id="reader-count"></span><button id="reader-next" aria-label="下一份回复">›</button><button id="reader-session" class="session-link">回到这段会话 ↗</button></footer>
     </section>
     <section id="conversations" class="panel conversations interactive" hidden>
       <header><span class="conversation-heading"><small>一起工作的片段</small><strong>这次，陪哪一段？</strong></span><button id="conversations-close" aria-label="收起对话气泡">×</button></header>
-      <p class="conversation-intro">选一段，我就转过去陪着。其他对话需要你时，也会提醒你。</p>
+      <p class="conversation-intro">固定陪着你选的这段。后台继续工作，回复留在这里，遇到要紧事就叫你。</p>
+      <div class="conversation-tabs"><button id="sessions-all" aria-pressed="true">全部</button><button id="sessions-pending" aria-pressed="false">待查看</button></div>
       <label class="session-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="conversation-search" type="search" placeholder="找提问、项目或编号…" aria-label="搜索会话"></label>
       <div id="conversation-list" class="conversation-list" role="listbox" aria-label="切换当前对话"></div>
       <footer class="conversation-footer"><span id="conversation-count"></span><button id="conversation-open" class="session-link">打开当前会话 ↗</button></footer>
@@ -39,8 +48,9 @@
       <header><span class="conversation-heading"><small id="chat-character">DeepSeek 大肥鱼</small><strong id="chat-title">我在，慢慢说。</strong></span><button id="chat-close" aria-label="关闭聊天">×</button></header>
       <button id="chat-current" class="chat-current" type="button"><span><small id="chat-session-state">正在陪你聊</small><strong id="chat-session-name">还没有对话</strong><small id="chat-session-detail"></small></span><b>换一段 ›</b></button>
       <p id="chat-reply" class="chat-reply" hidden></p>
+      <button id="chat-read" class="session-link" hidden>读完整回复 ↗</button>
       <div class="pet-greetings" aria-label="和角色互动"><button data-gesture="wave">打个招呼</button><button data-gesture="cheer">给我打气</button><button id="chat-session" class="session-link">回到会话 ↗</button></div>
-      <p id="chat-help">消息会交给当前对话，回复显示在气泡里。</p>
+      <p id="chat-help">消息交给关注的会话，完成后把最终回复捎回来。</p>
       <form id="chat-form"><textarea id="message" rows="3" maxlength="2000" placeholder="接着这段对话说点什么…" aria-label="消息"></textarea><div class="compose-footer"><small>⌘ / Ctrl + Enter 发送</small><button id="send" type="submit">捎给这段对话 ↗</button></div></form>
     </section>
     <section id="menu" class="menu interactive" hidden>
@@ -68,6 +78,7 @@
       <p id="character-status" role="status">支持 Coopanion API 2 ZIP 角色包；角色和配色会在重启后保留。</p>
     </section>
     <div id="pet" class="pet interactive" hidden data-mood="idle" tabindex="0" role="button" aria-label="DeepSeek 大肥鱼，点击互动，双击聊天，右键菜单，拖动移动"></div>
+    <button id="attention" class="attention interactive" hidden aria-label="查看待处理会话"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4Z"/><path d="m4 6 8 7 8-7"/></svg><span id="attention-count"></span></button>
     <button id="toast" class="toast interactive" hidden><span>🐳</span><div><strong id="toast-title"></strong><p id="toast-body"></p></div><b>↗</b></button>
   </main>
   <script src="pet.js" type="module"></script>

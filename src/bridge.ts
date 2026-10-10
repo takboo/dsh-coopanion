@@ -23,6 +23,7 @@ export interface PetBridge {
 export class ElectronBridge extends EventEmitter implements PetBridge {
   private child?: ChildProcess;
   private latest?: PetSnapshot;
+  private resultKey?: string;
   private closing = false;
 
   async start(options: DesktopOptions): Promise<void> {
@@ -42,6 +43,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     child.on('message', message => {
       if (isRecord(message) && message.type === 'action') this.emit('action', message.action);
       if (isRecord(message) && message.type === 'tray-state') this.emit('tray-state', message.state);
+      if (isRecord(message) && message.type === 'tray-icon') this.emit('tray-icon', message);
       if (isRecord(message) && message.type === 'visibility' && typeof message.visible === 'boolean') this.emit('lifecycle', { running: true, visible: message.visible });
     });
     await new Promise<void>((resolve, reject) => {
@@ -51,7 +53,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
       };
       const ready = (message: unknown) => {
         if (isRecord(message) && message.type === 'ready') {
-          this.send({ type: 'init', options, snapshot: this.latest }); finish();
+          this.send({ type: 'init', options, snapshot: this.latest && desktopSnapshot(this.latest, true) }); finish();
         }
       };
       const failed = (error: Error) => { this.child = undefined; finish(error); };
@@ -68,7 +70,12 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     });
   }
 
-  update(snapshot: PetSnapshot): void { this.latest = snapshot; this.send({ type: 'snapshot', snapshot }); }
+  update(snapshot: PetSnapshot): void {
+    this.latest = snapshot;
+    const key = snapshot.results.map(result => `${result.id}:${result.read}`).join('|');
+    this.send({ type: 'snapshot', snapshot: desktopSnapshot(snapshot, key !== this.resultKey) });
+    this.resultKey = key;
+  }
   notify(notice: PetNotice): void { this.send({ type: 'notice', notice }); }
   onAction(listener: (action: unknown) => void): void { this.on('action', listener); }
   removeAction(listener: (action: unknown) => void): void { this.off('action', listener); }
@@ -96,3 +103,12 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+
+/** Stream animation updates carry metadata; full result text crosses IPC only when it changes. */
+function desktopSnapshot(snapshot: PetSnapshot, includeResults: boolean) {
+  const { results, ...state } = snapshot;
+  return { ...state, text: state.mood === 'happy' ? '' : state.text,
+    sessions: state.sessions.map(session => ({ ...session, text: session.mood === 'happy' ? '' : session.text, reply: '' })),
+    ...(includeResults ? { results } : {}),
+  };
+}

@@ -2,9 +2,18 @@
 // Unicode-safe plain text, punctuation pauses, and the original character/sound pulses.
 const PAUSE = /[,，。!?！？…、.;；:：]/;
 const SILENT = /[\s,，。!?！？…、.;；:：「」“”()（）]/;
-export function createSpeech({ text, node, onCharacter, immediate = false }) {
+export function replyPreview(text, limit = 180) {
+  const chars = Array.from(text.trim());
+  if (chars.length <= limit) return { text: chars.join(''), long: false };
+  let end = limit;
+  for (let i = limit - 1; i >= limit * .55; i--) if (/[。！？.!?\n]/.test(chars[i])) { end = i + 1; break; }
+  return { text: chars.slice(0, end).join('').trimEnd() + '…', long: true };
+}
+
+export function createSpeech({ text, node, onCharacter, immediate = false, maxDuration = 3 }) {
   let chars = Array.from(text);
   let shown = immediate ? chars.length : 0, acc = 0;
+  const rate = () => Math.max(22, chars.reduce((n, ch) => n + (PAUSE.test(ch) ? 5 : 1), 0) / maxDuration);
   node.textContent = chars.slice(0, shown).join('');
   return {
     get done() { return shown >= chars.length; },
@@ -17,7 +26,7 @@ export function createSpeech({ text, node, onCharacter, immediate = false }) {
     },
     finish() { shown = chars.length; node.textContent = text; },
     step(dt) {
-      acc += dt * 20;
+      acc += dt * rate();
       while (acc >= 1 && shown < chars.length) {
         const ch = chars[shown++]; acc -= PAUSE.test(ch) ? 5 : 1;
         if (!SILENT.test(ch)) onCharacter(ch);

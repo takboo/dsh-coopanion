@@ -118,6 +118,7 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
       })(); return;
     }
     if (action.type === 'select' && typeof action.sessionId === 'string') { model.select(action.sessionId); update(); return; }
+    if (action.type === 'read' && typeof action.resultId === 'string') { if (model.read(action.resultId)) update(); return; }
     if (action.type === 'open-session' && typeof action.sessionId === 'string') {
       if (!model.select(action.sessionId)) return;
       navigation = { sessionId: action.sessionId, expires: Date.now() + 30000 };

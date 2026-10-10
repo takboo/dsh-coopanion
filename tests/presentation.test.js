@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
-import { createSpeech } from '../web/speech.js';
-import { shortSessionIds } from '../web/session-ui.js';
+import { createSpeech, replyPreview } from '../web/speech.js';
+import { shortSessionIds, sessionActivity } from '../web/session-ui.js';
 import tray from '../desktop/tray-state.cjs';
 
 it('keeps the visible Unicode prefix and punctuation pause when live speech is extended', () => {
@@ -24,8 +24,28 @@ it('distinguishes host IDs with the same session prefix and collision-prone firs
 it('projects selected session, appearance, visibility and preferences into the macOS status bar', () => {
   const snapshot = { sessionId: 'b', mood: 'talking', active: true, sessions: [{ id: 'a', label: '菜单' }, { id: 'b', label: '修复同步', mood: 'talking' }] };
   const state = tray.trayState(snapshot, { characterId: 'whale', scheme: 'harness', name: '大肥鱼', sleeping: true, sound: false }, { roam: false, notifications: false }, true);
-  expect(state).toMatchObject({ sessionId: 'b', sessionLabel: '修复同步', mood: 'talking', title: '回复', sleeping: false, characterId: 'whale', scheme: 'harness', visible: true, roam: false, notifications: false, sound: false });
+  expect(state).toMatchObject({ sessionId: 'b', sessionLabel: '修复同步', mood: 'talking', title: '', icon: 'talking', sleeping: false, characterId: 'whale', scheme: 'harness', visible: true, roam: false, notifications: false, sound: false });
   expect(state.sessions.map(s => s.selected)).toEqual([true, false]);
   expect(state.tooltip).toContain('正在回复');
-  expect(tray.trayState({ ...snapshot, mood: 'idle', active: false }, { sleeping: true }).title).toBe('休息');
+  expect(tray.trayState({ ...snapshot, mood: 'idle', active: false, sessions: [] }, { sleeping: true })).toMatchObject({ title: '', icon: 'sleeping' });
+});
+
+it('bounds preview typing time while preserving full Unicode text for the reader', () => {
+  const full = '一句完整的话。\n' + '🐳很长很长，'.repeat(900) + '最后一句';
+  const preview = replyPreview(full);
+  expect(preview.long).toBe(true); expect(Array.from(preview.text).length).toBeLessThanOrEqual(181);
+  expect(preview.text).not.toMatch(/[\uD800-\uDBFF]$/);
+  const node = { textContent: '' };
+  const speech = createSpeech({ text: preview.text, node, onCharacter: () => {} });
+  for (let n = 0; n < 62; n++) speech.step(.05);
+  expect(speech.done).toBe(true); expect(node.textContent).toBe(preview.text);
+  expect(full.endsWith('最后一句')).toBe(true);
+});
+
+it('shares background attention and active work between the character and tray without changing focus', () => {
+  const snapshot = { sessionId: 'a', mood: 'thinking', active: true, sessions: [{ id: 'a', mood: 'thinking', active: true }, { id: 'b', mood: 'waiting', active: true, unread: 2 }, { id: 'c', mood: 'idle', unread: 1 }] };
+  expect(sessionActivity(snapshot)).toMatchObject({ mood: 'thinking', icon: 'waiting', waiting: 1, unread: 3, busy: 2, pending: 2 });
+  const state = tray.trayState(snapshot);
+  expect(state.activity).toEqual(sessionActivity(snapshot)); expect(state.sessionId).toBe('a');
+  expect(tray.trayState({ ...snapshot, mood: 'idle', active: false, sessions: snapshot.sessions.slice(1) }, { sleeping: true })).toMatchObject({ mood: 'waiting', sleeping: false });
 });

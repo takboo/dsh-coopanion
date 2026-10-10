@@ -17,7 +17,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .bubble::before, .bubble::after, .panel::before, .panel::after, .menu::before, .menu::after { content: ''; position: absolute; left: calc(var(--tail, 50%) - 12px); bottom: -11px; width: 22px; height: 11.5px; pointer-events: none; }
 .bubble::before, .panel::before, .menu::before { background: var(--skin-ink); clip-path: path('M0 0.5 L8.9 9.4 Q11 11.5 13.1 9.4 L22 0.5 Z'); }
 .bubble::after, .panel::after, .menu::after { background: var(--surface); clip-path: path('M3.04 0 L9.6 6.56 Q11 7.96 12.4 6.56 L18.96 0 Z'); }
-.bubble { z-index: 3; width: max-content; max-width: min(340px, calc(100vw - 20px)); padding: 12px 30px 12px 15px; font-size: 14.5px; line-height: 1.55; user-select: text; transform-origin: var(--tail, 50%) calc(100% + 10px); }
+.bubble { z-index: 3; width: min(340px, calc(100vw - 20px)); padding: 12px 30px 12px 15px; font-size: 14.5px; line-height: 1.55; user-select: text; transform-origin: var(--tail, 50%) calc(100% + 10px); }
 .bubble.pop { animation: bubble-in .26s cubic-bezier(.3,1.5,.5,1); }
 @keyframes bubble-in { from { transform: scale(.5); opacity: 0; } }
 .b-text { margin: 0; min-height: 1.55em; white-space: pre-wrap; overflow-wrap: anywhere; max-height: min(240px, 38vh); overflow-y: auto; }
@@ -29,6 +29,26 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 #bubble-status { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 150px; }
 .bubble-footer:has(#bubble-status:empty):has(#bubble-session[hidden]) { display: none; }
 .bubble-footer button { margin-left: auto; padding: 0; color: var(--accent); background: none; font-size: 11px; white-space: nowrap; }
+.reply-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.reply-actions button { background: transparent; color: var(--accent); font-size: 11px; padding: 0; }
+.reply-actions:has(button[hidden]):has(#bubble-expand[hidden]) { margin: 0; }
+.reader { width: min(520px, calc(100vw - 20px)); max-height: calc(100vh - 24px); }
+.reader .conversation-heading { min-width: 0; }
+.reader .conversation-heading strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-detail { display: block; color: var(--muted); margin: 8px 0 14px; font-size: 10px; }
+.reader-text { max-height: min(460px, calc(100vh - 190px)); overflow-y: auto; overscroll-behavior: contain; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.85; user-select: text; padding: 3px 10px 10px 2px; }
+.reader-footer { display: flex; align-items: center; gap: 10px; border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 9px; }
+.reader-footer>button:not(.session-link) { width: 25px; height: 25px; border-radius: 8px; color: var(--accent); background: var(--tint); font-size: 20px; }
+#reader-count { font-size: 10px; color: var(--muted); }
+#reader-session { margin-left: auto; }
+.attention { position: absolute; z-index: 2; display: flex; align-items: center; gap: 4px; padding: 5px 7px; border: 1.5px solid var(--skin-ink); border-radius: 12px 12px 12px 3px; color: var(--accent); background: var(--surface); box-shadow: 0 3px 10px var(--shadow); }
+.attention svg { width: 15px; height: 15px; }
+.attention span { font-size: 10px; font-weight: 600; }
+.attention[data-urgent=true] { color: #a36543; }
+.conversation-tabs { display: flex; gap: 5px; margin: 0 17px 9px; }
+.conversation-tabs button { font-size: 10px; color: var(--muted); background: transparent; padding: 5px 10px; border-radius: 10px; }
+.conversation-tabs [aria-pressed=true] { background: var(--tint); color: var(--accent); }
+.conversation-card[data-unread=true] { border-color: var(--line); }
 .activity { color: var(--accent); white-space: nowrap; font-weight: 600; }
 .panel { width: min(340px, calc(100vw - 20px)); padding: 16px; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

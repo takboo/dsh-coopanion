@@ -1,4 +1,5 @@
 /** Test-only app mounted by the published DSH CLI, using its real session store. */
+import { randomUUID } from 'node:crypto';
 export const inject = ['sessions', 'appReady', 'webServer', 'connection', 'settings'];
 
 export function apply(ctx) {
@@ -11,6 +12,7 @@ export function apply(ctx) {
       sessions.set(id, session);
       session.append('turn/start', { turn: 1 });
     } else if (message?.type === 'finish-task' && (session = sessions.get(message.sessionId ?? 'host-install'))) {
+      session.append('assistant/message', { turn: 1, step: 1, message: { role: 'assistant', id: randomUUID(), content: [{ type: 'text', text: `${message.sessionId === 'host-other' ? '第二会话' : '安装验证'}的最终回复。任务已完成。` }], source: { kind: 'model', provider: 'test', model: 'test' } }, stream: [] }, { surfaceOp: 'append' });
       session.append('turn/end', { turn: 1, reason: { kind: 'completed' } });
       process.send?.({ type: 'session-log', events: session.log.map(event => event.type) });
     } else if (message?.type === 'follow-system-language') {
