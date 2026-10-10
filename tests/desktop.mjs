@@ -9,6 +9,7 @@ import { once } from 'node:events';
 import { chromium } from 'playwright-core';
 import { ElectronBridge } from '../dist/bridge.js';
 import { importCharacter } from './helpers/characters.mjs';
+import { petClick } from './helpers/native-pointer.mjs';
 import { unzipSync } from 'fflate';
 
 let display, browser;
@@ -61,7 +62,7 @@ try {
   assert.equal(sourceResponse.status, 200);
   const source = unzipSync(new Uint8Array(await sourceResponse.arrayBuffer()));
   assert.ok(source['src/figure-server.ts'] && source['npm-shrinkwrap.json']);
-  await page.locator('#pet').dblclick(); await page.locator('#message').fill('通过桌宠发送'); await page.locator('#send').click();
+  await petClick(page, {}, true); await page.locator('#message').fill('通过桌宠发送'); await page.locator('#send').click();
   for (let n = 0; n < 30 && actions.length === 0; n++) await pause(50);
   assert.deepEqual(actions[0], { type: 'chat', text: '通过桌宠发送', sessionId: 'native-test' });
   bridge.update({ ...snapshot, mood: 'happy', text: '宿主回复已到达。' });
@@ -74,7 +75,7 @@ try {
   assert.deepEqual(actions[1], { type: 'open-session', sessionId: 'native-test' });
   bridge.update({ ...snapshot, mood: 'idle', text: '准备好了，随时叫我。', revision: 2, sessions: [...snapshot.sessions, { id: 'second-test', label: '另一会话', mood: 'working', text: '正在运行命令', reply: '', revision: 1 }] });
   await page.waitForFunction(() => document.getElementById('pet').dataset.mood === 'idle');
-  await page.locator('#pet').dblclick(); await page.locator('#chat-current').click();
+  await petClick(page, {}, true); await page.locator('#chat-current').click();
   assert.match(await page.locator('.conversation-intro').innerText(), /选一段，我就转过去陪着/);
   await page.locator('#conversation-list [data-session-id="second-test"]').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('正在忙'));
@@ -83,7 +84,7 @@ try {
   assert.deepEqual(actions[2], { type: 'select', sessionId: 'second-test' });
   await page.keyboard.press('Escape');
   await page.waitForSelector('#pet[data-character=whale]');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await petClick(page, { button: 'right' }); await page.locator('#open-characters').click();
   await importCharacter(page, 'paper-star.zip');
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
@@ -105,7 +106,7 @@ try {
   await page.locator('#characters-close').click();
   bridge.update({ ...snapshot, mood: 'idle', active: false, text: '现在可以休息。', revision: 3 });
   await page.waitForSelector('#pet[data-mood=idle]');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await petClick(page, { button: 'right' }); await page.locator('#toggle-sleep').click();
   await page.waitForSelector('#pet[data-mode=sleep]');
   await waitTray(state => state?.sleeping === true && state.scheme === 'night');
   bridge.update({ ...snapshot, active: true, revision: 4 });
@@ -132,7 +133,7 @@ try {
   await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); page = browser.contexts()[0].pages()[0];
   await page.waitForSelector('#pet[data-character=paper-star][data-scheme=night]');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await petClick(page, { button: 'right' }); await page.locator('#open-characters').click();
   await page.waitForFunction(() => !document.getElementById('character-remove').disabled);
   assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 1);
   await page.locator('#character-remove').click(); await page.waitForSelector('#pet[data-character=whale]');

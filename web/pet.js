@@ -45,7 +45,10 @@ function position() {
   if (box) {
     pet.hidden = false;
     x = box.x; y = box.y;
-    Object.assign(pet.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(1, box.w)}px`, height: `${Math.max(1, box.h)}px` });
+    // Keep the invisible input region on pixel boundaries while the artwork
+    // breathes at subpixel precision. Round outwards to contain the whole body.
+    const left = Math.floor(x), top = Math.floor(y);
+    Object.assign(pet.style, { left: `${left}px`, top: `${top}px`, width: `${Math.max(1, Math.ceil(x + box.w) - left)}px`, height: `${Math.max(1, Math.ceil(y + box.h) - top)}px` });
     pet.dataset.mode = layout.mode; pet.dataset.pressing = String(layout.pressing);
     pet.style.cursor = layout.cursor || 'grab';
   }
@@ -197,6 +200,7 @@ function receive(message) {
       $('toast').hidden = false; clearTimeout(toastTimer);
       toastTimer = setTimeout(() => { $('toast').hidden = true; }, options.bubbleDurationMs); break;
     }
+    case 'hit-state': pet.dataset.nativeHit = String(message.active); break;
     case 'cursor': hit(message.x, message.y); break;
     case 'display-changed': body?.set({ bounds: bounds() }); body?.place(innerWidth * .6, 1); position(); break;
   }

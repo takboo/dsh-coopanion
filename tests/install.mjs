@@ -9,6 +9,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { importCharacter } from './helpers/characters.mjs';
+import { petClick } from './helpers/native-pointer.mjs';
 
 const version = process.env.DSH_TEST_VERSION ?? '0.2.0-rc.2';
 assert.ok(['0.2.0-rc.2', '0.2.1-alpha.1'].includes(version), 'test only advertised DSH versions');
@@ -57,7 +58,7 @@ async function openPetSettings(page, chinese = true) {
   }
 }
 async function openSessionPicker(page) {
-  await page.locator('#pet').dblclick(); await page.locator('#chat-current').click();
+  await petClick(page, {}, true); await page.locator('#chat-current').click();
 }
 let display, host, browser, settingsBrowser;
 let hostUrl;
@@ -175,7 +176,7 @@ try {
   assert.equal(await page.locator('#demo').isVisible(), false);
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
   await page.waitForSelector('#pet[data-character=whale]');
-  await page.locator('#pet').click({ button: 'right' }); await page.locator('#open-characters').click();
+  await petClick(page, { button: 'right' }); await page.locator('#open-characters').click();
   await importCharacter(page, join(process.env.DSH_TEST_PACKAGE_DIR ?? project, 'paper-star.zip'));
   await page.waitForFunction(() => document.getElementById('character-select').value === 'paper-star' && !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star]');
@@ -238,7 +239,7 @@ try {
   await surface.getByRole('status').filter({ hasText: '已保存' }).waitFor();
   await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
   assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /size: 180/, 'native Host settings persist the size');
-  await page.locator('#pet').click({ button: 'right' });
+  await petClick(page, { button: 'right' });
   await page.locator('#toggle-roam').click();
   await surface.getByRole('switch', { name: '闲时走动', exact: true }).waitFor();
   await settings.waitForFunction(() => document.querySelector('.dsh-coopanion-settings [role="switch"][aria-label="闲时走动"]').getAttribute('aria-checked') === 'false');
