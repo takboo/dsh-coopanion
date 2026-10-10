@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -17,7 +17,9 @@ const project = fileURLToPath(new URL('../', import.meta.url));
 const manifest = JSON.parse(await readFile(join(project, 'package.json'), 'utf8'));
 const archive = resolve(process.env.DSH_TEST_PACKAGE ?? join(process.env.DSH_TEST_PACKAGE_DIR ?? project, `${manifest.name}-${manifest.version}.tgz`));
 assert.ok(existsSync(archive), 'run npm pack before the installation test');
-const root = await mkdtemp(join(tmpdir(), 'dsh-coopanion-install-'));
+// Windows TEMP can be an 8.3 alias (RUNNER~1). Use one physical path for the
+// CLI and profile loaders so stateful host modules share the same ESM identity.
+const root = realpathSync.native(await mkdtemp(join(process.env.RUNNER_TEMP ?? tmpdir(), 'dsh-coopanion-install-')));
 const runtime = process.env.DSH_TEST_RUNTIME ? resolve(process.env.DSH_TEST_RUNTIME) : join(root, 'runtime');
 const home = join(root, 'home');
 const profileName = 'coopanion-install';
