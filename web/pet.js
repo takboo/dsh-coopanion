@@ -319,7 +319,7 @@ $('conversation-list').onkeydown = event => {
 };
 $('conversations-close').onclick = closePanels;
 $('chat-close').onclick = closePanels;
-$('dismiss').onclick = () => { bubble.hidden = true; showNextReply(); };
+$('dismiss').onclick = () => { bubble.hidden = true; acknowledge(bubbleResult); showNextReply(); };
 $('bubble-reveal').onclick = () => { speech?.finish(); };
 $('bubble-expand').onclick = () => openReader(bubbleResult);
 $('chat-read').onclick = () => openReader((snapshot.results ?? []).find(r => r.sessionId === snapshot.sessionId && !r.read) ?? (snapshot.results ?? []).find(r => r.id === snapshot.sessions.find(s => s.id === snapshot.sessionId)?.replyId));
@@ -341,7 +341,7 @@ $('conversation-list').onclick = event => {
 function openSession(id) { if (id) { send({ type: 'open-session', sessionId: id }); closePanels(); bubble.hidden = true; } }
 $('conversation-open').onclick = () => openSession(snapshot.sessionId);
 $('chat-session').onclick = () => openSession(snapshot.sessionId);
-$('bubble-session').onclick = () => openSession(bubbleSession);
+$('bubble-session').onclick = () => { acknowledge(bubbleResult); openSession(bubbleSession); };
 $('chat-form').onsubmit = event => {
   event.preventDefault(); const text = $('message').value.trim();
   if (!text || !snapshot.sessionId) return;
@@ -394,7 +394,6 @@ function animate(now) {
   if (speech && !bubble.hidden) {
     if (reduced) speech.finish(); else speech.step(dt);
     bubble.dataset.typing = String(!speech.done); $('bubble-reveal').hidden = speech.done;
-    if (speech.done && $('bubble-expand').hidden) acknowledge(bubbleResult);
     if (speech.done && speechExpires === Infinity) speechExpires = now + options.bubbleDurationMs;
     if (bubble.matches(':hover') || bubble.contains(document.activeElement)) speechExpires = now + options.bubbleDurationMs;
     if (now >= speechExpires) { bubble.hidden = true; showNextReply(); }

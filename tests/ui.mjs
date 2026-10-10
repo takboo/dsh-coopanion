@@ -56,7 +56,9 @@ try {
   await speechDone(page); const completed = await page.locator('#bubble-text').textContent();
   assert.ok(completed.length > partial.length, 'speech is typed progressively');
   assert.match(completed, /任务完成/);
+  assert.equal(await page.locator('#attention-count').innerText(), '1', 'displaying a preview does not mark an unattended reply as read');
   await page.locator('#dismiss').click();
+  assert.equal(await page.locator('#attention').isVisible(), false, 'explicitly dismissing a reply acknowledges only that result');
 
   console.log('UI: speech passed'); const before = await page.locator('#pet').boundingBox();
   await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
