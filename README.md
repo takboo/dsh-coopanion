@@ -2,7 +2,7 @@
 
 给 [DeepSeek Harness Desktop](https://github.com/deepseek-ai/deepseek-harness) 加一只桌面伙伴。她会陪你工作，在任务完成、出错或需要确认时提醒你；双击角色，可以向已打开的 Harness 会话发送消息。
 
-**v0.4.0 使用 Coopanion 的原生动画与角色运行时，组合程序采用 AGPL-3.0-or-later。** 大肥鱼的网格变形、弹簧动作、动态五官、物理拖拽和八套配色直接复用上游固定版本。角色贴图保留独立权利声明，见 [第三方声明](THIRD_PARTY_NOTICES.md) 和 [上游版本记录](web/upstream/UPSTREAM.md)。
+**v0.4.1 使用 Coopanion 的原生动画与角色运行时，组合程序采用 AGPL-3.0-or-later。** 大肥鱼的网格变形、弹簧动作、动态五官、物理拖拽和八套配色直接复用上游固定版本。角色贴图保留独立权利声明，见 [第三方声明](THIRD_PARTY_NOTICES.md) 和 [上游版本记录](web/upstream/UPSTREAM.md)。
 
 ## 功能
 
@@ -13,9 +13,12 @@
 - 透明、无边框、置顶桌宠；空白区域点击穿透。点击互动、双击聊天、右键菜单、闲时活动、休息和显示 / 隐藏。
 - 角色周围不显示常驻按钮、会话气泡或名称标签；在聊天面板中点击当前会话可切换对话。
 - Harness 原生 **Settings → 桌宠** 页面：运行状态、启动 / 重启 / 关闭、显示 / 隐藏、角色管理及实时保存的偏好设置。
-- 会话选择、思考 / 工具工作 / 等待确认 / 完成 / 出错提示、系统通知和桌宠提醒。完成状态 2.5 秒后回到待机。
+- 实时思考 / 回复 / 工具工作 / 等待确认 / 完成 / 出错动画；新任务自动唤醒休息中的角色，思考标记持续显示，流式回复逐字续写而不重播。完成状态 2.5 秒后回到待机。
+- 会话以真实提问、项目路径、时间和有效短编号区分，支持搜索及键盘切换；旧会话从公开历史恢复提问。
+- 菜单与聊天使用角色风格的描边卡片，颜色跟随换装；摸头、叫醒、拖拽等互动使用上游身体事件。
+- macOS 状态栏同步当前角色 / 配色、会话、任务状态、休息、显示 / 隐藏和音效；走动、提醒开关与 Harness 设置共用持久偏好。
 - 聊天输入通过 `Agent.followup()` 进入 Harness 的持久会话，使用其现有模型、工具和权限。互动和换装不会自动发起模型请求。
-- 菜单提供 **下载本版本源码**，包含对应源代码、上游运行时、构建脚本和依赖锁文件。
+- 菜单提供 **源码 · AGPL**，包含对应源代码、上游运行时、构建脚本和依赖锁文件。
 
 审批提示引导你回到 Harness；桌宠不作出审批，也不单独收集 API Key。当前对话决定角色展示的状态及聊天消息的去向，其他对话有重要事件时仍会提醒。
 
@@ -31,7 +34,7 @@ v0.4.0 移除了旧 Canvas 关键帧引擎、`dsh-character` v1 协议、`.dshpe
 
 支持 **DSH 0.2.0-rc.2 和 0.2.1-alpha.1**；其他版本未声明兼容。
 
-1. 下载对应 [Release](https://github.com/takboo/dsh-coopanion/releases) 的 `.tgz`，或按下面步骤构建 `dsh-coopanion-0.4.0.tgz`。本分支的修改不代表该版本已经发布。
+1. 下载对应 [Release](https://github.com/takboo/dsh-coopanion/releases) 的 `.tgz`，或按下面步骤构建 `dsh-coopanion-0.4.1.tgz`。本分支的修改不代表该版本已经发布。
 2. 在 Harness 侧边栏 **插件** 页安装压缩包的绝对路径，启用 `dsh-coopanion`。
 3. 完全退出再重新打开 Harness。首次启动时会下载并校验 Electron 44 运行时。
 4. 打开一段 Harness 会话，双击角色聊天，或从 **Settings → 桌宠** 管理角色。
@@ -39,7 +42,7 @@ v0.4.0 移除了旧 Canvas 关键帧引擎、`dsh-character` v1 协议、`.dshpe
 也可使用 Desktop 自带的 CLI。先启动 Desktop 一次初始化 profile，完全退出应用，再执行：
 
 ```bash
-dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.4.0.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-coopanion-0.4.1.tgz
 ```
 
 npm 安装的 dsh 不能管理 Desktop 所拥有的 profile。Desktop 完全退出后执行包管理命令，再重新打开应用。
@@ -66,7 +69,7 @@ npm run test:install
 
 `npm run dev` 打开浏览器演示服务（默认 `http://127.0.0.1:4173`），`npm run demo` 启动桌面演示。演示中的任务事件是模拟的。浏览器预览和桌面版使用同一个 API 2 存储与沙箱运行时。
 
-浏览器测试检查实际 WebGL 动画、逐字说话与嘴部同步、拖拽 / 落地、会话、聊天、换装、包导入、重启保存及脚本隔离。桌面测试验证真实 Electron 窗口、IPC 和角色数据。安装测试使用官方 DSH profile loader 安装实际 `.tgz`，检查任务事件、会话导航、设置页、配置持久化和重启；`DSH_TEST_VERSION=0.2.1-alpha.1` 测试另一支持版本。
+浏览器测试检查实际 WebGL 动画、逐字说话与嘴部同步、拖拽 / 落地、会话、聊天、换装、包导入、重启保存及脚本隔离。桌面测试验证真实 Electron 窗口、IPC、流式回复、休息唤醒、状态栏投影和角色数据；CI 同时运行 Linux 和 macOS 原生窗口测试。安装测试使用官方 DSH profile loader 安装实际 `.tgz`，检查任务事件、会话导航、设置页、配置持久化和重启；`DSH_TEST_VERSION=0.2.1-alpha.1` 测试另一支持版本。
 
 窗口测试只在虚拟显示中使用测试沙箱参数与软件 WebGL。普通安装保留 Chromium sandbox、contextIsolation，关闭 Node integration。macOS / Windows 的实机窗口、系统通知和真实模型聊天仍需验收。
 

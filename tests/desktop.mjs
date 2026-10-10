@@ -38,16 +38,19 @@ try {
   process.env.DSH_PET_TEST_DEBUG_PORT = String(port);
   process.env.DSH_PET_TEST_NO_SANDBOX = '1';
   const actions = []; bridge.onAction(action => actions.push(action));
+  const trayStates = []; bridge.on('tray-state', state => trayStates.push(state));
+  const waitTray = async check => { for (let n = 0; n < 100; n++) { if (check(trayStates.at(-1))) return; await pause(50); } assert.fail('native tray did not synchronize'); };
   const failures = []; bridge.on('failure', error => failures.push(error.message));
   const snapshot = { mood: 'thinking', text: '真实 IPC 桌面测试', sessionId: 'native-test', sessions: [{ id: 'native-test', label: '桌面测试会话', mood: 'thinking', text: '', reply: '' }] };
   bridge.update(snapshot);
-  await bridge.start({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
+  await bridge.start({ size: 150, roam: false, notifications: true, bubbleDurationMs: 12000 });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   let page = browser.contexts()[0].pages()[0];
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '真实 IPC 桌面测试');
   assert.equal(await page.locator('#demo').isVisible(), false, 'native window does not masquerade as a browser demo');
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined', 'renderer has no Node access');
   assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'thinking');
+  await waitTray(state => state?.mood === 'thinking' && state.sessionId === 'native-test');
   await page.waitForSelector('#pet[data-mode]');
   const sandbox = await page.locator('#body-layer iframe').contentFrame().locator('body').evaluate(() => {
     let blocked = false; try { parent.document.body; } catch { blocked = true; }
@@ -91,6 +94,7 @@ try {
   await page.waitForFunction(() => !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=whale][data-scheme=claude]');
   assert.match(await page.locator('#character-credit').innerText(), /Pal-AI-Lab.*ZipZipPipe/);
+  await waitTray(state => state?.scheme === 'claude' && state.characterId === 'whale');
   assert.equal(actions.filter(action => action.type === 'chat').length, 1, 'character import and session navigation do not send extra model messages');
   await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/native-pet.png' });
   await page.locator('#character-select').selectOption('paper-star');
@@ -98,6 +102,30 @@ try {
   await page.locator('#character-scheme').selectOption('night');
   await page.waitForFunction(() => !document.getElementById('character-use').disabled);
   await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=paper-star][data-scheme=night]');
+  await page.locator('#characters-close').click();
+  bridge.update({ ...snapshot, mood: 'idle', active: false, text: '现在可以休息。', revision: 3 });
+  await page.waitForSelector('#pet[data-mood=idle]');
+  await page.locator('#pet').click({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await page.waitForSelector('#pet[data-mode=sleep]');
+  await waitTray(state => state?.sleeping === true && state.scheme === 'night');
+  bridge.update({ ...snapshot, active: true, revision: 4 });
+  await page.waitForSelector('#pet[data-mood=thinking]');
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mode !== 'sleep');
+  await waitTray(state => state?.mood === 'thinking' && !state.sleeping);
+  const live = { ...snapshot, active: true, mood: 'talking', speechId: 'native-stream', streaming: true, revision: 5, text: '实时' };
+  bridge.update(live); await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '实时');
+  bridge.update({ ...live, text: '实时回复', revision: 6 });
+  assert.match(await page.locator('#bubble-text').innerText(), /^实时/, 'appending a native live delta preserves the visible prefix');
+  await page.waitForFunction(() => document.getElementById('bubble-text').textContent === '实时回复');
+  await waitTray(state => state?.mood === 'talking' && state.title === '回复');
+  await page.locator('#dismiss').click();
+  bridge.update({ ...live, text: '实时回复继续', revision: 7 });
+  await pause(150);
+  assert.equal(await page.locator('#bubble').isVisible(), false, 'dismissed live speech stays closed as more deltas arrive');
+  bridge.configure({ size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 });
+  await waitTray(state => state?.roam === false && state.notifications === false);
+  bridge.control('hide'); await waitTray(state => state?.visible === false);
+  bridge.control('show'); await waitTray(state => state?.visible === true);
   await bridge.dispose();
   await browser.close(); browser = undefined;
   bridge = new ElectronBridge(); bridge.on('failure', error => failures.push(error.message)); bridge.update(snapshot);
@@ -108,6 +136,7 @@ try {
   await page.waitForFunction(() => !document.getElementById('character-remove').disabled);
   assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 1);
   await page.locator('#character-remove').click(); await page.waitForSelector('#pet[data-character=whale]');
+  await page.waitForFunction(() => document.getElementById('character-status').textContent.includes('已删除本地角色包'));
   await page.waitForFunction(() => document.getElementById('character-remove').disabled);
   assert.equal(await page.locator('#character-select option[value=paper-star]').count(), 0);
   await bridge.dispose();

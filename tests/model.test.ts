@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PetModel } from '../src/model.ts';
 import { SessionId, SessionSeq, type SessionEvent, type Session } from '@deepseek-ai/dsh-session';
-import { createAssistantMessage, createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm';
+import { createAssistantMessage, createUserMessage, createToolResultMessage, ToolCallId, LlmAttemptId } from '@deepseek-ai/dsh-llm';
 
 function session(id: string, origin?: 'subagent'): Pick<Session, 'id' | 'header'> {
   return { id: SessionId(id), header: { version: 4, id: SessionId(id), createdAt: 0, isSeeded: false, cwd: `/project/${id}`, origin } };
@@ -11,6 +11,37 @@ function event<T extends SessionEvent['type']>(type: T, data: Extract<SessionEve
   return { type, data, seq: SessionSeq(seq++), time: 0 } as SessionEvent;
 }
 describe('Harness task presentation', () => {
+  it('restores distinct human prompts for sessions in the same project without replaying task states', () => {
+    const m = new PetModel(), first = session('session-aaa111'), second = session('session-bbb222');
+    const a = { ...first, header: { ...first.header, cwd: '/project/shared' } }, b = { ...second, header: { ...second.header, cwd: '/project/shared' } };
+    const prompt = event('user/message', createUserMessage({ content: [{ type: 'text', text: '修复\n状态栏同步' }], source: { kind: 'user' } }));
+    m.observe({ ...a, snapshotEvents: () => [prompt] }); m.observe(b);
+    m.consume(b, event('user/message', createUserMessage({ content: [{ type: 'text', text: '重做会话选择' }], source: { kind: 'user' } })));
+    expect(m.snapshot().sessions.map(s => [s.label, s.project, s.cwd])).toEqual([['修复 状态栏同步', 'shared', '/project/shared'], ['重做会话选择', 'shared', '/project/shared']]);
+    expect(m.snapshot().mood).toBe('idle');
+  });
+  it('tracks real reasoning and text streams without restarting or accepting stale attempts', () => {
+    const m = new PetModel(), s = session('stream'), attemptId = LlmAttemptId('first');
+    m.consume(s, event('turn/start', { turn: 1 }));
+    m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 });
+    m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 0, time: 1, chunk: { type: 'reasoning-delta', index: 0, text: 'private reasoning' } });
+    expect(m.snapshot()).toMatchObject({ mood: 'thinking', active: true, streaming: true });
+    expect(m.snapshot().text).not.toContain('private');
+    for (const [index, text] of ['你好', '，正在输出'].entries()) m.stream(s, { type: 'chunk', attemptId, revision: 1, index: index + 1, time: 2, chunk: { type: 'text-delta', index: 1, text } });
+    expect(m.snapshot()).toMatchObject({ mood: 'talking', text: '你好，正在输出', speechId: attemptId });
+    expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 1, time: 1, chunk: { type: 'text-delta', index: 1, text: '重复' } })).toBe(false);
+    m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'block-end', index: 1, block: { type: 'text', text: '你好，正在输出' } } });
+    m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 4, time: 4, chunk: { type: 'text-delta', index: 2, text: '第二段' } });
+    expect(m.snapshot().text).toBe('你好，正在输出\n第二段');
+    m.consume(s, event('assistant/message', { turn: 1, step: 1, message: createAssistantMessage({ content: [{ type: 'text', text: '你好，正在输出' }, { type: 'text', text: '第二段' }], source: { provider: 'test', model: 'test' } }), stream: [] }));
+    expect(m.snapshot()).toMatchObject({ mood: 'talking', streaming: false, speechId: attemptId });
+    m.consume(s, event('turn/end', { turn: 1, reason: { kind: 'completed' } }));
+    expect(m.snapshot()).toMatchObject({ mood: 'happy', active: false });
+    expect(m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 })).toBe(false);
+    expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'text-delta', index: 1, text: '迟到' } })).toBe(false);
+    m.consume(s, event('turn/start', { turn: 2 }));
+    expect(m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 })).toBe(false);
+  });
   it('shows task work and assistant replies, then issues a completion notification', () => {
     const m = new PetModel(), s = session('one');
     m.consume(s, event('turn/start', { turn: 1 })); expect(m.snapshot().mood).toBe('thinking');

@@ -4,6 +4,7 @@ import { SessionId, SessionSeq, type Session } from '@deepseek-ai/dsh-session';
 import { Config, mountPet } from '../src/index.ts';
 import type { PetBridge } from '../src/bridge.ts';
 import type { Agent } from '@deepseek-ai/dsh-agent';
+import { LlmAttemptId } from '@deepseek-ai/dsh-llm';
 
 it('uses the real Cordis event bus, delegates approval, logs user input through the agent, and releases resources', async () => {
   const ctx = new Context();
@@ -28,6 +29,10 @@ it('uses the real Cordis event bus, delegates approval, logs user input through 
   expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', mood: 'happy' }));
   ctx.emit('session/event', fresh, { seq: SessionSeq(0), type: 'turn/start', data: { turn: 1 }, time: 0 });
   expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', mood: 'thinking' }));
+  const attemptId = LlmAttemptId('live-attempt');
+  ctx.emit('agent/assistant-stream', { agent, frame: { type: 'start', attemptId, revision: 1, turn: 1, step: 1 } });
+  ctx.emit('agent/assistant-stream', { agent, frame: { type: 'chunk', attemptId, revision: 1, index: 0, time: 1, chunk: { type: 'text-delta', index: 0, text: '实时回复' } } });
+  await vi.waitFor(() => expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'fresh', sessions: expect.arrayContaining([expect.objectContaining({ id: 'live', mood: 'talking', text: '实时回复', streaming: true })]) })));
   const delegated = vi.fn(async () => ({ status: 'denied' }));
   const outcome = await ctx.waterfall('approval/request', { agent, toolName: 'bash' }, delegated as never);
   expect(outcome).toEqual({ status: 'denied' }); expect(delegated).toHaveBeenCalledOnce();
@@ -55,6 +60,20 @@ it('keeps the plugin mounted when launch fails, and honors disabled auto-start',
   expect(ctx.coopanion.status().phase).toBe('stopped');
   expect((await ctx.coopanion.command('start')).phase).toBe('error');
   expect(ctx.coopanion.status().error).toBe('test: no display');
+  await fiber.dispose(); await ctx.fiber.dispose();
+});
+
+it('acknowledges desktop preference changes through the shared host configuration', async () => {
+  const ctx = new Context(); ctx.provide('agents', { list: () => [] });
+  let action: ((value: unknown) => void) | undefined;
+  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(), configure: vi.fn(), onAction: fn => { action = fn; }, removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  const fiber = ctx.plugin(scope => mountPet(scope, Config({ autoStart: false }), bridge)); await fiber.await();
+  action?.({ type: 'preference', field: 'roam', value: false });
+  await vi.waitFor(() => expect(bridge.configure).toHaveBeenLastCalledWith(expect.objectContaining({ roam: false, notifications: true })));
+  action?.({ type: 'preference', field: 'notifications', value: false });
+  await vi.waitFor(() => expect(bridge.configure).toHaveBeenLastCalledWith(expect.objectContaining({ roam: false, notifications: false })));
+  action?.({ type: 'preference', field: 'electronPath', value: true });
+  expect(bridge.configure).toHaveBeenCalledTimes(2);
   await fiber.dispose(); await ctx.fiber.dispose();
 });
 

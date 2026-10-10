@@ -36,10 +36,15 @@ try {
 
   await openSessionPicker();
   assert.equal(await page.locator('#conversation-list .conversation-card').count(), 2);
+  await page.locator('#conversation-search').fill('菜单');
+  assert.equal(await page.locator('#conversation-list .conversation-card').count(), 1, 'search identifies sessions by their real prompt, including shared projects');
+  assert.match(await page.locator('.session-detail').innerText(), /\/workspace\/dsh-coopanion.*#demo-n/);
+  await page.locator('#conversation-search').fill('');
   await page.locator('#conversation-list [data-session-id=demo-notes]').click(); await speechDone(page);
   assert.match(await page.locator('#bubble-text').innerText(), /好，我来听.*另一个想法.*正在忙/);
   await openSessionPicker(); await page.locator('#conversation-list [data-session-id=demo]').click();
-  console.log('UI: sessions passed'); await petClick(); await page.waitForSelector('#bubble[data-typing=true]');
+  console.log('UI: sessions passed'); await petClick();
+  await page.waitForFunction(() => /^(我在|摸摸头)/.test(document.getElementById('bubble-text').textContent));
   const partial = await page.locator('#bubble-text').textContent();
   await speechDone(page); const completed = await page.locator('#bubble-text').textContent();
   assert.ok(completed.length > partial.length, 'speech is typed progressively');
@@ -58,6 +63,12 @@ try {
   await petClick({}, true); await page.locator('#message').fill('<img src=x onerror="throw 1">'); await page.locator('#send').click();
   await page.waitForFunction(() => document.getElementById('bubble-text').textContent.includes('这是演示回复')); await speechDone(page);
   assert.match(await page.locator('#bubble-text').innerText(), /<img/); assert.equal(await page.locator('#bubble-text img').count(), 0);
+  await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mode === 'sleep');
+  await page.locator('[data-demo=thinking]').click();
+  await page.waitForFunction(() => document.getElementById('pet').dataset.mode !== 'sleep');
+  assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'thinking', 'a task wakes the body and overrides manual sleep');
+  await page.locator('[data-demo=happy]').click();
   await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
   await page.waitForFunction(() => document.getElementById('pet').dataset.mode === 'sleep');
   await petClick({ button: 'right' }); await page.locator('#toggle-sleep').click();
@@ -83,6 +94,11 @@ try {
   assert.match(await page.locator('#character-credit').innerText(), /AGPL/);
   await page.locator('#characters-close').click();
   await page.locator('[data-demo=thinking]').click();
+  await mainFrame(page).locator('[data-face=thinking]').waitFor();
+  await page.waitForTimeout(3800);
+  assert.equal(await mainFrame(page).locator('[data-face]').getAttribute('data-face'), 'thinking', 'the thinking state survives the initial expression timeout');
+  await page.locator('[data-demo=talking]').click();
+  await mainFrame(page).locator('[data-face=neutral]').waitFor();
   await mainFrame(page).locator('[data-talk]').evaluate(async () => {
     await new Promise((resolve, reject) => { const start = performance.now(); const check = () => { if (+document.querySelector('[data-talk]').dataset.talk > .2) resolve(); else if (performance.now() - start > 3000) reject(new Error('no mouth pulses')); else requestAnimationFrame(check); }; check(); });
   });

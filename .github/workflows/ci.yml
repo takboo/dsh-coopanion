@@ -38,6 +38,24 @@ jobs:
             dsh-coopanion-*.tgz
             paper-star.zip
             SHA256SUMS
+  macos-native:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run setup:electron
+      - run: npm run build
+      - run: npm run character:pack -- examples/star paper-star.zip
+      - run: npm run test:desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-native
+          path: artifacts/native-pet.png
   install:
     needs: test
     runs-on: ubuntu-latest
@@ -76,7 +94,7 @@ jobs:
             artifacts/settings-*.png
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test, install]
+    needs: [test, macos-native, install]
     runs-on: ubuntu-latest
     permissions:
       contents: write

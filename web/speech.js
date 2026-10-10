@@ -3,11 +3,18 @@
 const PAUSE = /[,，。!?！？…、.;；:：]/;
 const SILENT = /[\s,，。!?！？…、.;；:：「」“”()（）]/;
 export function createSpeech({ text, node, onCharacter, immediate = false }) {
-  const chars = Array.from(text);
+  let chars = Array.from(text);
   let shown = immediate ? chars.length : 0, acc = 0;
   node.textContent = chars.slice(0, shown).join('');
   return {
     get done() { return shown >= chars.length; },
+    // Preserve the visible prefix and punctuation clock as provider deltas arrive.
+    update(next) {
+      if (!next.startsWith(text)) return false;
+      text = next; chars = Array.from(text);
+      if (immediate) { shown = chars.length; node.textContent = text; }
+      return true;
+    },
     finish() { shown = chars.length; node.textContent = text; },
     step(dt) {
       acc += dt * 20;

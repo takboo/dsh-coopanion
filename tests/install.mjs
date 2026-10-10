@@ -238,6 +238,15 @@ try {
   await surface.getByRole('status').filter({ hasText: '已保存' }).waitFor();
   await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
   assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /size: 180/, 'native Host settings persist the size');
+  await page.locator('#pet').click({ button: 'right' });
+  await page.locator('#toggle-roam').click();
+  await surface.getByRole('switch', { name: '闲时走动', exact: true }).waitFor();
+  await settings.waitForFunction(() => document.querySelector('.dsh-coopanion-settings [role="switch"][aria-label="闲时走动"]').getAttribute('aria-checked') === 'false');
+  await page.waitForFunction(() => document.getElementById('toggle-roam').getAttribute('aria-checked') === 'false');
+  assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /roam: false/, 'desktop menu persists the same Host preference');
+  await surface.getByRole('switch', { name: '闲时走动', exact: true }).click();
+  await page.waitForFunction(() => document.getElementById('toggle-roam').getAttribute('aria-checked') === 'true');
+  await page.keyboard.press('Escape');
   await page.close();
   await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
   await surface.getByRole('button', { name: '启动桌宠', exact: true }).click();

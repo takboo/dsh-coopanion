@@ -1,11 +1,13 @@
 import { basename } from 'node:path';
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session';
+import type { AssistantStreamFrame } from '@deepseek-ai/dsh-agent';
 
-export type Mood = 'idle' | 'thinking' | 'working' | 'waiting' | 'happy' | 'error' | 'sleeping';
-export interface PetSession { id: string; label: string; mood: Mood; text: string; reply: string; revision: number; chatAvailable?: boolean; }
-export interface PetSnapshot { mood: Mood; text: string; sessionId: string | null; revision: number; sessions: PetSession[]; }
+export type Mood = 'idle' | 'thinking' | 'talking' | 'working' | 'waiting' | 'happy' | 'error' | 'sleeping';
+export interface PetSession { id: string; label: string; project: string; cwd: string; prompt: string; createdAt: number; updatedAt: number; mood: Mood; text: string; reply: string; revision: number; active: boolean; streaming: boolean; speechId: string; chatAvailable?: boolean; }
+export interface PetSnapshot { mood: Mood; text: string; sessionId: string | null; revision: number; active: boolean; streaming: boolean; speechId: string; sessions: PetSession[]; }
 export interface PetNotice { title: string; body: string; sessionId: string; }
-interface TaskState { seq: number; turn: number; active: boolean; tools: Map<string, string>; approvals: Set<symbol>; celebrateUntil: number; }
+interface TaskState { seq: number; turn: number; active: boolean; tools: Map<string, string>; approvals: Set<symbol>; celebrateUntil: number; stream?: { id: string; revision: number; index: number; text: string; blocks: Map<number, string> }; }
+type ObservedSession = Pick<Session, 'id' | 'header'> & Partial<Pick<Session, 'snapshotEvents'>>;
 const ready = '准备好了，随时叫我。';
 
 /** Keeps independent task states so background sessions cannot overwrite the selected conversation. */
@@ -15,7 +17,7 @@ export class PetModel {
   private tasks = new Map<string, TaskState>();
   constructor(private readonly now: () => number = Date.now) {}
 
-  observe(session: Pick<Session, 'id' | 'header'>): PetSession | undefined {
+  observe(session: ObservedSession): PetSession | undefined {
     if (session.header.origin === 'subagent') return;
     let item = this.sessions.get(session.id);
     if (!item) {
@@ -24,12 +26,69 @@ export class PetModel {
         const old = [...this.sessions.keys()].find(id => id !== this.selected);
         if (old) { this.sessions.delete(old); this.tasks.delete(old); }
       }
-      item = { id: session.id, label: session.header.cwd ? basename(session.header.cwd) : `会话 ${session.id.slice(0, 8)}`, mood: 'idle', text: ready, reply: '', revision: 0 };
+      const project = session.header.cwd ? basename(session.header.cwd) : '未指定项目';
+      item = { id: session.id, label: project, project, cwd: session.header.cwd ?? '', prompt: '', createdAt: session.header.createdAt, updatedAt: session.header.createdAt, mood: 'idle', text: ready, reply: '', revision: 0, active: false, streaming: false, speechId: '' };
       this.sessions.set(session.id, item);
       this.tasks.set(session.id, { seq: -1, turn: 0, active: false, tools: new Map(), approvals: new Set(), celebrateUntil: 0 });
       this.selected ??= session.id;
+      // Restore identity from public history, without replaying stale task states or notices.
+      for (const event of session.snapshotEvents?.() ?? []) this.describe(item, event);
     }
     return item;
+  }
+
+  private describe(item: PetSession, event: SessionEvent): void {
+    if (event.type !== 'user/message' || event.data.source.kind !== 'user') return;
+    const text = event.data.content.filter(p => p.type === 'text').map(p => p.text).join(' ').replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    if (!item.prompt) item.label = Array.from(text).slice(0, 64).join('');
+    item.prompt = Array.from(text).slice(0, 160).join(''); item.updatedAt = event.time;
+  }
+
+  /** Live chunks are not session events. Keep attempt identity and ordering separate from durable seq. */
+  stream(session: ObservedSession, frame: AssistantStreamFrame): boolean {
+    const item = this.observe(session);
+    if (!item) return false;
+    const task = this.tasks.get(item.id)!;
+    if (frame.type === 'start') {
+      if (frame.turn < task.turn || (frame.turn === task.turn && !task.active && task.seq >= 0) || (task.stream && frame.revision <= task.stream.revision)) return false;
+      task.turn = frame.turn; task.active = true;
+      task.stream = { id: frame.attemptId, revision: frame.revision, index: -1, text: '', blocks: new Map() };
+      item.streaming = true; item.speechId = frame.attemptId;
+      if (!task.tools.size && !task.approvals.size) this.present(item, 'thinking', '正在思考…');
+      return true;
+    }
+    const stream = task.stream;
+    if (!task.active || !stream || stream.id !== frame.attemptId || stream.revision !== frame.revision || frame.index <= stream.index) return false;
+    stream.index = frame.index;
+    if (frame.type === 'end') {
+      item.streaming = false;
+      if (frame.outcome.kind === 'abandoned' && !task.tools.size && !task.approvals.size) this.present(item, 'thinking', '正在重新准备回复…');
+      return true;
+    }
+    const chunk = frame.chunk;
+    if (chunk.type === 'text-delta' || (chunk.type === 'block-end' && chunk.block.type === 'text')) {
+      if (chunk.type === 'text-delta') stream.blocks.set(chunk.index, ((stream.blocks.get(chunk.index) ?? '') + chunk.text).slice(0, 1200));
+      else if (chunk.block.type === 'text') stream.blocks.set(chunk.index, chunk.block.text.slice(0, 1200));
+      stream.text = [...stream.blocks.entries()].sort(([a], [b]) => a - b).map(([, text]) => text).join('\n').slice(0, 1200);
+      if (stream.text.trim()) {
+        item.reply = stream.text;
+        if (!task.tools.size && !task.approvals.size) this.present(item, 'talking', item.reply);
+      }
+    } else if (chunk.type === 'reasoning-delta' && !stream.text && !task.tools.size && !task.approvals.size) {
+      // The pet signals reasoning without exposing private reasoning content.
+      this.present(item, 'thinking', '正在思考…');
+    }
+    return true;
+  }
+
+  detached(id: string): void { const task = this.tasks.get(id); if (task) task.stream = undefined; }
+
+  idle(id: string): void {
+    const item = this.sessions.get(id), task = this.tasks.get(id);
+    if (!item || !task?.active) return;
+    task.active = false; task.stream = undefined; task.tools.clear(); task.approvals.clear(); item.streaming = false;
+    this.present(item, 'idle', ready);
   }
 
   /** A newly-created foreground conversation should immediately become visible. */
@@ -48,12 +107,14 @@ export class PetModel {
   /** Baseline already-running agents without replaying old completion notifications. */
   running(session: Pick<Session, 'id' | 'header'>): void {
     const item = this.observe(session);
-    if (!item || item.mood !== 'idle') return;
+    if (!item || this.tasks.get(item.id)!.active) return;
     this.tasks.get(item.id)!.active = true;
     this.present(item, 'thinking', '正在处理当前会话…');
   }
 
   private present(item: PetSession, mood: Mood, text: string): void {
+    item.active = this.tasks.get(item.id)!.active;
+    if (item.mood === mood && item.text === text) return;
     item.mood = mood; item.text = text; item.revision++;
   }
 
@@ -75,12 +136,14 @@ export class PetModel {
     const task = this.tasks.get(item.id)!;
     if (event.seq <= task.seq) return;
     task.seq = event.seq;
+    this.describe(item, event);
     // Late results from a previous turn cannot overwrite a newer turn.
     if ('turn' in event.data && event.data.turn < task.turn) return;
     switch (event.type) {
       case 'turn/start':
         task.turn = event.data.turn; task.active = true; task.tools.clear(); task.approvals.clear(); task.celebrateUntil = 0;
-        item.reply = ''; this.present(item, 'thinking', '让我想一想…'); break;
+        task.stream = undefined; item.reply = ''; item.streaming = false; item.speechId = ''; item.updatedAt = event.time;
+        this.present(item, 'thinking', '让我想一想…'); break;
       case 'step/start':
         task.active = true;
         if (!task.approvals.size && !task.tools.size) this.present(item, 'thinking', '正在思考…'); break;
@@ -100,11 +163,13 @@ export class PetModel {
       case 'assistant/message': {
         const text = event.data.message.content.filter(p => p.type === 'text').map(p => p.text).join('\n');
         if (!task.active) break;
-        if (text.trim()) { item.reply = text.slice(0, 500); if (!task.tools.size && !task.approvals.size) this.present(item, 'thinking', item.reply); }
+        item.streaming = false;
+        if (text.trim()) { item.reply = text.slice(0, 1200); if (!task.tools.size && !task.approvals.size) this.present(item, 'talking', item.reply); }
         break;
       }
       case 'turn/end': {
         task.turn = event.data.turn; task.active = false; task.tools.clear(); task.approvals.clear(); task.celebrateUntil = 0;
+        task.stream = undefined; item.streaming = false;
         switch (event.data.reason.kind) {
           case 'completed':
             this.present(item, 'happy', item.reply || '任务完成啦！🐳'); task.celebrateUntil = this.now() + 2500;
@@ -156,7 +221,7 @@ export class PetModel {
   snapshot(): PetSnapshot {
     const item = this.selected ? this.sessions.get(this.selected) : undefined;
     this.settle();
-    return { mood: item?.mood ?? 'idle', text: item?.text ?? '你好。打开 Harness 会话后就能和我聊天。', sessionId: item?.id ?? null, revision: item?.revision ?? 0, sessions: [...this.sessions.values()].map(s => ({ ...s })) };
+    return { mood: item?.mood ?? 'idle', text: item?.text ?? '你好。打开 Harness 会话后就能和我聊天。', sessionId: item?.id ?? null, revision: item?.revision ?? 0, active: item?.active ?? false, streaming: item?.streaming ?? false, speechId: item?.speechId ?? '', sessions: [...this.sessions.values()].map(s => ({ ...s })) };
   }
 }
 

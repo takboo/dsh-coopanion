@@ -34,7 +34,10 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
 /** Shared assembly used by integration tests with an IPC substitute for the native window. */
 export async function mountPet(ctx: Context, options: Config, bridge: PetBridge): Promise<void> {
   const model = new PetModel();
-  const currentOptions = (): DesktopOptions => ({ size: options.size.get(), roam: options.roam.get(), notifications: options.notifications.get(), bubbleDurationMs: options.bubbleDurationMs.get(), electronPath: options.electronPath });
+  const preferences: Partial<Pick<DesktopOptions, 'roam' | 'notifications'>> = {};
+  let savePreference: ((field: 'roam' | 'notifications', value: boolean) => Promise<void>) | undefined;
+  ctx.inject(['settings'], child => { savePreference = (field, value) => child.settings.mutate('dsh-coopanion', [{ op: 'set', path: [field], value }]); });
+  const currentOptions = (): DesktopOptions => ({ size: options.size.get(), roam: options.roam.get(), notifications: options.notifications.get(), bubbleDurationMs: options.bubbleDurationMs.get(), electronPath: options.electronPath, ...preferences });
   const controls = new PetControls(bridge, currentOptions);
   let navigation: { sessionId: string; expires: number } | undefined;
   ctx.provide('coopanion', controls);
@@ -42,7 +45,9 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
     const snapshot = model.snapshot(), live = new Set<string>(ctx.agents.list().map(agent => agent.session.id));
     bridge.update({ ...snapshot, sessions: snapshot.sessions.map(session => ({ ...session, chatAvailable: live.has(session.id) })) });
   };
-  const notice = (value: ReturnType<PetModel['consume']>) => { if (value && options.notifications.get()) bridge.notify(value); };
+  const notice = (value: ReturnType<PetModel['consume']>) => { if (value && currentOptions().notifications) bridge.notify(value); };
+  let streamUpdate: ReturnType<typeof setTimeout> | undefined;
+  ctx.effect(() => () => clearTimeout(streamUpdate));
   ctx.effect(() => () => controls.dispose());
   ctx.effect(() => {
     const timer = setInterval(() => { if (model.settle()) update(); }, 250);
@@ -85,7 +90,13 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
   for (const agent of ctx.agents.list()) { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); }
   ctx.on('session/created', session => { model.created(session); update(); });
   ctx.on('agent/created', ({ agent }) => { model.observe(agent.session); if (agent.status === 'running') model.running(agent.session); update(); return undefined; });
-  ctx.on('agent/disposed', () => { update(); });
+  ctx.on('agent/status', ({ agent, status }) => { if (status === 'running') model.running(agent.session); else model.idle(agent.session.id); update(); });
+  ctx.on('agent/assistant-stream', ({ agent, frame }) => {
+    if (!model.stream(agent.session, frame) || streamUpdate) return;
+    // Coalesce high-frequency provider deltas; durable events still publish immediately.
+    streamUpdate = setTimeout(() => { streamUpdate = undefined; update(); }, 40);
+  });
+  ctx.on('agent/disposed', ({ agent }) => { model.idle(agent.session.id); model.detached(agent.session.id); update(); });
   ctx.on('session/event', (session, event) => { notice(model.consume(session, event)); update(); });
   ctx.on('session/disposed', session => { model.remove(session.id); update(); });
   ctx.on('approval/request', async (request, next) => {
@@ -97,6 +108,15 @@ export async function mountPet(ctx: Context, options: Config, bridge: PetBridge)
   });
   const onAction = (action: unknown) => {
     if (!isRecord(action)) return;
+    if (action.type === 'preference' && (action.field === 'roam' || action.field === 'notifications') && typeof action.value === 'boolean') {
+      const field = action.field, value = action.value;
+      void (async () => {
+        try {
+          if (savePreference) await savePreference(field, value); else preferences[field] = value;
+          controls.configure();
+        } catch { bridge.notify({ title: '设置未能保存', body: '请回到 Harness 检查插件设置。', sessionId: model.snapshot().sessionId ?? '' }); }
+      })(); return;
+    }
     if (action.type === 'select' && typeof action.sessionId === 'string') { model.select(action.sessionId); update(); return; }
     if (action.type === 'open-session' && typeof action.sessionId === 'string') {
       if (!model.select(action.sessionId)) return;

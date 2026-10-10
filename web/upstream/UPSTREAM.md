@@ -22,3 +22,10 @@ Harness adaptations, 2026-10-09:
 - Harness state mapping, loopback asset server, pack storage, native-window integration, source download and UI are implemented by dsh-coopanion.
 
 No Cortico World service, upstream bot, speech-recognition runtime or independent model credentials are introduced.
+
+Harness refinements, 2026-10-10:
+
+- The host listens to public assistant-stream and lifecycle events. Thinking remains active through the body state; active tasks wake sleeping bodies. Visible deltas extend the upstream-style typewriter without resetting it.
+- Authenticated upstream touch events drive interaction feedback, with double-click and task-output precedence. The kit, rig and whale renderer remain unchanged.
+- Outlined menus and conversation cards use manifest console hues and thumbnails. Session identity comes from public human prompts, cwd, timestamps and distinct short IDs.
+- The native tray projects the same snapshot, selected appearance and acknowledged settings as the desktop page. macOS title and icon follow the selected state.

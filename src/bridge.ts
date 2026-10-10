@@ -41,6 +41,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     child.stderr?.on('data', data => { diagnostic = (diagnostic + data.toString()).slice(-4000); });
     child.on('message', message => {
       if (isRecord(message) && message.type === 'action') this.emit('action', message.action);
+      if (isRecord(message) && message.type === 'tray-state') this.emit('tray-state', message.state);
       if (isRecord(message) && message.type === 'visibility' && typeof message.visible === 'boolean') this.emit('lifecycle', { running: true, visible: message.visible });
     });
     await new Promise<void>((resolve, reject) => {
