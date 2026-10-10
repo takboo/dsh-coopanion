@@ -1,5 +1,8 @@
 name: Windows installation diagnostics
 on:
+  push:
+    branches: [codex/npm-market-release]
+    paths: [.github/workflows/windows-diagnostics.yml]
   workflow_dispatch:
 permissions:
   contents: read
