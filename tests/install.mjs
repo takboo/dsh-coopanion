@@ -232,6 +232,15 @@ try {
   settingsPage = settings;
   settings.on('pageerror', error => uiErrors.push(error.message));
   settings.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text().split('\n')[0]); });
+  settings.on('response', async response => {
+    if (!/settings[/.]mutate/.test(response.url())) return;
+    try {
+      const request = response.request().postDataJSON();
+      if (!JSON.stringify(request.payload).includes('dsh-coopanion')) return;
+      const reply = await response.json();
+      console.log('DSH preference mutation:', JSON.stringify({ request: request.payload, ok: reply.result?.ok, error: reply.result?.error }));
+    } catch (error) { console.error('Settings response diagnostic:', String(error)); }
+  });
   await settings.goto(hostUrl);
   await settings.getByRole('button', { name: /^(继续|Continue)$/, exact: true }).click();
   // A queued background result opens its source in the actual Harness client.
