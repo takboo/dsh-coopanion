@@ -67,9 +67,14 @@ function position() {
     panel.style.left = `${px}px`; panel.style.top = `${py}px`;
     panel.style.setProperty('--tail', `${Math.max(22, Math.min(pw - 22, panelAnchor.x - px))}px`);
   }
-  Object.assign($('attention').style, { left: `${Math.max(8, Math.min(innerWidth - 55, anchor.x + options.size * .25))}px`, top: `${Math.max(8, Math.min(innerHeight - 38, anchor.y + 15))}px` });
   const activity = sessionActivity(snapshot);
-  $('attention').hidden = !(activity.unread + activity.waiting + activity.errors) || panels.some(p => !p.hidden);
+  const attention = $('attention');
+  attention.hidden = !(activity.unread + activity.waiting + activity.errors) || panels.some(p => !p.hidden);
+  const holding = !attention.hidden && (attention.matches(':hover') || document.activeElement === attention);
+  if (!holding) panelAnchors.delete(attention);
+  else if (!panelAnchors.has(attention)) { const b = attention.getBoundingClientRect(); panelAnchors.set(attention, { x: b.x, y: b.y }); }
+  const point = panelAnchors.get(attention) ?? { x: Math.max(8, Math.min(innerWidth - 55, anchor.x + options.size * .25)), y: Math.max(8, Math.min(innerHeight - 38, anchor.y + 15)) };
+  Object.assign(attention.style, { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px` });
 }
 function speak(result) {
   const source = snapshot.sessions.find(session => session.id === result.sessionId);
@@ -133,7 +138,8 @@ function updateMood(now = performance.now()) {
     appliedMood = mood;
   }
   const dialogOpen = panels.some(p => !p.hidden);
-  const controls = { roam: options.roam && !reduced && !hovered && !dialogOpen && bubble.hidden && mood === 'idle' ? 'calm' : 'off', dialogOpen, thinking: mood === 'thinking', thoughtShown: false, expression: { thinking: 'thinking', talking: 'determined', working: 'determined', waiting: 'worried', error: 'sad' }[mood] ?? null, listening: !chat.hidden && !active };
+  const readingAttention = !$('attention').hidden && ($('attention').matches(':hover') || document.activeElement === $('attention'));
+  const controls = { roam: options.roam && !reduced && !hovered && !readingAttention && !dialogOpen && bubble.hidden && mood === 'idle' ? 'calm' : 'off', dialogOpen, thinking: mood === 'thinking', thoughtShown: false, expression: { thinking: 'thinking', talking: 'determined', working: 'determined', waiting: 'worried', error: 'sad' }[mood] ?? null, listening: !chat.hidden && !active };
   const key = JSON.stringify(controls);
   if (key !== appliedControls) { if (controls.roam === 'off') body.stopWalk(0); body.set(controls); appliedControls = key; }
   $('toggle-roam').setAttribute('aria-checked', String(options.roam));
