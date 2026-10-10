@@ -90,7 +90,10 @@ async function run(command, args, cwd = project, timeoutMs = 240000) {
 async function stop(child) {
   if (!child || child.exitCode !== null || child.signalCode !== null) return;
   const finished = once(child, 'exit');
-  child.kill('SIGTERM');
+  // Windows cannot deliver a catchable SIGTERM. The fixture uses the real
+  // launcher's bounded appExit hook, preserving the clean-exit assertion.
+  if (child === host && child.connected) child.send({ type: 'shutdown-host' });
+  else child.kill('SIGTERM');
   const deadline = setTimeout(() => child.kill('SIGKILL'), 10000);
   try { await finished; } finally { clearTimeout(deadline); }
 }
@@ -142,7 +145,7 @@ try {
   await writeFile(join(observer, 'package.json'), JSON.stringify({ name: 'coopanion-install-observer', private: true, type: 'module' }));
   const fixture = join(observer, 'host.mjs');
   await writeFile(fixture, await readFile(fileURLToPath(new URL('./fixtures/host.mjs', import.meta.url))));
-  await writeFile(join(profile, 'cordis.patch.yml'), `- insert:\n    - id: install-observer\n      name: ${JSON.stringify(fixture)}\n- id: locale\n  config:\n    preference: zh\n- id: ui-settings-models\n  config:\n    credentialOnboarding: false\n- id: dsh-coopanion\n  config:\n    autoStart: true\n    size: 150\n    roam: false\n    notifications: true\n    bubbleDurationMs: 12000\n`);
+  await writeFile(join(profile, 'cordis.patch.yml'), `- insert:\n    - id: install-observer\n      name: ${JSON.stringify(fixture)}\n- id: locale\n  config:\n    preference: zh\n- id: ui-settings-models\n  config:\n    credentialOnboarding: false\n- id: dsh-coopanion\n  config:\n    autoStart: true\n    size: 150\n    roam: true\n    notifications: true\n    bubbleDurationMs: 12000\n`);
   if (process.platform === 'linux' && !environment.DISPLAY) {
     const number = 100 + process.pid % 1000;
     display = spawn(process.env.XVFB_PATH ?? 'Xvfb', [`:${number}`, '-screen', '0', '1200x800x24', '-nolisten', 'tcp'], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -272,6 +275,7 @@ try {
   await surface.getByRole('status').filter({ hasText: '已保存' }).waitFor();
   await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--size') === '180px');
   assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /size: 180/, 'native Host settings persist the size');
+  await settings.waitForFunction(() => document.querySelector('.dsh-coopanion-settings [role="switch"][aria-label="闲时走动"]').getAttribute('aria-checked') === 'true');
   await petClick(page, { button: 'right' });
   await page.locator('#toggle-roam').click();
   await surface.getByRole('switch', { name: '闲时走动', exact: true }).waitFor();
@@ -280,6 +284,7 @@ try {
   assert.match(await readFile(join(profile, 'cordis.patch.yml'), 'utf8'), /roam: false/, 'desktop menu persists the same Host preference');
   await surface.getByRole('switch', { name: '闲时走动', exact: true }).click();
   await page.waitForFunction(() => document.getElementById('toggle-roam').getAttribute('aria-checked') === 'true');
+  await waitProfile(/roam: true/);
   await page.keyboard.press('Escape');
   await page.close();
   await surface.getByTestId('pet-status').filter({ hasText: '已关闭' }).waitFor();
