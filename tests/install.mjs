@@ -71,12 +71,12 @@ const uiErrors = [];
 const consoleErrors = [];
 let hostLog = '';
 
-async function run(command, args, cwd = project) {
+async function run(command, args, cwd = project, timeoutMs = 240000) {
   const child = spawn(command, args, { cwd, env: environment, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   const collect = chunk => { output = (output + chunk.toString()).slice(-32000); };
   child.stdout.on('data', collect); child.stderr.on('data', collect);
-  const deadline = setTimeout(() => child.kill('SIGKILL'), 240000);
+  const deadline = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
   try {
     const [code, signal] = await once(child, 'exit');
     assert.equal(signal, null, output);
@@ -97,9 +97,13 @@ try {
   if (!process.env.DSH_TEST_RUNTIME) {
     console.log(`Preparing published DSH ${version} in an isolated test directory…`);
     await mkdir(runtime, { recursive: true });
+    const logs = join(project, 'artifacts', `npm-runtime-${version}`);
+    await mkdir(logs, { recursive: true });
     assert.ok(process.env.npm_execpath, 'run this test through npm run test:install');
     // Invoke npm's JavaScript entry directly: Windows cannot exec a .cmd without a shell.
-    await run(process.execPath, [process.env.npm_execpath, 'install', '--prefix', runtime, '--no-audit', '--no-fund', `@deepseek-ai/dsh@${version}`]);
+    const preparing = Date.now();
+    await run(process.execPath, [process.env.npm_execpath, 'install', '--prefix', runtime, '--no-audit', '--no-fund', '--loglevel=info', '--timing', '--logs-dir', logs, `@deepseek-ai/dsh@${version}`], project, process.platform === 'win32' ? 600000 : 240000);
+    console.log(`Published DSH ${version} prepared in ${Math.round((Date.now() - preparing) / 1000)}s.`);
   }
   const cliDir = join(runtime, 'node_modules', '@deepseek-ai', 'dsh');
   assert.equal(JSON.parse(await readFile(join(cliDir, 'package.json'), 'utf8')).version, version);

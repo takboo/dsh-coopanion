@@ -129,3 +129,4 @@ jobs:
             artifacts/install-*.json
             artifacts/installed-*.png
             artifacts/settings-*.png
+            artifacts/npm-runtime-*/
