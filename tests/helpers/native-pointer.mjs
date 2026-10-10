@@ -32,6 +32,9 @@ export async function petClick(page, options = {}, twice = false) {
   });
   const pet = page.locator('#pet');
   await pet.waitFor({ state: 'visible' });
+  // CDP can attach to an inactive target after relaunch. Activate it before
+  // ordinary pointer input; the desktop itself continues to show without stealing focus.
+  await page.bringToFront();
   if (process.platform === 'linux' && process.env.DISPLAY) {
     // CDP moves a virtual pointer. Enabling native input also generates X11
     // movement at the physical cursor; keep both at the same point as a user.

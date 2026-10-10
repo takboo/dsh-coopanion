@@ -30,7 +30,7 @@ function hit(active) {
   if (!win || win.isDestroyed() || active === interactive) return;
   interactive = active;
   win.setIgnoreMouseEvents(!active, { forward: true });
-  forward({ type: 'hit-state', active });
+  forward({ type: 'hit-state', active, focused: win.isFocused(), visible: win.isVisible() });
 }
 function show() { win?.showInactive(); syncTray(); }
 function act(action) { process.send?.({ type: 'action', action }); }
