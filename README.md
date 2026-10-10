@@ -49,7 +49,7 @@ npm 安装的 dsh 不能管理 Desktop 所拥有的 profile。Desktop 完全退�
 
 ## 开发与验证
 
-需要 Node.js 24。Electron 支持 Windows、macOS、Linux；Linux 的窗口测试需要 X11 / XWayland 或 Xvfb。原生网格需要 Chromium 的 WebGL 支持。
+需要 Node.js 24。Electron 支持 Windows、macOS、Linux；Linux 的窗口测试需要 X11 / XWayland 或 Xvfb，以及 Python 3 和 libX11，用于同步原生鼠标位置。原生网格需要 Chromium 的 WebGL 支持。
 
 ```bash
 npm ci

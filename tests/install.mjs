@@ -141,7 +141,7 @@ try {
       await pause(100);
     }
     assert.ok(existsSync(`/tmp/.X11-unix/X${number}`), 'Xvfb is ready');
-    environment.DISPLAY = `:${number}`;
+    process.env.DISPLAY = environment.DISPLAY = `:${number}`;
   }
   const listener = createServer(); listener.listen(0, '127.0.0.1'); await once(listener, 'listening');
   const port = listener.address().port; await new Promise(resolve => listener.close(resolve));
