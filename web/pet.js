@@ -14,7 +14,7 @@ const library = native?.characters ?? browserCharacters;
 const sfx = createSfx({ storageKey: 'dsh-pet.sound.v2', volume: .35 });
 const nameIn = names => names?.zh ?? names?.en ?? Object.values(names ?? {})[0] ?? '';
 let body, previewBody, previewCharacter, activeView, activeScheme, activeName = 'DeepSeek 大肥鱼', libraryState, libraryBusy = false;
-let appliedMood, appliedControls, speech, speechExpires = Infinity, pressing = false, previewScheme = "", reducedNeedsStep = true;
+let appliedMood, appliedControls, speech, speechExpires = Infinity, pressing = false, dragStart, dragging = false, previewScheme = "", reducedNeedsStep = true;
 const label = mood => `${activeName} · ${labels[mood] ?? labels.idle}`;
 let options = { size: 180, roam: true, notifications: true, bubbleDurationMs: 12000 };
 let snapshot = { mood: 'idle', text: '你好。点点我，或双击和我说话。', sessionId: null, sessions: [] };
@@ -221,7 +221,7 @@ function closePanels() { conversations.hidden = true; chat.hidden = true; menu.h
 pet.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   touchBlockedUntil = 0; clearTimeout(touchTimer);
-  sfx.unlock(); pressing = true;
+  sfx.unlock(); pressing = true; dragging = false; dragStart = { x: event.clientX, y: event.clientY };
   pet.setPointerCapture(event.pointerId);
   body?.pointer('down', { x: event.clientX, y: event.clientY, t: event.timeStamp });
 });
@@ -236,7 +236,13 @@ pet.addEventListener('pointerup', release); pet.addEventListener('pointercancel'
 // authenticated touch events instead of layering an unrelated random click on top.
 function onBody(kind, detail) {
   if (kind !== 'touch') return;
-  if (detail.kind === 'grab') { clearTimeout(touchTimer); closePanels(); bubble.hidden = true; return; }
+  if (detail.kind === 'grab') {
+    clearTimeout(touchTimer);
+    // Body events arrive with a later animation frame. A completed drag must
+    // not close a panel opened by a subsequent double-click.
+    if (pressing) { closePanels(); bubble.hidden = true; }
+    return;
+  }
   if (detail.kind === 'poke' && detail.woke) { asleep = false; appliedMood = undefined; }
   if (detail.kind === 'poke' || detail.kind === 'pet') {
     if (performance.now() < touchBlockedUntil) return;
@@ -315,6 +321,9 @@ document.querySelectorAll('[data-gesture]').forEach(button => { button.onclick =
 document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
 document.addEventListener('pointermove', event => {
   const point = { x: event.clientX, y: event.clientY, t: event.timeStamp };
+  if (pressing && !dragging && Math.hypot(point.x - dragStart.x, point.y - dragStart.y) > 6) {
+    dragging = true; clearTimeout(touchTimer); closePanels(); bubble.hidden = true;
+  }
   body?.pointer('move', point); hit(point.x, point.y);
 });
 document.addEventListener('pointerleave', () => body?.pointer('leave', {}));

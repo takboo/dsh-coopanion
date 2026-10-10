@@ -19,6 +19,10 @@ try {
   page.setDefaultTimeout(12000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const petClick = async (options = {}, twice = false) => {
+    if (options.button !== 'right') {
+      // The original body ignores taps while a poke's jump is still in flight.
+      await page.waitForFunction(() => !['air', 'drag', 'crouch'].includes(document.getElementById('pet').dataset.mode));
+    }
     const box = await page.locator('#pet').boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     // Breathing keeps the bounds moving; send real mouse input without waiting for a stable element.
@@ -122,6 +126,26 @@ try {
   await page.waitForFunction(() => !document.querySelector('#character-select option[value=paper-star]'));
   await page.locator('#characters-close').click();
   assert.equal(await page.locator('#bubble').isVisible(), false, 'closing the manager does not replay old speech');
+
+  // Reproduce a slow frame reporting grab after pointer-up and a newly opened chat.
+  const delayedManifest = JSON.parse(await readFile('examples/star/figure.json', 'utf8'));
+  delayedManifest.id = 'delayed-touch'; delayedManifest.name.zh = '延迟互动验证';
+  const delayedBody = (await readFile('examples/star/figure.js', 'utf8')).replace("return kit.createBody(host, { figure, roam: 'off' });", `
+    const body = kit.createBody(host, { figure, roam: 'off' });
+    let pending = 0;
+    return { ...body,
+      pointer(type, point) { body.pointer(type, point); if (type === 'up') pending = 5; },
+      step(dt) { body.step(dt); if (pending && --pending === 0) { host.emit('touch', { kind: 'grab' }); host.root.dataset.lateGrab = 'sent'; } },
+    };`);
+  await petClick({ button: 'right' }); await page.locator('#open-characters').click();
+  await importCharacter(page, { name: 'delayed-touch.zip', mimeType: 'application/zip', buffer: Buffer.from(zipSync({ 'figure.json': strToU8(JSON.stringify(delayedManifest)), 'figure.js': strToU8(delayedBody) })) });
+  await page.waitForFunction(() => document.getElementById('character-select').value === 'delayed-touch' && !document.getElementById('character-use').disabled);
+  await page.locator('#character-use').click(); await page.waitForSelector('#pet[data-character=delayed-touch]');
+  await page.locator('#characters-close').click(); await petClick({}, true);
+  await mainFrame(page).locator('#root[data-late-grab=sent]').waitFor();
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('#chat').isVisible(), true, 'a delayed grab from completed pointer input cannot close a subsequent chat');
+  await page.keyboard.press('Escape');
 
   // Imported code is confined to the opaque frame and cannot reach the native bridge, page, or API.
   const sandboxManifest = JSON.parse(await readFile('examples/star/figure.json', 'utf8'));
