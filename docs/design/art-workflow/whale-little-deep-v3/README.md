@@ -1,0 +1,75 @@
+# 小湛造型与完整互动第三轮
+
+用户选择第二轮小湛的蓝色、奶泡藏进尾巴的互动和墨鲸的眨眼，并要求造型与尾巴更靠近所给 DeepSeek logo 参考。本轮围绕单个小湛继续制作，仍为独立体验原型，未接入 API 2、真实 Harness、NPC 或原生窗口。
+
+## 造型与来源
+
+- 新绘制的 96 点代码轮廓，采用更圆的额头、额顶小缺口、弯曲的白色腹部和向上抬起的不对称分叉尾鳍。主配色为 `#4d6bfe`，另保留初版小湛蓝、奶白和夜游四套配色。
+- 保留墨鲸所用的 Livelings 原生眨眼与偶发双眨机制；额外提供显式双眨动作，便于体验。
+- 复用第二轮保存的 Livelings 引擎原字节，不修改第三方源码；来源、包摘要及许可见[第二轮来源](../whale-livelings-prototype-v2/upstream/source.json)、[MIT](../whale-livelings-prototype-v2/upstream/LICENSE)和[附带角色许可](../whale-livelings-prototype-v2/upstream/LICENSE-CHARACTERS.md)。页面保留 Livelings by MakerJackie 署名。
+- 用户参考图片原字节见[参考图](reference/deepseek-user-reference.png)，来源与摘要见[记录](reference/source.json)。图片只作设计参考，不由运行页加载，不把棋盘格当作角色素材。
+
+## 运行
+
+在仓库根目录运行：
+
+```bash
+python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow
+```
+
+打开 `http://127.0.0.1:4187/whale-little-deep-v3/`。
+
+“走一遍完整体验”依次演示七种持续状态、完成／出错、六种招牌动作、抚摸和眨眼，最后回到待机。任意手动动作或角色按下会停止演示；后台隐藏时停止演示，不补播。
+
+[小尺寸对照](size-sheet.html)显示 32／64／128 像素附近的同一鲸鱼在日光、夜色背景下的静态轮廓，便于核对缩小后的辨识线索。
+
+## 状态与动作
+
+| 类型 | 动作 | 表现 |
+| --- | --- | --- |
+| 持续 | idle | 安静漂浮、原生眨眼、低幅摆尾 |
+| 持续 | thinking | 身体与五官渐隐为小尾巴，轻摆并偶发小泡泡 |
+| 持续 | working | 探出来，用尾巴与小鳍认真划动 |
+| 持续 | waiting | 安静看向用户，减少动作 |
+| 持续 | blocked | 收尾、担忧神态，等用户帮助 |
+| 持续 | listening | 柔和视线，轻微点头 |
+| 持续 | sleep | 闭眼、降低漂浮、尾巴慢下来 |
+| 一次 | done | 探头、开心、喷水花、安静落定 |
+| 一次 | error | 收尾、缓一缓、吐一粒小泡泡 |
+| 招牌 | peek-tail | 藏进尾巴，稍后探出来 |
+| 招牌 | spout | 抬头喷水 |
+| 招牌 | tail-wave | 看向用户后摆尾招呼 |
+| 招牌 | dive | 向下潜入水纹，带泡泡回来 |
+| 招牌 | belly-show | 侧身、抬鳍、展开白肚皮 |
+| 招牌 | bubble-ring | 吹一枚缓慢上浮的泡泡圈 |
+| 补充 | blink-soft / pet-soft / peek-out | 双眨、舒服眯眼、主动探出来 |
+
+## 直接互动与动作交接
+
+- 指针靠近驱动视线；悬停、往返轻擦使用原生 purr／giggle 入口。慢摸与按住不设置原生 `petting` 标志，避免引擎的毛绒效果把鲸鱼变为毛球。
+- 轻戳吐泡泡；连续两次双眨；三次藏尾巴。藏起来时轻戳会短暂探出来；按下睡眠中的角色会唤醒。
+- 按住约 420 毫秒触发舒服的眯眼。按钮提供相同动作，便于触屏与键盘体验。
+- 拉动只拉伸当前轮廓，松手无抛掷，恢复之前的持续状态；不代表产品中的位置拖放。取消指针不算轻戳。
+- 手动切换状态会取消当前按住／拉伸和自动体验；不直接重置弹簧位置。抚摸等一次动作结束后回到原持续状态，完成／出错体验则回到待机。
+- 配色、背景与尺寸修改不重建 Actor。声音默认关闭，可显式开启低音量合成音；减少动态遵循引擎的系统偏好。
+
+## 验证边界
+
+以代码语法检查、真实浏览器体验页与原生十六格工作台观察为主。观察覆盖藏尾巴、状态切换、动作中断、直接触碰和六个招牌动作；截图及源码身份另行保存。浏览器可运行不代表用户已经认可造型、品牌辨识度或完整生活感，也不代表宿主安装、跨平台原生或长期资源验收。
+
+背景与用户选择见[研讨白板](../../companion-art-whiteboard.md)。
+
+## 原生网页嵌入示例
+
+在本目录对应的页面中，可用作者原生组件加载同一角色定义：
+
+```html
+<script type="module">
+  import {registerCharacter} from '../whale-livelings-prototype-v2/livelings/livelings.js';
+  import littleDeep from './character.js';
+  registerCharacter(littleDeep);
+</script>
+<live-ling character="little-deep-v3" state="idle" style="width:240px;height:240px"></live-ling>
+```
+
+原生组件的默认手势包含抛掷与按住毛绒效果。本轮体验页在 `app.js` 中单独实现无抛掷、无毛绒的鲸鱼手势、动作交接和完整演示；需要相同行为时一并保留这层适配。以上是网页嵌入方式，不是 Coopanion API 2 角色包。
