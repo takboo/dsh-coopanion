@@ -1,0 +1,17 @@
+{
+  "source": "https://livelings.makerjackie.com/livelings-skill.zip",
+  "downloadDate": "2026-10-27",
+  "zipSHA256": "39c7a233cdf965a532caaface78d270f42feb7a6fb3f0425c169724f8f255a2e",
+  "observedRepositoryCommit": "3dfe4e60db5f2c9a2b2446a8863c3fd81c09ca8d",
+  "note": "Workspace bytes are from the author-distributed ZIP; repository commit is contextual and not a claim of reproducible bundle identity.",
+  "workspaceFiles": {
+    "card.html": "3ef92676365106d38af3cfafdbdde08d7c214f3cca1a2189428f65dd146e0e74",
+    "card.js": "49f28108f338815aaba83319bdafa755f0efca43a5a232d4992b76e6869192af",
+    "cards/example.json": "30b8ccf002c40b5e378f2b5ff0c8b58c5d277bb0df275503cd2cf91dbc393a02",
+    "cards/toast.json": "5e4f9d0b7853c7c86d0fa407b68b9f78ba9903e91a03b92ee2c106a41e09bd7b",
+    "characters/toast.js": "d1d7c1504c5de6b4e641eb91f80e9aa7a531998653196bc8902206ad64d96190",
+    "livelings.js": "d34d09fefd90650a800fd3ad3af5f55f6df5e821ca8f1141f83466c5e9fb78da",
+    "studio.html": "fec983a68257500178794ace38e11361f4fd6dccf23dc58cb2092f5fddfdbdfb",
+    "studio.js": "5c5329751933833f0a09b40acfc0aad0ccdc49e38cd8e2372e900239ac9771aa"
+  }
+}
