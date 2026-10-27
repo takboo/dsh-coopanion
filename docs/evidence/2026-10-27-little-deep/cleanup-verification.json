@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-27",
+  "sourceCommit": "4d0a207dfedccd556f10573c46e9435f45b7b16d",
+  "branch": "codex/little-deep-livelings",
+  "baseMainCommit": "41bd49a433234e1a06ffac3c6b6acaf2979845c1",
+  "lifeBranchMerged": false,
+  "scope": "Documentation, archival and prototype dependency paths; no product runtime or release validation.",
+  "checks": {
+    "markdownFiles": 23,
+    "missingLocalTargets": [],
+    "httpResourceGraphCountBeforeShutdown": 9,
+    "javascriptSyntax": [
+      "app.js",
+      "character.js"
+    ],
+    "nodeVersion": "v26.12.0",
+    "npmDryRun": {
+      "fileCount": 613,
+      "developmentFilesIncluded": [],
+      "ignoreScripts": true,
+      "notAReleaseVerification": true
+    },
+    "upstreamWorkspaceFilesByteIdentical": 8,
+    "fullSkillZIPFilesByteIdentical": 20,
+    "originalEvidenceFilesByteIdentical": 5,
+    "interactionLogic": "Compared to 179594b: app.js, character.js and size-sheet.html differ only in the engine import path.",
+    "productSourceChanges": [],
+    "browser": {
+      "interface": "Codex in-app browser via CUA; browser engine version unavailable",
+      "currentPreviewLoaded": true,
+      "thinkingActionLoaded": true,
+      "newStudioAndCharacterImportLoaded": true,
+      "observedConsoleErrors": [],
+      "knownVisualLimit": "The unmodified upstream 16-tile layout can crop some animated tails in a narrow side panel; this is not visual acceptance."
+    },
+    "cleanup": {
+      "previewTabsClosed": 3,
+      "previewPortsClosed": {
+        "4186": true,
+        "4187": true
+      },
+      "taskTemporarySkillDownloadRemoved": true,
+      "oldGeneratedBundleRetainedInIgnoredCache": ".cache/doc-cleanup-20261027/work-facts.generated.js"
+    }
+  },
+  "currentSourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/index.html": "8bb3f2753b0ab802794e34bc5810d499d82c26ef641bb3c9da401550bfda7a18",
+    "docs/design/art-workflow/whale-little-deep-v3/style.css": "578cf820afcdd684becc3da2f2b9b62f36c03cdd6d19e9428dfb883406a70e6f",
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "1ca741b0e84b07edfac88d28c78b8cb81a4848f2640c455ec6ab6292d4005dd8",
+    "docs/design/art-workflow/whale-little-deep-v3/app.js": "e328052f00ea63ec06649e5237b6fb87d210c2fd18e4b843d2d6cf3af82aea5a",
+    "docs/design/art-workflow/whale-little-deep-v3/size-sheet.html": "ac1807f336ae228e97ecc64edb488f0690492b82a7e5755e6bd59ee062fe73c3"
+  },
+  "engineDistributionSHA256": "39c7a233cdf965a532caaface78d270f42feb7a6fb3f0425c169724f8f255a2e",
+  "engineSHA256": "d34d09fefd90650a800fd3ad3af5f55f6df5e821ca8f1141f83466c5e9fb78da",
+  "cleanupPreviewSHA256": "e18c7264930b98f0f38abde61e3025532582871e87a21813a0c38925d571ec61",
+  "notCovered": [
+    "subjective artwork acceptance",
+    "Harness or API 2 integration",
+    "native platforms",
+    "long-running resource usage",
+    "audio quality",
+    "publication"
+  ]
+}
