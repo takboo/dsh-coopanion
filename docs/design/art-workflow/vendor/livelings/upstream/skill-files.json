@@ -1,0 +1,14 @@
+{
+  "SKILL.md": "3febafc9e5518ee8ce69c6246442c64d4459ad188196ace36e54483489f98a78",
+  "reference/api.md": "147bdcd4774260854d0f125a45e50a0ec386b64a26b1f42294840a4f14e20493",
+  "reference/design.md": "637d7139d33a97b4cbb1cad4b477fe951ae465869bd397a3287a1a55afa8df66",
+  "reference/examples/blocks.ts": "795ff98f13f3837d46938db9aab21b52665cd541e243b2304e3a273d8f9256d6",
+  "reference/examples/cloud.ts": "5846edb2c2d411fe47593bc1f32769388c6735df06b582b8c82338ff395466c7",
+  "reference/examples/dice.ts": "79253f4740133aeca20d4e176bf162e39da848dbee4fd65939aabde2243d53fc",
+  "reference/examples/duck.ts": "36b2565122d9105d6248936e8acc17387fd5f15627598406584e72febf2d18d7",
+  "reference/examples/ghost.ts": "7f2d0e841a8beb960fe4d7b7569903383b7a572d597356404d0daba4f82181a5",
+  "reference/examples/inky.ts": "df37628f1537536b7d54e6706c12443a083bdc70b0874d85ed982b12edc31b3a",
+  "reference/examples/kit.ts": "595769669a900dbd3d7e2badb19623881d78808d7de8a47a2677c8897bb70ba7",
+  "reference/examples/moon.ts": "f0028934f12c0b9589aaeb89d4ca75a1c70d235fdbfccfb45ee082f103caa2d0",
+  "templates/character.js": "93ae0214c397f6abb410fa3eb4e05c5d912949e035e513320aba5afa369c8303"
+}

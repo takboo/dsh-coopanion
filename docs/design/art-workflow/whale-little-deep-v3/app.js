@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import {createMascot,onFrame,sounds} from '../whale-livelings-prototype-v2/livelings/livelings.js';
+import {createMascot,onFrame,sounds} from '../vendor/livelings/workspace/livelings.js';
 import character,{signatureMoves,bendTail} from './character.js';
 
 const $ = s => document.querySelector(s);

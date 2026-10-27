@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-27",
+  "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c",
+  "branch": "codex/whale-code-prototypes",
+  "scope": "Standalone Little Deep prototype; no Harness, product NPC, native installation or subjective acceptance claim.",
+  "browser": "Codex in-app browser via CUA; engine version not exposed by this interface.",
+  "checks": [
+    "JavaScript syntax",
+    "sixteen-tile author studio renders",
+    "32/64/128 px light and dark silhouette sheet",
+    "thinking to pet to working interruption",
+    "direct pointer tap",
+    "700 ms pointer hold",
+    "drag and release",
+    "palette switch",
+    "night background",
+    "complete 18-step guided sequence returns to idle with data-demo-result=complete"
+  ],
+  "observedBrowserConsoleErrors": [],
+  "audio": "Muted by default; acoustic quality not evaluated.",
+  "sourceFiles": {
+    "README.md": "359de962ce46e21818b47b45e0c3d61d894b2541af7d30d22bf148966b9cc631",
+    "app.js": "1d4485d30714f99b92b2045f2ff184ed9f184d6c9940deec22488025655efee2",
+    "character.js": "80ceba50b93d92cfa6767db73053965ee22e6711512339f33f327dc918765a9d",
+    "index.html": "758157778bc66ade486185f02e8d40ae5dc5e6f32822b00cf8b8850961922951",
+    "reference/deepseek-user-reference.png": "1e76856d107f208ce17022b571a295b7b11c6e634918895b2d66ba04c8b35ded",
+    "reference/source.json": "6a04f0788540c725ec83c2094a996ca1bad98a839e0e6f6d5c13dd8759cdd3b8",
+    "size-sheet.html": "00ac3777355d5cd5c1b552c9ce9680ef0635d3a0c07f1b6a3c97586cb32d3f91",
+    "style.css": "578cf820afcdd684becc3da2f2b9b62f36c03cdd6d19e9428dfb883406a70e6f"
+  },
+  "engineSHA256": "d34d09fefd90650a800fd3ad3af5f55f6df5e821ca8f1141f83466c5e9fb78da",
+  "engineDistributionSHA256": "39c7a233cdf965a532caaface78d270f42feb7a6fb3f0425c169724f8f255a2e",
+  "screenshotSHA256": "75b079cd241e05c72b140d566d7a725971335e102d1b2497c0d27e5107de34b3"
+}

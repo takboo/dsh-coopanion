@@ -1,5 +1,7 @@
 # DeepSeek 大肥鱼
 
+> 本分支正在探索小湛与 Livelings 纯代码角色，接手见[当前设计入口](docs/design/README.md)。小湛目前是独立交互原型；下面的安装与产品说明仍对应现有大肥鱼插件。
+
 **让 Harness 的工作，有个看得见的小伙伴。**
 
 大肥鱼住在你的桌面上，陪你一起用 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 工作。她会思考、挥手、陪你等结果，也会把回复和待办捎到桌边。双击她，就能接着刚才的对话聊下去。

@@ -6,18 +6,12 @@
 
 - 新绘制的 96 点代码轮廓，采用更圆的额头、额顶小缺口、弯曲的白色腹部和向上抬起的不对称分叉尾鳍。主配色为 `#4d6bfe`，另保留初版小湛蓝、奶白和夜游四套配色。
 - 保留墨鲸所用的 Livelings 原生眨眼与偶发双眨机制；额外提供显式双眨动作，便于体验。
-- 复用第二轮保存的 Livelings 引擎原字节，不修改第三方源码；来源、包摘要及许可见[第二轮来源](../whale-livelings-prototype-v2/upstream/source.json)、[MIT](../whale-livelings-prototype-v2/upstream/LICENSE)和[附带角色许可](../whale-livelings-prototype-v2/upstream/LICENSE-CHARACTERS.md)。页面保留 Livelings by MakerJackie 署名。
+- 复用独立保存的 Livelings 引擎原字节，不修改第三方源码；来源、包摘要及许可见[上游来源](../vendor/livelings/upstream/source.json)、[MIT](../vendor/livelings/upstream/LICENSE)和[附带角色许可](../vendor/livelings/upstream/LICENSE-CHARACTERS.md)。页面保留 Livelings by MakerJackie 署名。
 - 用户参考图片原字节见[参考图](reference/deepseek-user-reference.png)，来源与摘要见[记录](reference/source.json)。图片只作设计参考，不由运行页加载，不把棋盘格当作角色素材。
 
 ## 运行
 
-在仓库根目录运行：
-
-```bash
-python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow
-```
-
-打开 `http://127.0.0.1:4187/whale-little-deep-v3/`。
+启动命令、当前分支与访问地址统一见[设计入口的本地预览](../../README.md#本地预览)。
 
 “走一遍完整体验”依次演示七种持续状态、完成／出错、六种招牌动作、抚摸和眨眼，最后回到待机。任意手动动作或角色按下会停止演示；后台隐藏时停止演示，不补播。
 
@@ -55,7 +49,7 @@ python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflo
 
 ## 验证边界
 
-以代码语法检查、真实浏览器体验页与原生十六格工作台观察为主。观察覆盖藏尾巴、状态切换、动作中断、直接触碰和六个招牌动作；截图及源码身份另行保存。浏览器可运行不代表用户已经认可造型、品牌辨识度或完整生活感，也不代表宿主安装、跨平台原生或长期资源验收。
+以代码语法检查、真实浏览器体验页与原生十六格工作台观察为主。观察覆盖藏尾巴、状态切换、动作中断、直接触碰和六个招牌动作；固定截图、源码身份与目录整理后的核验见[证据索引](../../../evidence/2026-10-27-little-deep/README.md)。浏览器可运行不代表用户已经认可造型、品牌辨识度或完整生活感，也不代表宿主安装、跨平台原生或长期资源验收。
 
 背景与用户选择见[研讨白板](../../companion-art-whiteboard.md)。
 
@@ -65,7 +59,7 @@ python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflo
 
 ```html
 <script type="module">
-  import {registerCharacter} from '../whale-livelings-prototype-v2/livelings/livelings.js';
+  import {registerCharacter} from '../vendor/livelings/workspace/livelings.js';
   import littleDeep from './character.js';
   registerCharacter(littleDeep);
 </script>

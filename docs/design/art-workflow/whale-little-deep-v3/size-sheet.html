@@ -2,7 +2,7 @@
 <style>*{box-sizing:border-box}body{margin:0;padding:25px;background:#f5f4ef;color:#28324a;font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{max-width:1000px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}h1{font-size:23px;font-weight:550;margin:0}a{color:inherit}h2{font-size:12px;font-weight:500;margin:0 0 12px}.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:24px}.sample{min-width:0;text-align:center;border-radius:12px;background:#fffefa}.dark .sample{background:#1d2638;color:#dfe8fb}canvas{display:block;width:100%;height:170px}.label{padding:0 0 15px;font-size:11px;color:#8590a6}.sample .label{color:inherit;opacity:.6}@media(max-width:500px){body{padding:18px}canvas{height:130px}.row{gap:7px}}</style>
 <main><header><h1>小湛，小一点看看。</h1><a href="./">回到互动体验 ↗</a></header><h2>日光背景</h2><div class="row" id="light"></div><h2>夜色背景</h2><div class="row dark" id="dark"></div></main>
 <script type="module">
-import {Actor,renderActor} from '../whale-livelings-prototype-v2/livelings/livelings.js';
+import {Actor,renderActor} from '../vendor/livelings/workspace/livelings.js';
 import definition from './character.js';
 for(const row of ['light','dark'])for(const size of [32,64,128]){
   const sample=document.createElement('div');sample.className='sample';

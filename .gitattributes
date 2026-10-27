@@ -1,3 +1,5 @@
-# Preserve captured VM evidence bytes, including Windows CRLF, on every platform.
-docs/evidence/p1/keyboard-vm-20261016/** -text -whitespace
-docs/evidence/releases/v0.4.10/** -text -whitespace
+# Preserve upstream and historical evidence bytes across checkout platforms.
+docs/design/art-workflow/vendor/** -text -whitespace linguist-vendored
+docs/evidence/** -text -whitespace
+docs/archive/2026-10-27-whale-studies/snapshots/** -text -whitespace
+docs/design/art-workflow/whale-little-deep-v3/reference/** -text

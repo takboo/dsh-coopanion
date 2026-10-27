@@ -2,12 +2,16 @@
 
 本目录维护当前产品行为与开发契约。安装入口见 [项目首页](../README.md)，各版本改动见 [版本记录](release-notes.md)。实际版本、依赖、命令和支持的宿主列表以 `package.json`、`npm-shrinkwrap.json` 与 `.github/workflows/` 为准。
 
+本分支的小湛／Livelings 工作从[当前设计入口](design/README.md)接手。它是基于 main 的独立角色原型；以下产品契约仍描述现有 Harness 插件。
+
 ## 按任务阅读
 
 | 任务 | 资料 |
 |---|---|
 | 安装、配置、操作与升级 | [使用指南](usage.md) |
 | 开发、构建、测试与录制回归 | [开发指南](development.md) |
+| 小湛造型、完整互动与分支续做 | [当前设计入口](design/README.md)、[设计白板](design/companion-art-whiteboard.md) |
+| 前两轮鲸鱼方案与旧讨论追溯 | [归档索引](archive/README.md)，按固定提交解释 |
 | 完成判断、通知身份与请求结算 | [提醒契约](notification-contract.md) |
 | 会话续接、接受回执、草稿与去重 | [会话契约](session-chat-contract.md) |
 | 进程退出、有限恢复与临时状态 | [恢复契约](desktop-recovery-contract.md) |
@@ -27,3 +31,5 @@
 正式发布使用 [GitHub Release](https://github.com/takboo/dsh-coopanion/releases) 中的版本、提交和包摘要核验；`verification.json`、`SHA256SUMS` 与版本包一起提供。本地试装包不代表该版本的正式分发产物。
 
 仓库的 `docs/evidence/` 只保留历史原始证据，普通搜索及安装包均排除它。追溯时先读其说明并核对实际产物身份。`.cache/`、`artifacts/` 与 `dist/` 属于本机或生成内容，可能来自其他提交。
+
+普通搜索聚焦当前契约与设计；历史方案使用 `rg --no-ignore docs/archive`，第三方 Livelings 原文按需使用 `rg --no-ignore docs/design/art-workflow/vendor/livelings`，版本历史使用 `rg --no-ignore docs/release-notes.md`。归档与第三方 skill 的原始文字按其来源解释，当前执行范围以用户最新要求和设计入口为准。
