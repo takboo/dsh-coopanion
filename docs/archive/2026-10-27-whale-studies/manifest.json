@@ -1,0 +1,131 @@
+{
+  "snapshotCommit": "179594b684a68a5fb6747d60abeda430451fcc8c",
+  "retiredFiles": [
+    {
+      "path": "docs/design/art-workflow/whale-code-prototype-v1/README.md",
+      "sha256": "331641b78c37e7b1639ebcfdd5934c092786450dd0207bdd2fec745287dc018a",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-code-prototype-v1/index.html",
+      "sha256": "53bf6ea557fc3d874eaf6abe79bfc3ffc42171cc9601d8cf3cc464604d390cc9",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/README.md",
+      "sha256": "2f46eb1ed96208b5febdedef3314a4ca8341e7d7083b71263353a74eaeb872a7",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/app.js",
+      "sha256": "6eb152919184d0f7e113827d9ad8dd5b722edef5fb637c9825451dee0dcc4bdd",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/index.html",
+      "sha256": "9513bb0d272ae5940b33fc10107cf4b6bde4be74826b0061b83e31783f55c71c",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/card.html",
+      "sha256": "3ef92676365106d38af3cfafdbdde08d7c214f3cca1a2189428f65dd146e0e74",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/card.js",
+      "sha256": "49f28108f338815aaba83319bdafa755f0efca43a5a232d4992b76e6869192af",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/cards/example.json",
+      "sha256": "30b8ccf002c40b5e378f2b5ff0c8b58c5d277bb0df275503cd2cf91dbc393a02",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/cards/toast.json",
+      "sha256": "5e4f9d0b7853c7c86d0fa407b68b9f78ba9903e91a03b92ee2c106a41e09bd7b",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/characters/ink-whale.js",
+      "sha256": "08a93cee638f7d513fcf88055b2dd5cc9b61f4d0718c3c9f9b33725cf9896136",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/characters/little-deep.js",
+      "sha256": "7425eb43bb238d16cbabd520919ad47fcd829348e3343d2417e59dcc52828be4",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/characters/milk-whale.js",
+      "sha256": "7aae39bc218d80f2c10ef225bd477481a5c3bf39ea8586caea12b58f6895adf3",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/characters/toast.js",
+      "sha256": "d1d7c1504c5de6b4e641eb91f80e9aa7a531998653196bc8902206ad64d96190",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/characters/whale-concepts.js",
+      "sha256": "f1ef8b9f14c2a670a4737fe8ecafb582efdeb95f96f60852c9e4d3ba6ccd8f5a",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/livelings.js",
+      "sha256": "d34d09fefd90650a800fd3ad3af5f55f6df5e821ca8f1141f83466c5e9fb78da",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/studio.html",
+      "sha256": "fec983a68257500178794ace38e11361f4fd6dccf23dc58cb2092f5fddfdbdfb",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/livelings/studio.js",
+      "sha256": "5c5329751933833f0a09b40acfc0aad0ccdc49e38cd8e2372e900239ac9771aa",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/LICENSE",
+      "sha256": "515086bf6f64b33c2d570a723f52f3dbdceaaa836510e1fb7136480a07994f12",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/LICENSE-CHARACTERS.md",
+      "sha256": "cb46d1b2277527ed15d3d04f14b1d1a3cc29313394ac2e777c6e33b79c34761c",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/SKILL.md",
+      "sha256": "3febafc9e5518ee8ce69c6246442c64d4459ad188196ace36e54483489f98a78",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/api.md",
+      "sha256": "147bdcd4774260854d0f125a45e50a0ec386b64a26b1f42294840a4f14e20493",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/design.md",
+      "sha256": "637d7139d33a97b4cbb1cad4b477fe951ae465869bd397a3287a1a55afa8df66",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    },
+    {
+      "path": "docs/design/art-workflow/whale-livelings-prototype-v2/upstream/source.json",
+      "sha256": "a58841f93274eca89fe1a2cd2c1ec40c83598cb31a74baea46b417f80f616c65",
+      "sourceCommit": "179594b684a68a5fb6747d60abeda430451fcc8c"
+    }
+  ],
+  "rawSnapshots": {
+    "snapshots/companion-art-whiteboard.md": "e19c89b13778b2260d050a057542db04bcead672032c4c463acff5a5f8e2890e",
+    "snapshots/round-1-README.md": "331641b78c37e7b1639ebcfdd5934c092786450dd0207bdd2fec745287dc018a",
+    "snapshots/round-2-README.md": "2f46eb1ed96208b5febdedef3314a4ca8341e7d7083b71263353a74eaeb872a7"
+  },
+  "generatedResidue": {
+    "originalPath": "docs/design/art-workflow/space-v1/work-facts.generated.js",
+    "sha256": "4306dd83a6dae73169754ba75dba0cb9d0913a0486c13a00347d5290d9963a2c",
+    "reason": "Untracked generated bundle; exact path is ignored on codex/aliveness-foundation. Not used by this branch.",
+    "retainedLocalCopy": ".cache/doc-cleanup-20261027/work-facts.generated.js"
+  }
+}

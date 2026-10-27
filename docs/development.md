@@ -2,6 +2,8 @@
 
 先从[文档索引](README.md)阅读对应行为契约。工具链分别固定在 `.node-version` 和 `package.json#packageManager`，依赖锁为随包提供的 `npm-shrinkwrap.json`。
 
+小湛／Livelings 的独立浏览器原型按[当前设计入口](design/README.md)启动与续做；本页其余命令验证现有插件，不能用插件测试通过结算角色美术观感。
+
 ## 准备与验证入口
 
 ```bash

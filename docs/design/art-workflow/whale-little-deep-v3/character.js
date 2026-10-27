@@ -3,7 +3,7 @@
 import {
   defineCharacter, label, physics, shapes, variant, at, every,
   zzz, blip, chime, splash as splashSound, whoosh,
-} from '../whale-livelings-prototype-v2/livelings/livelings.js';
+} from '../vendor/livelings/workspace/livelings.js';
 
 function outline(start, curves) {
   let point = {x: start[0], y: start[1]};

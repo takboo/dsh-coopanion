@@ -1,2 +1,6 @@
 # Immutable historical evidence is searched explicitly and excluded from npm packages.
 /docs/evidence/
+# Historical decisions and verbatim third-party instructions are read explicitly.
+/docs/archive/
+/docs/design/art-workflow/vendor/
+/docs/release-notes.md

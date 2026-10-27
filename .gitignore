@@ -5,3 +5,4 @@ web/markdown-runtime.js
 artifacts/
 *.tgz
 paper-star.zip
+docs/design/art-workflow/space-v1/work-facts.generated.js

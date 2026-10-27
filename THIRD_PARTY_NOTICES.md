@@ -12,6 +12,12 @@ The textures and thumbnails in `web/upstream/whale/`, and the generated tray ico
 
 This integration follows the project user's existing statement that the community character is reusable. AGPL does not relicense these textures. The complete original upstream rights notice is preserved verbatim in [web/upstream/THIRD_PARTY_NOTICES.md](web/upstream/THIRD_PARTY_NOTICES.md). Its sections on speech-recognition libraries/models describe the upstream package; this plugin does not bundle those components.
 
+## Livelings development prototype
+
+The independent Little Deep design prototype uses the author-distributed Livelings workspace by MakerJackie, preserved under [docs/design/art-workflow/vendor/livelings](docs/design/art-workflow/vendor/livelings/README.md). The engine is MIT; its bundled original characters and example have separate CC BY 4.0 terms. The complete [code license](docs/design/art-workflow/vendor/livelings/upstream/LICENSE), [character terms](docs/design/art-workflow/vendor/livelings/upstream/LICENSE-CHARACTERS.md), and [source hashes](docs/design/art-workflow/vendor/livelings/upstream/source.json) are retained byte-for-byte. Credit: **Livelings by MakerJackie**.
+
+These development files are outside the package's published file set. The prototype has not replaced the installed Coopanion runtime or been integrated as an API 2 character. The user-supplied DeepSeek reference and its provenance remain beside the prototype; vendor marks do not imply endorsement.
+
 ## Electron
 
 Electron 44.7.0 is installed as a dependency and retains its MIT license and Chromium's accompanying notices. Runtime download and verification remain unchanged.
