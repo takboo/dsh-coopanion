@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小湛 · 鲸鱼互动体验</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%234d6bfe'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+<body><main>
+  <header class="top"><span class="wordmark">COOPANION <span>/ 小湛 03</span></span><div class="top-actions"><a href="../whale-livelings-prototype-v2/?variant=little-deep">上轮对照 ↗</a><button id="theme" aria-pressed="false">夜色</button><button id="sound" aria-pressed="false">声音关</button></div></header>
+  <div class="intro"><div><p class="eyebrow">A LITTLE DEEPER, A LITTLE CLOSER.</p><h1>小湛</h1><p class="subtitle">认真想事情时，只把小尾巴留给你。</p></div><a class="studio" href="../whale-livelings-prototype-v2/livelings/studio.html?char=../../whale-little-deep-v3/character.js">看动作工作台 ↗</a></div>
+  <div class="experience">
+    <section class="playground" aria-label="和小湛互动">
+      <div class="stage" id="stage"><div class="live"><span></span><span id="state-name" aria-live="polite">在陪着你</span></div><div id="whale" class="whale"></div><div class="stage-label">DEEP / 小湛</div></div>
+      <p class="response" id="response" aria-live="polite">靠近看看，它也在看你。</p>
+      <p class="touch-help">轻戳吐泡泡 · 连戳三下藏起来 · 按住摸摸 · 拉一拉尾巴</p>
+      <div class="gesture-buttons"><button data-gesture="pet-soft">摸摸它 ♡</button><button data-gesture="blink-soft">眨眨眼</button><button data-gesture="peek-out">出来看看</button></div>
+      <div class="appearance"><label>配色 <select id="palette" aria-label="配色"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label><label class="size-label">大小 <input id="size" aria-label="角色大小" type="range" min="70" max="125" value="100" step="5"><output id="size-value">100%</output></label></div>
+    </section>
+    <aside class="controls" aria-label="动作体验">
+      <section><div class="section-label"><h2>陪你做点什么</h2><span>随时切换</span></div><div class="states" id="states">
+        <button data-state="idle" aria-pressed="true">陪着你</button><button data-state="thinking" aria-pressed="false">想事情</button><button data-state="working" aria-pressed="false">忙起来</button><button data-state="waiting" aria-pressed="false">等一等</button><button data-state="blocked" aria-pressed="false">需要你</button><button data-state="listening" aria-pressed="false">听你说</button><button data-state="done" aria-pressed="false">做好啦</button><button data-state="error" aria-pressed="false">出错了</button><button data-state="sleep" aria-pressed="false">睡一会</button>
+      </div></section>
+      <section><div class="section-label"><h2>小鲸的拿手动作</h2><span>点一下试试</span></div><div class="tricks" id="tricks"></div></section>
+      <section class="demo"><button id="demo" class="demo-button" aria-pressed="false">走一遍完整体验 <span>↗</span></button><p id="demo-step" aria-live="polite">看看它怎样工作、藏起来，再探出头。</p><div class="demo-track" aria-hidden="true"><div id="demo-progress"></div></div></section>
+    </aside>
+  </div>
+  <footer><span>纯代码角色 · 互动原型 · 工作状态为手动演示</span><span>Powered by <a href="https://github.com/makerjackie/livelings">Livelings by MakerJackie</a></span></footer>
+</main><script type="module" src="./app.js"></script></body></html>
