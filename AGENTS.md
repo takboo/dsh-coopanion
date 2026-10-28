@@ -3,7 +3,7 @@
 开始仓库工作时先读 [docs/README.md](docs/README.md)，按任务读取对应契约。版本、依赖和命令以 `package.json`、`npm-shrinkwrap.json` 及 `.github/workflows/` 为准，当前执行范围来自用户。
 
 - 产品行为变更同步实现、测试和使用说明；完成语义由 `src/completion.ts` 共享判断，会话接受回执与任务完成分别结算。
-- 小湛造型、Livelings 动作或角色路线续做，先读[当前设计入口](docs/design/README.md)，按其中的当前目录与分支关系接手；历史方案从归档索引按需查阅。
+- 小湛造型、Livelings 分镜、动作或角色制作流程续做，先读[当前设计入口](docs/design/README.md)，按当前意图、实现范围和待评审项接手；历史方案从归档索引按需查阅。
 - 浏览器回复、收件箱、字号、多屏或 NPC 日常的变更包含 `test:inbox-ui`。原生窗口和安装使用隔离 profile，系统桌面操作串行执行。自动化矩阵与物理实机验收分别报告。
 - 诊断和资源观察按 [诊断契约](docs/diagnostics-contract.md) 解释有效时间、缺口和报告状态；进程存活本身不证明自主活动可用。
 - 发布前读 [发布流程](docs/releasing.md)，保持同一分发包贯穿安装、npm 和 Release；本地构建或安装成功分别记录，不能代替发布成功。

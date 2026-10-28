@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Continuous preview and reference frames share the same performance source.
+import {renderActor} from '../vendor/livelings/workspace/livelings.js';
+import {createPerformance,KEYFRAMES} from './storyboard-performance.js';
+
+const clamp = n => Math.max(0,Math.min(1,n));
+const smooth = n => {const t=clamp(n);return t*t*(3-2*t);};
+const mix = (a,b,t) => a+(b-a)*t;
+const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Draw the hook by travelled distance, so it grows from the tip of the pen.
+function questionStroke() {
+  const curves=[
+    [[-.39,-.29],[-.51,-.72],[.20,-.85],[.40,-.48]],
+    [[.40,-.48],[.66,-.08],[.00,-.06],[-.035,.25]],
+  ];
+  const points=[];
+  for(const [p0,p1,p2,p3] of curves) {
+    for(let i=points.length?1:0;i<=40;i++) {
+      const t=i/40,u=1-t;
+      const x=u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0];
+      const y=u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1];
+      const last=points.at(-1);
+      points.push({x,y,distance:last?last.distance+Math.hypot(x-last.x,y-last.y):0});
+    }
+  }
+  return points;
+}
+const question=questionStroke();
+const exclamation=[{x:-.025,y:-.64,distance:0},{x:.015,y:.23,distance:.871}];
+
+function strokePrefix(g,points,progress) {
+  if(progress<=0)return;
+  const distance=points.at(-1).distance*clamp(progress);
+  g.beginPath();g.moveTo(points[0].x,points[0].y);
+  for(let i=1;i<points.length;i++) {
+    const p=points[i],previous=points[i-1];
+    if(p.distance>distance) {
+      const t=(distance-previous.distance)/(p.distance-previous.distance);
+      g.lineTo(mix(previous.x,p.x,t),mix(previous.y,p.y,t));break;
+    }
+    g.lineTo(p.x,p.y);
+  }
+  g.stroke();
+}
+
+function drawSymbol(g, actor, layout, progress, symbol, palette, time=0, activity=0) {
+  if (progress<=0) return;
+  const size = layout.R*.47;
+  const center=actor.bodyCenter(), angle=actor.lean.value;
+  // Float ahead of the left-facing head; the symbol has its own small tremor.
+  // Attachment during shape changes remains outside this storyboard study.
+  const x=-1.55, y=-.72;
+  const anchor={
+    x:layout.cx+(center.x+x*Math.cos(angle)-y*Math.sin(angle))*layout.R,
+    y:layout.cy+(center.y+x*Math.sin(angle)+y*Math.cos(angle))*layout.R,
+  };
+  const tremor=reducedMotion.matches?0:Math.min(progress*3,1)*activity;
+  const shakeX=tremor*(Math.sin(time*23)*.027+Math.sin(time*37)*.012);
+  const shakeY=tremor*Math.sin(time*29+.8)*.026;
+  g.save();
+  g.translate(anchor.x,anchor.y);
+  g.scale(size,size);
+  g.translate(shakeX,shakeY);
+  g.rotate(-.09+tremor*Math.sin(time*19)*.035);
+  g.strokeStyle=g.fillStyle=palette==='night'?'#bdd0ff':actor.palette.outline;
+  g.lineWidth=.14;g.lineCap='round';g.lineJoin='round';
+  strokePrefix(g,symbol==='question'?question:exclamation,smooth(progress/.84));
+  const dot=smooth((progress-.86)/.14);
+  if(dot>0) {
+    g.beginPath();g.ellipse(-.055,.55,.115*dot,.10*dot,-.2,0,Math.PI*2);g.fill();
+  }
+  g.restore();
+}
+
+const canvases=[...document.querySelectorAll('canvas[data-pose]')];
+const previewCanvas=document.querySelector('#performance');
+const progressInput=document.querySelector('#progress');
+const pauseButton=document.querySelector('#pause');
+const references=new Map();
+let palette=document.querySelector('#palette').value;
+let symbol=document.querySelector('#symbol').value;
+let study=createPerformance({palette,calm:reducedMotion.matches});
+let playing=!reducedMotion.matches,frame=null,lastFrame=null;
+const phaseNames={settle:'稍微一怔',ask:'疑问浮现',relax:'余韵与放松',wait:'安静等待回应'};
+
+function draw(canvas,actor,progress,time=0,activity=0) {
+  const bounds=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+  const width=Math.round(bounds.width*dpr),height=Math.round(bounds.height*dpr);
+  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+  const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  g.fillStyle=palette==='night'?'#15263f':'#e8eef8';g.fillRect(0,0,bounds.width,bounds.height);
+  const R=Math.min(bounds.width/3.8,bounds.height/3.5);
+  const layout={cx:bounds.width/2,cy:bounds.height*.64,R,shadow:true};
+  renderActor(g,actor,layout);
+  drawSymbol(g,actor,layout,progress,symbol,palette,time,activity);
+  canvas.dataset.rendered='true';
+}
+
+function updateControls() {
+  const time=Math.min(study.time,study.duration);
+  progressInput.value=String(Math.round(time/study.duration*100));
+  document.querySelector('#clock').textContent=`${time.toFixed(1)} s / ${study.duration.toFixed(1)} s`;
+  pauseButton.textContent=playing?'暂停':'播放';
+  pauseButton.setAttribute('aria-pressed',String(playing));
+  document.querySelector('#replay').textContent='↻ 重播';
+}
+
+function renderPreview() {
+  const pose=study.pose;
+  draw(previewCanvas,study.actor,pose.symbol,study.actor.time,pose.tremor);
+  document.querySelector('#phase-name').textContent=phaseNames[pose.phase];
+  for(const chip of document.querySelectorAll('[data-phase]')) {
+    if(chip.dataset.phase===pose.phase)chip.setAttribute('aria-current','step');
+    else chip.removeAttribute('aria-current');
+  }
+  updateControls();
+}
+
+function render() {
+  const mark=symbol==='question'?'问号':'感叹号';
+  previewCanvas.setAttribute('aria-label',`小湛稍微一怔，侧倾时头前逐笔画出${mark}，然后放松等待`);
+  for(const canvas of canvases) {
+    let reference=references.get(canvas);
+    if(!reference){reference=createPerformance({palette});reference.seek(KEYFRAMES[canvas.dataset.pose]);references.set(canvas,reference);}
+    reference.setPalette(palette);
+    draw(canvas,reference.actor,reference.pose.symbol);
+    if(canvas.dataset.pose==='ask')canvas.setAttribute('aria-label',`小湛侧倾约十二度，头前的${mark}逐笔成形`);
+  }
+  study.setPalette(palette);renderPreview();
+  document.querySelector('#render-status').textContent='短版样片与三张参考帧共用同一表演数据 · 尚未接入 Harness';
+}
+
+function tick(now) {
+  frame=null;
+  if(!playing||document.hidden){lastFrame=null;return;}
+  const dt=lastFrame===null?0:Math.min((now-lastFrame)/1000,.05);lastFrame=now;
+  study.advance(dt);renderPreview();
+  frame=requestAnimationFrame(tick);
+}
+
+function schedule() {
+  if(playing&&!document.hidden&&frame===null){lastFrame=null;frame=requestAnimationFrame(tick);}
+}
+
+function seek(time) {
+  study.seek(time);lastFrame=null;renderPreview();
+}
+
+document.querySelector('#palette').addEventListener('change',event=>{palette=event.target.value;render();});
+document.querySelector('#symbol').addEventListener('change',event=>{symbol=event.target.value;render();});
+document.querySelector('#replay').addEventListener('click',()=>{seek(0);playing=true;updateControls();schedule();});
+pauseButton.addEventListener('click',()=>{playing=!playing;updateControls();render();schedule();});
+progressInput.addEventListener('input',()=>{playing=false;seek(Number(progressInput.value)/100*study.duration);});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&frame!==null){cancelAnimationFrame(frame);frame=null;lastFrame=null;}
+  else schedule();
+});
+reducedMotion.addEventListener('change',()=>{
+  playing=false;study=createPerformance({palette,calm:reducedMotion.matches});seek(study.duration);
+});
+new ResizeObserver(render).observe(document.querySelector('.board'));
+new ResizeObserver(renderPreview).observe(previewCanvas.parentElement);
+if(reducedMotion.matches)seek(study.duration);
+render();
+schedule();
