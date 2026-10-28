@@ -46,6 +46,9 @@ test('seeking reconstructs the same physical pose and changing palette retains p
   live.setPalette('night');
   assert.equal(live.actor,identity);assert.equal(live.time,time);assert.deepEqual(frame(live),before);
   assert.equal(live.actor.palette.id,'night');
+  scrubbed.seek(scrubbed.duration);
+  assert.equal(scrubbed.time,scrubbed.duration);
+  assert.equal(scrubbed.pose.phase,'wait','Seeking to 100% enters the actual waiting state');
 });
 
 test('the question starts during the reaction, forms within the entrance, and remains in calm waiting',()=>{
