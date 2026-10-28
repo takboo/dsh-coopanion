@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-28",
+  "sourceHead": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "working tree before documentation consolidation; includes uncommitted design notes",
+  "snapshots": [
+    {
+      "originalPath": "docs/design/companion-art-whiteboard.md",
+      "path": "docs/archive/2026-10-28-little-deep/snapshots/companion-art-whiteboard.md",
+      "sha256": "450d498566e56057adeb002ad2c4fedf9b8ffe730309f34056e221da68c82730",
+      "status": "historical discussion; relative links and present-tense language belong to the original location"
+    }
+  ]
+}

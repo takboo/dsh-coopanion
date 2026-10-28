@@ -10,8 +10,8 @@
 |---|---|
 | 安装、配置、操作与升级 | [使用指南](usage.md) |
 | 开发、构建、测试与录制回归 | [开发指南](development.md) |
-| 小湛造型、完整互动与分支续做 | [当前设计入口](design/README.md)、[设计白板](design/companion-art-whiteboard.md) |
-| 前两轮鲸鱼方案与旧讨论追溯 | [归档索引](archive/README.md)，按固定提交解释 |
+| 小湛造型、完整互动与分支续做 | [当前设计入口](design/README.md)，统一维护已选方案、最新反馈与下一步 |
+| 旧鲸鱼候选、眼型对照与讨论追溯 | [归档索引](archive/README.md)，按原提交与源码摘要解释 |
 | 完成判断、通知身份与请求结算 | [提醒契约](notification-contract.md) |
 | 会话续接、接受回执、草稿与去重 | [会话契约](session-chat-contract.md) |
 | 进程退出、有限恢复与临时状态 | [恢复契约](desktop-recovery-contract.md) |
@@ -32,4 +32,4 @@
 
 仓库的 `docs/evidence/` 只保留历史原始证据，普通搜索及安装包均排除它。追溯时先读其说明并核对实际产物身份。`.cache/`、`artifacts/` 与 `dist/` 属于本机或生成内容，可能来自其他提交。
 
-普通搜索聚焦当前契约与设计；历史方案使用 `rg --no-ignore docs/archive`，第三方 Livelings 原文按需使用 `rg --no-ignore docs/design/art-workflow/vendor/livelings`，版本历史使用 `rg --no-ignore docs/release-notes.md`。归档与第三方 skill 的原始文字按其来源解释，当前执行范围以用户最新要求和设计入口为准。
+普通搜索聚焦当前契约与设计；历史方案使用 `rg --no-ignore docs/archive`，眼型历史对照按归档链接显式读取，第三方 Livelings 原文按需使用 `rg --no-ignore docs/design/art-workflow/vendor/livelings`，版本历史使用 `rg --no-ignore docs/release-notes.md`。归档与第三方 skill 的原始文字按其来源解释，当前执行范围以用户最新要求和设计入口为准。本地目录保留及跨分支忽略规则见[开发指南](development.md#本地文件与分支切换)。

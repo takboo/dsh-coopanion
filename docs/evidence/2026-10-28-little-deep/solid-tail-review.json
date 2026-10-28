@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree, identified by hashes",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "b4de8e193857d5a01de136261c304881ce63dfb37738faacd41cb21d385d3fbb",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "f23ebd7b8419219c5912b037300884bd331894c645c0e6a1e456dc91d868137c",
+    "docs/design/art-workflow/whale-little-deep-v3/app.js": "e328052f00ea63ec06649e5237b6fb87d210c2fd18e4b843d2d6cf3af82aea5a"
+  },
+  "userCorrection": [
+    "Large visible motion after supplied GIF, not a subtle sway.",
+    "Full whale and thinking tail must share the new shape and both be solid."
+  ],
+  "checks": {
+    "syntax": "character.js and harness-tail.js passed node --check",
+    "geometry": "All declared actions simulated for four seconds each, finite 96-point outlines within four body units. Result actions settled to idle when entered from idle as in app.js.",
+    "motion": "Tip-region width 2.043 units broadside and 0.868 units edge-on; sampled lateral centroid travel 1.235 units. Three-second periodicity and calm=true unchanged deformation passed.",
+    "browser": "CUA in-app browser. Studio reloaded; main idle and thinking viewed; thinking interrupted by working, tail-wave interrupted by done. Complete all-palette/studio-envelope acceptance is not claimed.",
+    "offscreenRender": "90 frames at 30fps rendered with the real Livelings Actor/renderActor and current definition in Node @napi-rs/canvas, combined into a three-second GIF. This is an offscreen render, not a browser recording."
+  },
+  "artifactsSHA256": {
+    "solid-body-preview.png": "46ebe779992b1ac9f389df2b1b5d565768368c4144f7d91d1abcaf1ee16d86cb",
+    "solid-thinking-preview.png": "7f8f915cd5030dfd2f0474cd83af7464539a830d14701e3acf03735411774959",
+    "solid-tail-motion.gif": "7b3a8e273f1f82415a42b17aa48df778e92ff0247a47bb8dfa042e9c44beb6a6"
+  },
+  "notCovered": [
+    "user aesthetic acceptance",
+    "frame-exact GIF reproduction",
+    "all palettes and window sizes",
+    "browser OS reduced-motion preference",
+    "native platforms and Harness integration",
+    "publication"
+  ]
+}

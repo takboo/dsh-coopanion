@@ -4,8 +4,10 @@ import {
   defineCharacter, label, physics, shapes, variant, at, every,
   zzz, blip, chime, splash as splashSound, whoosh,
 } from '../vendor/livelings/workspace/livelings.js';
+import {harnessTail, attachedHarnessTail, bendThinkingTail, sampleOpenPath,
+  TAIL_ATTACHMENT, TAIL_FLUKE_Y, detachTailPoint} from './harness-tail.js';
 
-function outline(start, curves) {
+function outline(start, curves, resample = true) {
   let point = {x: start[0], y: start[1]};
   const points = [point];
   for (const curve of curves) {
@@ -19,41 +21,34 @@ function outline(start, curves) {
     }
     point = {x: curve[4], y: curve[5]};
   }
-  return shapes.resample(points);
+  return resample ? shapes.resample(points) : points;
 }
 
 // Rounded forehead, a little notch, a curved peduncle, and asymmetric flukes.
-export const whaleBody = () => outline([-1.13, -.12], [
+export const whaleBody = () => {
+  const tail = attachedHarnessTail();
+  const first=tail[0],last=tail.at(-1);
+  const tangent=(a,b)=>{const length=Math.hypot(b.x-a.x,b.y-a.y);return{x:(b.x-a.x)/length,y:(b.y-a.y)/length};};
+  const incoming=tangent(first,tail[1]),outgoing=tangent(tail.at(-2),last);
+  const head = outline([-1.13, -.12], [
   [-1.14, -.65, -.76, -.97, -.26, -.96],
-  [.02, -.96, .23, -.89, .48, -.99],
-  [.59, -1.03, .64, -1.02, .67, -1.00],
-  [.47, -.95, .49, -.82, .63, -.72],
-  [.75, -.62, .88, -.54, .98, -.52],
-  [1.03, -.65, .99, -.79, .93, -.86],
-  [.77, -.94, .77, -1.17, .91, -1.33],
-  [.96, -1.39, .97, -1.35, 1.00, -1.24],
-  [1.02, -1.08, 1.10, -.98, 1.20, -.92],
-  [1.37, -1.04, 1.57, -.97, 1.70, -1.14],
-  [1.77, -1.24, 1.78, -1.20, 1.77, -1.09],
-  [1.75, -.82, 1.54, -.63, 1.27, -.63],
-  [1.23, -.22, 1.03, .13, .73, .36],
+  [.02, -.96, .18, -.94, .34, -1.01],
+  [.46, -1.07, .51, -1.05, .53, -1.03],
+  [.35, -.99, .37, -.86, .54, -.70],
+  [.72, -.48, first.x-incoming.x*.15, first.y-incoming.y*.15, first.x, first.y],
+  ], false);
+  const underside = outline([tail.at(-1).x, tail.at(-1).y], [
+  [last.x+outgoing.x*.15, last.y+outgoing.y*.15, 1.03, .13, .73, .36],
   [.88, .50, 1.03, .55, 1.02, .60],
   [.81, .70, .59, .60, .48, .51],
   [.17, .83, -.30, .91, -.73, .65],
   [-1.03, .47, -1.16, .19, -1.13, -.12],
-]);
-
-const tailBookmark = () => outline([-.09, .80], [
-  [-.10, .46, -.06, .05, -.02, -.23],
-  [-.47, -.22, -.73, -.53, -.69, -.94],
-  [-.68, -1.10, -.60, -1.17, -.57, -1.12],
-  [-.44, -.79, -.23, -.64, .02, -.56],
-  [.29, -.85, .59, -.73, .88, -.95],
-  [1.01, -1.05, 1.03, -.99, .97, -.82],
-  [.84, -.43, .49, -.23, .16, -.25],
-  [.11, .06, .09, .46, .10, .80],
-  [.04, .85, -.04, .85, -.09, .80],
-]);
+  ], false);
+  // Keep the exact same 48 tail knots as the standalone tail. Spend the other
+  // 48 points on the body; never resample across this shared component again.
+  return [...sampleOpenPath(head,24), ...tail.slice(1),
+    ...sampleOpenPath(underside,27).slice(1,-1)];
+};
 
 function paintPath(r, points, fill, stroke = null, width = .025) {
   const g = r.g, first = r.toPx(...points[0]);
@@ -67,13 +62,23 @@ function paintPath(r, points, fill, stroke = null, width = .025) {
 }
 
 export function bendTail(points, time, actor) {
+  const hidden = Math.max(0, Math.min(1, actor.fxValue('hidden')));
+  bendThinkingTail(points, actor.cues.tailClock ?? time - (actor.cues.tailStarted ?? time),
+    hidden * Math.max(0, Math.min(1, actor.fxValue('tailMotion'))), actor.calm);
   // Rotate the whole fluke around its root; keep the notch and forehead stable.
-  const angle = actor.fxValue('tail');
+  const angle = actor.fxValue('tail') * (1 - hidden);
   for (const p of points) {
-    const weight = Math.max(0, Math.min(1, (p.x - .73) / .43));
-    const turn = angle * weight, x = p.x - .86, y = p.y + .28;
-    p.x = .86 + Math.cos(turn) * x - Math.sin(turn) * y;
-    p.y = -.28 + Math.sin(turn) * x + Math.cos(turn) * y;
+    // Paddle the existing silhouette fin, without an extra fin over the belly.
+    const finWeight = Math.max(0, Math.min(1, (p.y - .34) / .26))
+      * Math.max(0, Math.min(1, (p.x - .38) / .35));
+    p.y -= actor.fxValue('fin') * .08 * finWeight * (1 - hidden);
+    // Bend only the stem. Every fluke point gets one rigid rotation, so the
+    // left lobe and fork cannot stretch differently during a tail wave.
+    const stemY = detachTailPoint(p).y;
+    const weight = p.x>.65 ? Math.max(0,Math.min(1,stemY/TAIL_FLUKE_Y)) : 0;
+    const turn = angle * weight, x = p.x - TAIL_ATTACHMENT.x, y = p.y - TAIL_ATTACHMENT.y;
+    p.x = TAIL_ATTACHMENT.x + Math.cos(turn) * x - Math.sin(turn) * y;
+    p.y = TAIL_ATTACHMENT.y + Math.sin(turn) * x + Math.cos(turn) * y;
   }
 }
 
@@ -99,15 +104,42 @@ function spout(a, count = 9) {
 }
 
 function hide(a) {
+  if (a.cues.tailClock === undefined) a.cues.tailClock = 0;
+  a.cues.tailStarted = a.time;
   a.morph('tail', {squash: .4, blink: false});
   a.fx('hidden').target = 1; a.fx('eyesOpacity').target = 0;
+  a.fx('tailMotion').target = 1;
   a.scale.target = .78; a.hover.target = .09; a.lookFree();
 }
 function reveal(a) {
   a.morph('rest', {squash: .4, blink: false});
   a.fx('hidden').target = 0; a.fx('eyesOpacity').target = 1;
+  a.fx('tailMotion').target = 1;
   a.scale.target = 1; a.hover.target = .13;
 }
+
+function peek(a) {
+  // Peek with the original whale, still curled up, before stretching out.
+  // Keeping its own head, belly and face avoids inventing a second anatomy.
+  a.morph('rest', {squash: 0, blink: false});
+  a.fx('hidden').target = 0; a.fx('eyesOpacity').target = 0;
+  a.fx('tailMotion').target = 0;
+  a.fx('fin').target = .9;
+  a.scale.target = .82; a.hover.target = .10; a.lean.target = .075;
+  a.express('shy'); a.lookAt(0,-.25);
+}
+
+export const tailPerformanceDuration = {hide:6.2,peek:4.2};
+export const tailBeats = {
+  notice:['先看你一眼','咦，你在看我呀。'],
+  tuck:['缩一缩，收好小鳍','有点害羞，先把自己收起来。'],
+  hide:['藏下去啦','身体藏好，只留尾巴在外面。'],
+  hidden:['小尾巴还在','藏好了……偷偷摆一下尾巴。'],
+  pause:['尾巴停住了','听见你啦，先看看是谁。'],
+  peek:['缩着身子看看你','先探出来看一眼，还没有完全放松。'],
+  emerge:['放心出来了','原来是你呀，那就出来陪你。'],
+  return:['回去继续想','我在呢。再让我想一会儿。'],
+};
 function wave(a, t, amplitude = .16, speed = 4.0) {
   a.fx('tail').target = a.calm ? 0 : Math.sin(t * speed) * amplitude;
 }
@@ -117,7 +149,7 @@ function heart(a) {
 }
 
 export const signatureMoves = [
-  {id:'peek-tail', name:'藏进尾巴', detail:'害羞一下，再悄悄探出来'},
+  {id:'peek-tail', name:'藏进尾巴', detail:'看你、收鳍，再偷偷探头'},
   {id:'spout', name:'噗噜喷水', detail:'抬一抬头，喷一小束水花'},
   {id:'tail-wave', name:'摆尾招呼', detail:'先看你，再用尾巴打招呼'},
   {id:'dive', name:'潜下再探头', detail:'潜进去，带着小泡泡回来'},
@@ -135,11 +167,11 @@ export default defineCharacter({
     softStiffness:260,softDamping:15,softSmoothing:160,stretch:.48,
     squashiness:.60,morphStiffness:130,morphDamping:18,
     hopPower:2.2,bounce:0}),
-  eyes: {w:.29,h:.41,corner:1,spacing:.65,lift:.025,topLid:0,bottomLid:0,tilt:0,slant:0,asym:0},
+  eyes: {w:.25,h:.34,corner:1,spacing:.48,lift:.025,topLid:0,bottomLid:0,tilt:-.04,slant:0,asym:-.28},
   eyeMode:'ink',eyeShine:0,outlineWidth:.026,thicken:false,splash:false,
-  face:{x:.04,y:-.26,r:.63},rest:whaleBody,
+  face:{x:-.12,y:-.29,r:.63},rest:whaleBody,
   shapes:{
-    tail:tailBookmark,
+    tail:harnessTail,
     wide:()=>shapes.transform(whaleBody(),1.06,.94,0,.04),
     tall:()=>shapes.transform(whaleBody(),.97,1.04,0,-.03),
     puddle:()=>shapes.transform(whaleBody(),1.07,.90,0,.08),
@@ -153,6 +185,7 @@ export default defineCharacter({
   effects:{
     tail:{rest:0,stiffness:72,damping:12},fin:{rest:0,stiffness:85,damping:13},
     hidden:{rest:0,stiffness:95,damping:18},eyesOpacity:{rest:1,stiffness:95,damping:18},
+    tailMotion:{rest:1,stiffness:65,damping:16},
     belly:{rest:0,stiffness:65,damping:14},opacity:{rest:1,stiffness:50,damping:12},
     ripple:{rest:0,stiffness:40,damping:11},
   },
@@ -180,16 +213,11 @@ export default defineCharacter({
       [.13,.76,-.30,.77,-.63,.55],[-.90,.35,-1.02,.11,-1.02,-.10-belly*.08]],r.palette.core);
     r.g.restore();
   },
-  paintFace(r) {
-    const alpha = (1 - Math.min(1, Math.max(0, r.actor.fxValue('hidden')))) ** 2;
-    if (alpha < .005) return;
-    const fin = r.actor.fxValue('fin');
-    r.g.save(); r.g.globalAlpha *= alpha * r.actor.fxValue('opacity');
-    paintPath(r,[[.00,.18],[.03,.39,.24,.59+fin*.06,.49,.57],
-      [.39,.48+fin*.06,.20,.43,.00,.18]],r.palette.body);
-    r.g.restore();
-  },
-  update(a) {
+  update(a,dt) {
+    if (a.cues.tailClock !== undefined) {
+      a.cues.tailClock += dt * Math.max(0, Math.min(1, a.fxValue('tailMotion')));
+    }
+    if (!['peek-tail','peek-out'].includes(a.onceId)) a.cues.tailBeat = null;
     // Keep blink timing and the occasional double blink from the native engine.
     if (!a.onceId && a.loopId === 'idle') {
       wave(a,a.time,.045,1.6);
@@ -201,12 +229,17 @@ export default defineCharacter({
   },
   react:{
     tap(a,count) {
+      // Touching a performance never restarts its opening on every tap.
+      if (a.onceId === 'peek-out') return true;
       if (a.fxValue('hidden') > .65) { a.play('peek-out'); return true; }
+      if (a.onceId === 'peek-tail') return true;
       if (count >= 3) { a.play('peek-tail'); return true; }
       if (count === 2) { a.play('blink-soft'); a.fx('tail').velocity += 1.5; return true; }
       a.flash('curious',.75); a.poke(.32); a.fx('tail').velocity += .7; bubbles(a,2); return true;
     },
     purr(a) {
+      if (a.onceId === 'peek-out') return true;
+      if (a.fxValue('hidden') > .65) { a.play('peek-out'); return true; }
       if (a.onceId === 'pet-soft') return true;
       a.play('pet-soft'); return true;
     },
@@ -262,14 +295,41 @@ export default defineCharacter({
       duration:2.7,enter(a){reveal(a);a.express('worried');a.fx('tail').target=.17;a.lean.target=-.06;a.blink();},
       tick(a,t,dt){if(at(t,dt,.5))bubbles(a,1);if(at(t,dt,1.6))a.express('soft');},front:undefined,back:undefined,
     }),
-    'peek-tail':{kind:'once',duration:3.3,label:label('Hide in the tail','藏进尾巴'),
-      enter(a){hide(a);bubbles(a,2);},tick(a,t,dt){wave(a,t,.12,3.3);if(at(t,dt,2.15)){reveal(a);a.express('shy');a.blink();}}},
+    'peek-tail':{kind:'once',duration:tailPerformanceDuration.hide,label:label('Hide in the tail','藏进尾巴'),
+      enter(a){
+        reveal(a);a.cues.tailBeat='notice';a.express('curious');a.lookAt(0,-.25);
+        a.cues.tailClock=0;
+      },
+      tick(a,t,dt){
+        wave(a,t,.04,2.1);
+        if(at(t,dt,.40)){
+          a.cues.tailBeat='tuck';a.express('shy');a.scale.target=.91;
+          a.fx('fin').target=.95;a.lean.target=.075;
+        }
+        if(at(t,dt,.90)){
+          a.cues.tailBeat='hide';a.express('closed');hide(a);
+          a.lean.target=0;bubbles(a,1);
+        }
+        if(at(t,dt,1.65))a.cues.tailBeat='hidden';
+        if(at(t,dt,2.85)){a.cues.tailBeat='pause';a.fx('tailMotion').target=0;}
+        if(at(t,dt,3.35))peek(a);
+        // Let the original silhouette settle before showing its eyes.
+        if(at(t,dt,3.75)){a.cues.tailBeat='peek';a.fx('eyesOpacity').target=1;}
+        if(at(t,dt,4.30)){a.express('closed');a.fx('eyesOpacity').target=0;}
+        if(at(t,dt,4.55)){
+          a.cues.tailBeat='emerge';reveal(a);a.express('soft');
+          a.fx('eyesOpacity').target=0;
+          a.fx('fin').target=.25;a.lean.target=-.045;a.lookAt(0,-.15);
+        }
+        if(at(t,dt,4.95))a.fx('eyesOpacity').target=1;
+        if(at(t,dt,5.45)){a.blink();a.lean.target=0;a.fx('fin').target=0;a.lookFree();}
+      }},
     'spout':{kind:'once',duration:2.4,label:label('Spout','噗噜喷水'),
       enter(a){reveal(a);a.express('happy');a.lean.target=.07;},
       tick(a,t,dt){wave(a,t,.10,3);if(at(t,dt,.4)){spout(a,11);a.squish(2.0);}if(at(t,dt,1.4))a.lean.target=0;}},
     'tail-wave':{kind:'once',duration:2.5,label:label('Tail hello','摆尾招呼'),
       enter(a){reveal(a);a.express('soft');a.lookFree();},
-      tick(a,t,dt){wave(a,t,Math.sin(Math.min(1,t/2.5)*Math.PI)*.23,4.8);if(at(t,dt,.3))a.blink();}},
+      tick(a,t,dt){wave(a,t,Math.sin(Math.min(1,t/2.5)*Math.PI)*.48,4.8);if(at(t,dt,.3))a.blink();}},
     'dive':{kind:'once',duration:3.6,label:label('Dive and surface','潜下再探头'),
       enter(a){reveal(a);a.express('closed');a.hover.target=-.42;a.lean.target=.14;a.fx('opacity').target=.30;a.fx('eyesOpacity').target=.12;a.fx('ripple').target=1;},
       tick(a,t,dt){wave(a,t,.12,4);if(at(t,dt,.5))bubbles(a,4);if(at(t,dt,1.7)){reveal(a);a.fx('opacity').target=1;a.fx('ripple').target=.3;a.lean.target=-.06;a.express('curious');spout(a,6);}if(at(t,dt,2.5))a.lean.target=0;}},
@@ -285,8 +345,31 @@ export default defineCharacter({
     'pet-soft':{kind:'once',duration:2.1,label:label('Enjoy a pet','舒服地眯眼'),
       enter(a){reveal(a);a.express('happy');a.fx('fin').target=.8;a.fx('belly').target=.22;heart(a);},
       tick(a,t){wave(a,t,.035,2.1);}},
-    'peek-out':{kind:'once',duration:2.8,label:label('Peek out','探出来看看'),
-      enter(a){reveal(a);a.express('curious');a.blink();},tick(a,t){wave(a,t,.07,2.5);}},
+    'peek-out':{kind:'once',duration:tailPerformanceDuration.peek,label:label('Peek out','探出来看看'),
+      enter(a){
+        a.cues.peekFromTail=a.fxValue('hidden')>.45;
+        if(a.cues.peekFromTail){
+          hide(a);a.cues.tailBeat='pause';a.fx('tailMotion').target=0;
+        }else{reveal(a);a.cues.tailBeat='emerge';a.express('curious');a.lookAt(0,-.25);}
+      },
+      tick(a,t,dt){
+        wave(a,t,.035,2.1);
+        if(!a.cues.peekFromTail)return;
+        if(at(t,dt,.50))peek(a);
+        if(at(t,dt,.90)){a.cues.tailBeat='peek';a.fx('eyesOpacity').target=1;}
+        if(at(t,dt,1.35)){a.express('curious');a.lookAt(.3,-.15);}
+        if(a.loopId==='thinking'){
+          if(at(t,dt,2.35)){a.cues.tailBeat='return';a.express('closed');a.fx('eyesOpacity').target=0;}
+          if(at(t,dt,2.70)){hide(a);a.lean.target=0;}
+        }else{
+          if(at(t,dt,1.80)){a.express('closed');a.fx('eyesOpacity').target=0;}
+          if(at(t,dt,2.05)){
+            a.cues.tailBeat='emerge';reveal(a);a.express('soft');a.lean.target=0;a.lookFree();
+            a.fx('eyesOpacity').target=0;
+          }
+          if(at(t,dt,2.45))a.fx('eyesOpacity').target=1;
+        }
+      }},
     'tail-settle':{kind:'once',duration:1.4,label:label('Settle the tail','轻轻收尾'),
       enter(a){reveal(a);},tick(a,t){wave(a,t,Math.sin(Math.min(1,t/1.4)*Math.PI)*.07,3);}},
   },

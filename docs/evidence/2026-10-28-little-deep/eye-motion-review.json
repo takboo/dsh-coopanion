@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree identified by file hashes",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/eye-motion.html": "84398e4cff897df2cd047a062c80ca5964b64ce8be9fa144db463e751dfe95ea",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-motion.css": "adb13d24af993903d2bf876acd9d5dedc0474997586f82142cf2b739cbcb0111",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-motion.js": "bc2707660bfda123e34fa0ecf61e972655db925a0cfeb0f9098f3d0aaf8f5b96",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-studies.js": "825020b643bcbc36838cc3d319f780649818864347e97faa135da71023dc065e",
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "867dc421d240c6ef36be4438b79f9f97900a9bc51bf1f1495467b5a0cb77270f",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "74832ac5426deee340c80cdaf49349f39d151d64ed22a4f804afa1dbf07bd2e9"
+  },
+  "scope": "B and C remain candidates; user requested motion comparison before deciding. No default-eye replacement and no new hiding/petting choreography.",
+  "checks": {
+    "syntax": "eye-motion.js and eye-studies.js passed node --check",
+    "sourceIdentity": "Default character.js and harness-tail.js still match organic-tail-review.json byte hashes",
+    "actorSimulation": "B/C advanced through idle, blink, working, blocked, pet, sleep, thinking, peek-out and done; body base vertices and state matched at every sampled step. This does not assert pixel-identical eyes or body wobble.",
+    "offscreenRender": "Actual Livelings renderActor used with Node canvas and an OffscreenCanvas bridge to render native glyph overlays; eye-motion-expressions.png compares six expressions.",
+    "browser": "Codex in-app browser via CUA: six dynamic canvases displayed; manual pet interrupted the demo; a full twelve-step demo ended and returned to idle; pointer movement applied through a large canvas. Final demo restarted with existing night palette retained.",
+    "visibilityAndMotionPreference": "Visibility pause/cancel and reduced-motion event wiring inspected in source; browser preference emulation was not performed."
+  },
+  "artifactsSHA256": {
+    "eye-motion-preview.png": "1cbe4d428fa9c964d8b4ad33e02ecccbf1d43ac1bed291d885fa60018ef7be5a",
+    "eye-motion-expressions.png": "1a269abcd0bf53008cc3bf2f55c4acb731302e6f587351604718b9387362ba6f"
+  },
+  "notCovered": [
+    "user final eye choice or aesthetic acceptance",
+    "all palettes and viewport sizes",
+    "new multi-phase hiding or sustained-petting implementation",
+    "native platform integration",
+    "publication"
+  ]
+}

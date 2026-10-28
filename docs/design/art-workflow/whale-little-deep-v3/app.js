@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {createMascot,onFrame,sounds} from '../vendor/livelings/workspace/livelings.js';
-import character,{signatureMoves,bendTail} from './character.js';
+import character,{signatureMoves,bendTail,tailBeats,tailPerformanceDuration} from './character.js';
 
 const $ = s => document.querySelector(s);
 const host = $('#whale'), stage = $('#stage');
@@ -58,6 +58,7 @@ function stopDemo() {
 function play(id,fromDemo=false) {
   if (!fromDemo) stopDemo();
   cancelPress();
+  if (['peek-tail','peek-out'].includes(id) && mascot.actor.onceId===id) return;
   // Result reactions settle into idle instead of returning to an old thinking loop.
   if (id==='done'||id==='error') mascot.play('idle');
   mascot.play(id); message.until=0;
@@ -120,7 +121,9 @@ mascot.canvas.addEventListener('pointerdown',e=>{
   mascot.canvas.setPointerCapture(e.pointerId);
   petTimer=setTimeout(()=>{
     if(!press||press.drag)return;
-    press.pet=true;mascot.actor.purr();say('舒服得眯起眼，再摸一会也可以。',2.1);
+    press.pet=true;mascot.actor.purr();
+    if(mascot.actor.onceId==='peek-out')message.until=0;
+    else say('舒服得眯起眼，再摸一会也可以。',2.1);
   },420);
 });
 mascot.canvas.addEventListener('pointermove',e=>{
@@ -138,7 +141,11 @@ function release(e,cancelled=false){
   if(!press||press.id!==e.pointerId)return;
   const was=press;clearTimeout(petTimer);press=null;
   if(was.drag){mascot.actor.release();mascot.play(was.restore);mascot.actor.flash('soft',.7);say('轻轻松手，小湛又安顿好了。',1.6);}
-  else if(!cancelled&&!was.pet){const count=mascot.actor.tap();say(count>=3?'藏起来一下，很快就回来。':count===2?'你发现它会连着眨眼了。':'咦，是你呀。噗噜，送你两个小泡泡。',1.7);}
+  else if(!cancelled&&!was.pet){
+    const count=mascot.actor.tap();
+    if(['peek-tail','peek-out'].includes(mascot.actor.onceId))message.until=0;
+    else say(count===2?'你发现它会连着眨眼了。':'咦，是你呀。噗噜，送你两个小泡泡。',1.7);
+  }
   mascot.canvas.style.cursor='grab';
 }
 mascot.canvas.addEventListener('pointerup',e=>release(e));
@@ -159,7 +166,7 @@ const sequence=[
   ['idle',2.2,'先安静地陪你一会'],['thinking',4.0,'潜进思考，只留下小尾巴'],
   ['working',3.0,'出来认真忙起来'],['waiting',2.3,'安静等一等'],
   ['listening',2.5,'认真听你说'],['done',3.3,'做好啦，送你一束水花'],
-  ['peek-tail',3.6,'藏起来，再探出头'],['tail-wave',2.8,'摆摆尾巴打招呼'],
+  ['peek-tail',tailPerformanceDuration.hide+.3,'看你、收鳍、藏好，再偷偷探头'],['tail-wave',2.8,'摆摆尾巴打招呼'],
   ['spout',2.7,'噗噜喷水'],['dive',3.9,'潜下去，再回来'],
   ['belly-show',3.3,'舒服地露露白肚皮'],['bubble-ring',3.1,'吹一个泡泡圈'],
   ['error',3.0,'卡住时也会缓一缓'],['blocked',2.4,'有件事需要你'],
@@ -190,12 +197,15 @@ onFrame({visible:true,tick(){
     $('#demo-progress').style.width=((demo.index+fraction)/sequence.length*100)+'%';
     if(fraction>=1)demoStep(demo.index+1);
   }
-  const key=a.state,description=states[key]||states[a.loopId]||states.idle;
-  if(key!==lastState){
+  const key=a.state,beat=['peek-tail','peek-out'].includes(key)?a.cues.tailBeat:null;
+  const description=tailBeats[beat]||states[key]||states[a.loopId]||states.idle;
+  const displayKey=`${key}:${beat||''}`;
+  if(displayKey!==lastState){
     $('#state-name').textContent=description[0];stage.dataset.state=key;
+    stage.dataset.tailBeat=beat||'';
     document.querySelectorAll('[data-state]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.state===(['done','error'].includes(key)?key:a.loopId)));
     document.querySelectorAll('[data-move]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.move===key));
-    lastState=key;
+    lastState=displayKey;
   }
   const text=a.time<message.until?message.text:description[1];
   if(text!==lastDescription){$('#response').textContent=text;lastDescription=text;}

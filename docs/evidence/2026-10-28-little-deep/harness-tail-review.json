@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree; identify the tested code by hashes below",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "042cf237b5677cc3ce212f445843be19cf3fb8a1b944d11e885f8becf48a7474",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "358801408a074f0dfd6fa58eb0f30619cef1b57cb85fd6e4ab199e290a490374",
+    "docs/design/art-workflow/whale-little-deep-v3/app.js": "e328052f00ea63ec06649e5237b6fb87d210c2fd18e4b843d2d6cf3af82aea5a"
+  },
+  "checks": {
+    "javascriptSyntax": "character.js and harness-tail.js passed node --check",
+    "actorSimulation": "All declared actions advanced for four seconds each; outlines remained finite with 96 points. Result reactions were started from idle as in app.js and settled back to idle. HTMLElement was stubbed for Node import; this is not a browser rendering test.",
+    "motionMath": "Three-second periodicity and unchanged geometry when calm=true passed. This does not test the browser OS preference.",
+    "browser": "Codex in-app browser via CUA; main preview loaded, thinking displayed, peek-out was interrupted by working, done settled into idle. Hollow tail observed on daylight and night backgrounds. Studio was reloaded and observed during transition; no claim of complete visual acceptance for all tiles.",
+    "screenshot": "harness-tail-preview.png"
+  },
+  "adaptation": "Static geometry from official RunningWhaleTail.tsx; low-amplitude vector motion locally authored, not a frame-exact animation port.",
+  "notCovered": [
+    "user artwork acceptance",
+    "all palette and size combinations",
+    "browser reduced-motion preference",
+    "native platforms or product integration",
+    "full GIF motion variants",
+    "publication"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree; identify source by hashes",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "eec55acec5a07c23cebda7a2fb2a99d5ce83cb48a5ee0316541ff085e8f288bc",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "b3a3cefe489fc9da9e509af9738dff49ff28c03a2a17ab6fa65341f7a32b9544",
+    "tests/little-deep-tail.mjs": "07d0ce51d6ce4dcb7f313d8ecf2f5b313c6540408fda6381e01641d27c83dfd3"
+  },
+  "symptom": "Standalone and full-whale tail shape appeared different despite sharing source curves.",
+  "confirmedCauses": [
+    "Whole-body closed resampling assigned different knots to the flukes.",
+    "Position-weighted rotation stretched the two lobes differently."
+  ],
+  "fix": [
+    "Both shapes retain the identical 48 open-tail contour knots; body/base get the remaining 48.",
+    "Whole-whale tail waves bend only the stem and rigidly rotate all fluke points."
+  ],
+  "checks": {
+    "regressionCommand": "node --test tests/little-deep-tail.mjs",
+    "before": {
+      "smoothedContourMaxDeviation": 0.05223,
+      "flukeDistanceChangeAtWave": 0.03696,
+      "neutralFlukeRasterOverlap": 0.98304
+    },
+    "after": {
+      "regressionTestsPassed": 2,
+      "neutralFlukeRasterOverlap": 1.0,
+      "contourToleranceBodyUnits": 0.01,
+      "flukeDistanceToleranceBodyUnits": 1e-09
+    },
+    "actorSimulation": "All declared actions: four seconds at 60Hz each, finite 96-point outlines within four body units.",
+    "browser": "Codex in-app browser CUA: refreshed main, restored existing night palette, viewed whole whale and standalone thinking tail and switched back.",
+    "render": "Aligned contour image and 90-frame GIF use actual Livelings smoothing/renderActor with current source; raster overlap checks only the aligned neutral upper flukes, not the body join or every animated frame."
+  },
+  "artifactsSHA256": {
+    "matched-tail-alignment.png": "00ab78938b8aac0eb559b73533e239dd44a593693f967631f4e730482afbd801",
+    "matched-tail-motion.gif": "8a30d634c3ea5e8f4a7cbd92956bf60ddd8c0f814fc173eb43af769de3b1ae3a"
+  },
+  "notCovered": [
+    "user artwork acceptance",
+    "all palettes and viewport sizes",
+    "native integration",
+    "frame-exact source GIF reproduction",
+    "publication"
+  ]
+}

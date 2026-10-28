@@ -4,6 +4,22 @@
 
 小湛／Livelings 的独立浏览器原型按[当前设计入口](design/README.md)启动与续做；本页其余命令验证现有插件，不能用插件测试通过结算角色美术观感。
 
+## 本地文件与分支切换
+
+`node_modules/`、`dist/`、`.cache/`、`artifacts/` 和指定生成文件由 `.gitignore` 排除；清理前核对来源和可重建性。原始证据、源码、许可与用户数据分别保留，不能按目录大小推断可删。
+
+`/.local/macos-vm/` 包含持久 VM 磁盘和专用 SSH 身份，不属于可重建缓存。仓库 `.gitignore` 保留这条精确规则；本机同时在 `.git/info/exclude` 保留 `/.local/macos-vm/` 和 `.DS_Store`，防止切换到缺少规则的分支时进入 Git／变更快照。新 checkout 或新 worktree 应重新核对其本地排除文件；规则不跨克隆自动传播。不要扩大为忽略整个 `.local/` 或所有镜像扩展名，以免隐藏其他应跟踪的内容。
+
+可用以下只读命令核对规则与未跟踪范围：
+
+```bash
+git check-ignore -v .local/macos-vm/tart .DS_Store
+git ls-files --others --exclude-standard -- .local/macos-vm/
+git status --short
+```
+
+最后两条应分别确认 VM 目录无输出、开发内容仍正常显示。被忽略的文件不等于可以删除；中断的 `tmp_pack_*` 需逐个核对身份、占用和正式包边界后处理。
+
 ## 准备与验证入口
 
 ```bash
