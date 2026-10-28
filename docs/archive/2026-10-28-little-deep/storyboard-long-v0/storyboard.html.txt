@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小湛工作分镜 v0 · 转向用户</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root{color-scheme:light;--ink:#283b50;--muted:#66778a;--line:#d9e0e6;--blue:#365acb;--paper:#f5f3ed}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"PingFang SC",sans-serif}main{max-width:1380px;margin:auto;padding:25px 32px 20px}a{color:var(--blue);text-underline-offset:3px}header{display:flex;justify-content:space-between;gap:20px;align-items:start}h1{font-size:29px;letter-spacing:-.04em;margin:3px 0 5px;font-weight:650}p{margin:0}.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--blue)}.intro{color:var(--muted);max-width:780px;font-size:14px}nav{font-size:12px;display:flex;gap:15px;white-space:nowrap;margin-top:10px}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px 22px;margin:20px 0 16px;padding:10px 0;border-block:1px solid var(--line);font-size:12px}.toolbar label{display:flex;align-items:center;gap:8px}select{font:inherit;color:var(--ink);background:#fff;border:1px solid #cbd4df;border-radius:6px;padding:5px 26px 5px 9px}.status{margin-left:auto;color:#896331;background:#efe5d4;padding:3px 9px;border-radius:20px}.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}figure{margin:0;min-width:0}.shot-heading{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:7px}.shot-heading strong{font-weight:650}.shot-heading span{color:var(--muted)}.image{overflow:hidden;border:1px solid #d7dfe7;border-radius:10px;background:#e8eef8;aspect-ratio:1.3}canvas{width:100%;height:100%;display:block}figcaption{padding:10px 2px 0}h2{font-size:16px;line-height:1.4;margin:0 0 5px;font-weight:650}.movement{font-size:12px;min-height:44px;color:var(--muted)}.control{font:11px/1.6 ui-monospace,SFMono-Regular,monospace;color:#4b6686;margin-top:6px}.notes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-top:23px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.notes strong{display:block;font-size:12px;color:var(--ink);margin-bottom:4px}footer{display:flex;justify-content:space-between;gap:12px;margin-top:22px;color:var(--muted);font-size:11px}#render-status{color:var(--blue)}@media(max-width:1000px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}.image{aspect-ratio:1.7}.notes{grid-template-columns:1fr}.status{margin-left:0}header{display:block}}@media(max-width:580px){main{padding:18px}.board{grid-template-columns:1fr}.image{aspect-ratio:1.6}nav{flex-wrap:wrap}h1{font-size:25px}footer{display:block}}@media print{main{padding:0}.toolbar,nav{display:none}.board{grid-template-columns:repeat(4,minmax(0,1fr))}.notes{grid-template-columns:repeat(3,1fr)}figure{break-inside:avoid}}
+  </style>
+  <style>
+    .playback{display:flex;gap:6px}button{font:inherit;font-size:12px;border:1px solid #cbd4df;border-radius:6px;padding:6px 10px;color:var(--ink);background:#fff;cursor:pointer}button:hover{border-color:#7b93d8}button:focus-visible,input:focus-visible{outline:2px solid #5578dc;outline-offset:3px}.sample{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:var(--muted)}.sample input{width:100%;min-width:0;accent-color:var(--blue)}.sample output{white-space:nowrap;font-variant-numeric:tabular-nums}.motion-tag{color:var(--blue)!important;font-weight:600}
+    .preview{margin:0 0 30px}.preview-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px;font-size:13px}.preview-heading strong{font-weight:650}#phase-name{color:var(--blue);font-size:12px}.preview-image{height:clamp(270px,35vw,400px);border:1px solid #d7dfe7;border-radius:12px;overflow:hidden;background:#e8eef8}.phases{display:flex;gap:8px;flex-wrap:wrap;list-style:none;margin:12px 0 0;padding:0;font-size:11px;color:var(--muted)}.phases li{padding:4px 11px;border:1px solid var(--line);border-radius:20px}.phases [aria-current=step]{background:#e5eafb;border-color:#9aade8;color:var(--blue)}.preview .sample{font-size:12px;margin-top:13px}.reference-title{font-size:16px;margin:0 0 15px}.preview-image canvas{width:100%;height:100%}@media print{.preview{display:none}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">STORYBOARD / LITTLE DEEP / W03</p>
+        <h1>从忙碌，到看向你</h1>
+        <p class="intro">固定角色、固定机位。同一只小湛连续完成收势、看向你、侧倾写出符号，再放松等待。</p>
+      </div>
+      <nav aria-label="相关资料"><a href="#preview">连续样片</a><a href="#review">评审重点</a><a href="./index.html">互动原型 ↗</a></nav>
+    </header>
+    <section class="toolbar" aria-label="静帧对照">
+      <label>同造型配色 <select id="palette"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label>
+      <label>共用姿态的事件 <select id="symbol"><option value="question">AI 提问 · 问号</option><option value="approval">等待审批 · 感叹号</option></select></label>
+      <label>播放范围 <select id="scope"><option value="full">整段 A → D</option><option value="c">单看 C</option></select></label>
+      <div class="playback"><button id="replay" type="button">↻ 重播整段</button><button id="pause" type="button" aria-pressed="true">暂停</button></div>
+      <span class="status">连续样片 · 节奏与交接待评审</span>
+    </section>
+    <section class="preview" id="preview" aria-label="连续动作预演">
+      <div class="preview-heading"><strong>W03 · 从忙碌到等待</strong><span id="phase-name">正在忙碌</span></div>
+      <div class="preview-image"><canvas id="performance" role="img" aria-label="小湛连续收势、看向你、侧倾写出头前问号，再放松等待"></canvas></div>
+      <ol class="phases" aria-label="表演段落"><li data-phase="working">工作中</li><li data-phase="settle">A · 收势</li><li data-phase="notice">B · 看向你</li><li data-phase="ask">C · 侧倾与符号</li><li data-phase="wait">D · 等待</li></ol>
+      <div class="sample"><input id="progress" aria-label="样片进度" type="range" min="0" max="100" step="1" value="0"><output id="clock" for="progress">0.0 s / 6.2 s</output></div>
+    </section>
+    <h2 class="reference-title">同一表演的关键姿态对照</h2>
+    <section class="board" aria-label="转向用户的四个关键姿态">
+      <figure>
+        <div class="shot-heading"><strong>W03 A</strong><span>0.9–1.5 s →</span></div>
+        <div class="image"><canvas data-pose="settle" role="img" aria-label="小湛保持工作轮廓，视线偏下，划鳍逐渐缓下" aria-describedby="settle-caption"></canvas></div>
+        <figcaption id="settle-caption"><h2>先收住忙碌</h2><p class="movement">划鳍减速；尾巴完成当前半次摆动，漂浮继续。</p><p class="control">保留相位 · 从当前姿态减速</p></figcaption>
+      </figure>
+      <figure>
+        <div class="shot-heading"><strong>W03 B</strong><span>1.5–2.2 s →</span></div>
+        <div class="image"><canvas data-pose="notice" role="img" aria-label="小湛的双眼回到正视位置，身体逐渐稳定" aria-describedby="notice-caption"></canvas></div>
+        <figcaption id="notice-caption"><h2>把注意力转过来</h2><p class="movement">双眼由偏下回中，眼睑逐渐打开；低幅尾摆承接。</p><p class="control">视线偏下 → 回中 · 眼睑渐开</p></figcaption>
+      </figure>
+      <figure>
+        <div class="shot-heading"><strong>W03 C</strong><span>2.2–4.6 s →</span></div>
+        <div class="image"><canvas data-pose="ask" role="img" aria-label="小湛从正视缓缓侧倾约十二度，左侧头前的问号逐笔画出并轻微颤动" aria-describedby="ask-caption"></canvas></div>
+        <figcaption id="ask-caption"><h2>侧一下身，把符号慢慢写出来</h2><p class="movement">先侧倾，尾巴稍后跟随。左侧头前逐笔成形，圆点最后落下，保留轻微颤动。</p><p class="control">侧倾约 12° → 稍回正 · 无圆形底牌</p></figcaption>
+      </figure>
+      <figure>
+        <div class="shot-heading"><strong>W03 D</strong><span>4.6 s 以后</span></div>
+        <div class="image"><canvas data-pose="wait" role="img" aria-label="小湛稍稍回正，保持关注和事件符号，安静等待" aria-describedby="wait-caption"></canvas></div>
+        <figcaption id="wait-caption"><h2>安静等你回应</h2><p class="movement">身体稍回正、放松眼睑；漂浮与眨眼继续，符号轻颤减弱。</p><p class="control">保留符号 · 等待实际处理</p></figcaption>
+      </figure>
+    </section>
+    <section class="notes" id="review" aria-label="本轮评审重点">
+      <p><strong>固定项</strong>复用当前鲸鱼轮廓、白腹、额顶缺口与 B 大小眼基准。当前“侧倾”作用于整只鲸鱼。</p>
+      <p><strong>本轮看什么</strong>点击“重播整段”观察收势、视线回中、侧倾与放松是否连贯。也可选“单看 C”，暂停或拖动进度比较。</p>
+      <p><strong>后续验证</strong>真实提问结算后的退场、鼠标跟随、触碰和新事件接管仍待验证。这里播放的是固定分镜。</p>
+    </section>
+    <footer><span id="render-status" role="status">正在绘制当前角色…</span><span>分镜不接入 Harness · Powered by Livelings by MakerJackie</span></footer>
+  </main>
+  <script type="module" src="./storyboard.js"></script>
+</body>
+</html>

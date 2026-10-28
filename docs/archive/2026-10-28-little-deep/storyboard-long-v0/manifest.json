@@ -1,0 +1,32 @@
+{
+  "status": "Superseded 6.2-second exploration; not current instructions",
+  "baseCommit": "0844f7e0e180b94be35fe89d63683624dbf1a6ae",
+  "sourceState": "Uncommitted exploration captured before the compact revision",
+  "files": [
+    {
+      "original": "docs/design/storyboards/little-deep-work-v0.md",
+      "snapshot": "little-deep-work-v0.md.txt",
+      "sha256": "811a97daa45cb4fcaa1e9a52f83cf317332d5075bdede19f3fc4ba4a030ec855"
+    },
+    {
+      "original": "docs/design/art-workflow/whale-little-deep-v3/storyboard-performance.js",
+      "snapshot": "storyboard-performance.js.txt",
+      "sha256": "1bc7be9d5642065646a0169ca4c45f970811e139f995d975e846a0ad31a9334f"
+    },
+    {
+      "original": "docs/design/art-workflow/whale-little-deep-v3/storyboard.js",
+      "snapshot": "storyboard.js.txt",
+      "sha256": "a04086812e25ea2c06311374c1a09e269b6eeb23b3dc91f29f024db6f371f5ed"
+    },
+    {
+      "original": "docs/design/art-workflow/whale-little-deep-v3/storyboard.html",
+      "snapshot": "storyboard.html.txt",
+      "sha256": "affe61788d58fe43a44c726543f6140583282bf00322d25b515a845659d7cd1a"
+    },
+    {
+      "original": "tests/little-deep-storyboard.mjs",
+      "snapshot": "little-deep-storyboard.mjs.txt",
+      "sha256": "1ff7fe851a92d749f399d41a423a3b540dd5332911649dd81d3c74edf4bd2699"
+    }
+  ]
+}

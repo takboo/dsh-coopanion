@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// One continuous actor for the storyboard study; no Harness event adapter.
+import {Actor} from '../vendor/livelings/workspace/livelings.js';
+import character from './character.js';
+
+const clamp=n=>Math.max(0,Math.min(1,n));
+const smooth=n=>{const t=clamp(n);return t*t*(3-2*t);};
+const mix=(a,b,t)=>a+(b-a)*t;
+export const TIMING=Object.freeze({settle:.9,notice:1.5,ask:2.2,wait:4.6,end:6.2});
+export const KEYFRAMES=Object.freeze({settle:1.2,notice:2.15,ask:3.16,wait:6.2});
+export const durationFor=scope=>scope==='c'?TIMING.wait-TIMING.ask:TIMING.end;
+
+function cPose(time) {
+  const turn=smooth((time-.12)/.64),settle=smooth((time-1.32)/.66);
+  const tail=smooth((time-.26)/.70);
+  return {
+    phase:'ask',look:[0,0],rootX:0,
+    lean:-.025*Math.sin(Math.PI*smooth(time/.18))+.22*turn-.06*settle,
+    tail:mix(-.02,-.12,tail)+.05*settle,fin:mix(.08,.14,turn)-.07*settle,
+    eyes:{w:1,h:mix(1,1.05,turn),topLid:0},
+    symbol:clamp((time-.30)/1.04),tremor:1,
+  };
+}
+
+export function samplePose(time,{calm=false}={}) {
+  const t=Math.max(0,time);
+  let pose;
+  if(t<TIMING.ask) {
+    const release=smooth((t-TIMING.settle)/(TIMING.notice-TIMING.settle));
+    const attention=smooth((t-TIMING.notice)/(TIMING.ask-TIMING.notice));
+    const energy=1-release,phase=t*4.8+.35;
+    pose={
+      phase:t<TIMING.settle?'working':t<TIMING.notice?'settle':'notice',
+      rootX:Math.sin(t*1.3)*.09*energy,
+      lean:Math.sin(t*1.3)*.025*energy,
+      tail:mix(Math.sin(phase)*.09,-.02,release),
+      fin:mix(Math.sin(phase)*.35,.08,release),
+      look:[mix(.3,0,attention),mix(.6,0,attention)],
+      eyes:{w:mix(.95,1,attention),h:mix(.86,1,attention),topLid:mix(.14,0,attention)},
+      symbol:0,tremor:0,
+    };
+  } else if(t<TIMING.wait) pose=cPose(t-TIMING.ask);
+  else {
+    const local=t-TIMING.wait,relax=smooth(local/1.0),from=cPose(TIMING.wait-TIMING.ask);
+    pose={
+      phase:'wait',rootX:0,look:[0,0],
+      lean:mix(from.lean,.13,relax),
+      tail:mix(from.tail,-.04,relax)+Math.sin(local*1.4)*.012*relax,
+      fin:mix(from.fin,.02,relax)+Math.sin(local*1.1)*.008*relax,
+      eyes:{w:1,h:mix(from.eyes.h,.97,relax),topLid:.04*relax},
+      symbol:1,tremor:mix(1,.35,relax),
+    };
+  }
+  if(calm) {
+    pose.rootX*=.28;pose.lean*=.28;pose.tail*=.28;pose.fin*=.28;pose.tremor=0;
+  }
+  return pose;
+}
+
+function applyPose(actor,pose) {
+  actor.lookAt(...pose.look);actor.express({...pose.eyes,asym:character.eyes.asym});
+  actor.rootX.target=pose.rootX;actor.lean.target=pose.lean;
+  actor.fx('tail').target=pose.tail;actor.fx('fin').target=pose.fin;
+}
+
+export function createPerformance({palette='deep',calm=false,scope='full'}={}) {
+  let actor,time=0;
+  const absoluteTime=()=>scope==='c'?TIMING.ask+Math.min(time,durationFor(scope)):time;
+  const pose=()=>{const p=samplePose(absoluteTime(),{calm});if(scope==='c')p.phase='ask';return p;};
+  function setPalette(id) {
+    const selected=character.palettes.find(p=>p.id===id);
+    if(!selected)throw new Error(`Unknown storyboard palette: ${id}`);
+    palette=id;actor.palette=selected;
+  }
+  function reset() {
+    time=0;
+    const definition={...character,actions:{...character.actions,
+      'storyboard-performance':{kind:'loop',enter(a){applyPose(a,pose());}},
+    }};
+    actor=new Actor(definition,{state:'storyboard-performance',palette,seed:42,fidget:false});
+    actor.calm=calm;
+    for(let i=0;i<132;i++)actor.advance(1/120);
+  }
+  function advance(seconds) {
+    if(!Number.isFinite(seconds)||seconds<0)throw new Error('Expected a finite non-negative duration');
+    for(let remaining=seconds;remaining>1e-9;) {
+      const dt=Math.min(remaining,1/120);time+=dt;remaining-=dt;
+      applyPose(actor,pose());actor.advance(dt);
+    }
+  }
+  reset();
+  return {
+    get actor(){return actor;},get time(){return time;},get duration(){return durationFor(scope);},
+    get pose(){return pose();},get absoluteTime(){return absoluteTime();},
+    advance,setPalette,
+    seek(seconds){reset();advance(Math.max(0,Math.min(durationFor(scope),seconds)));},
+  };
+}

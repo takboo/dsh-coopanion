@@ -2,7 +2,7 @@
 
 本目录维护当前产品行为与开发契约。安装入口见 [项目首页](../README.md)，各版本改动见 [版本记录](release-notes.md)。实际版本、依赖、命令和支持的宿主列表以 `package.json`、`npm-shrinkwrap.json` 与 `.github/workflows/` 为准。
 
-本分支的小湛／Livelings 工作从[当前设计入口](design/README.md)接手。它是基于 main 的独立角色原型；以下产品契约仍描述现有 Harness 插件。
+本分支的小湛／Livelings 分镜与角色制作工作从[当前设计入口](design/README.md)接手，由该入口区分当前方案、待体验项与历史归档。它是基于 main 的独立角色原型；以下产品契约仍描述现有 Harness 插件。
 
 ## 按任务阅读
 
