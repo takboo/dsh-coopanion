@@ -1,0 +1,33 @@
+{
+  "retrieved": "2026-10-28",
+  "commit": "f3803c96974ad4a94195fb97e5c637e9c2a3afe3",
+  "license": "MIT",
+  "files": {
+    "LICENSE": {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/f3803c96974ad4a94195fb97e5c637e9c2a3afe3/LICENSE",
+      "sha256": "ebb4f09972aee8608be255debaf78451a68e95c290f55c240dec2ecfa16ea6be"
+    },
+    "RunningWhaleTail.tsx": {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/f3803c96974ad4a94195fb97e5c637e9c2a3afe3/packages/client/ui-chat/src/client/chat/RunningWhaleTail.tsx",
+      "sha256": "0ddb0ab3819c0eb3b8a5ab96d8c3d5ada30771fa66d16e594faa5e552161905d"
+    },
+    "running-whale@2x.png": {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/f3803c96974ad4a94195fb97e5c637e9c2a3afe3/packages/client/ui-chat/src/client/assets/running-whale@2x.png",
+      "sha256": "0fd990d118113d19af7af4480f2b55d610b103451a08be6f7bf5a146823f8bd3"
+    },
+    "FishLogo.tsx": {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/f3803c96974ad4a94195fb97e5c637e9c2a3afe3/packages/client/ui-primitives/src/FishLogo.tsx",
+      "sha256": "284e14941ee40ecb3473f424866a2f9370fb28ecdb8e5f1bbd8b1af295e5ddeb"
+    }
+  },
+  "upstreamAnimation": {
+    "size": [
+      28,
+      28
+    ],
+    "frames": 60,
+    "frameDurationMs": 50,
+    "loopDurationMs": 3000
+  },
+  "adaptation": "The curled flukes now derive from the official FishLogo.tsx mark, with a locally shaped short curved stem. Both appearances retain the same 48 contour knots. Body curves follow the stem tangents. The GIF-inspired turning remains locally authored; RunningWhaleTail.tsx and APNG are preserved as earlier motion references."
+}

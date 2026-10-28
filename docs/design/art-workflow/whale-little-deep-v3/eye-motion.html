@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小湛 · 历史 B / C 对照（已选 B）</title><link rel="icon" href="data:,">
+<link rel="stylesheet" href="./eye-study.css"><link rel="stylesheet" href="./eye-motion.css">
+<body class="motion"><main>
+  <header><a class="brand" href="./">COOPANION <span>/ 小湛</span></a><nav aria-label="对照设置">
+    <label>配色 <select id="palette" aria-label="配色"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label>
+    <button id="theme" aria-pressed="false">夜色背景</button>
+  </nav></header>
+  <section class="intro"><p class="eyebrow">EYE STUDIES / 2026.10.28</p><h1>历史动态对照：B 已选，C 未采用。</h1><p>共用当前动作，供回看眼型差异。在任一大图上移动指针，两边同步看你。</p></section>
+  <section class="motion-controls" aria-label="同步动作">
+    <div class="action-row">
+      <button data-action="idle" aria-pressed="true">陪着你</button><button data-action="blink-soft" aria-pressed="false">眨眨眼</button><button data-action="look-around" aria-pressed="false">看看左右</button><button data-action="working" aria-pressed="false">认真工作</button><button data-action="blocked" aria-pressed="false">需要你</button><button data-action="pet-soft" aria-pressed="false">摸摸</button><button data-action="peek-tail" aria-pressed="false">藏尾巴</button><button data-action="peek-out" aria-pressed="false">探头</button><button data-action="thinking" aria-pressed="false">想事情</button><button data-action="done" aria-pressed="false">做好啦</button><button data-action="sleep" aria-pressed="false">睡一会</button>
+    </div>
+    <div class="demo-row"><button id="demo" aria-pressed="false">一起走一遍 ↗</button><p id="demo-step" aria-live="polite">也可以单独点一个动作，慢慢比较。</p><span id="motion-state" aria-live="polite">在陪着你</span></div>
+    <div class="progress" aria-hidden="true"><div id="demo-progress"></div></div>
+  </section>
+  <div class="studies" id="studies" data-state="idle" data-demo="idle"></div>
+  <footer><span>已采用 B 大小眼 · C 保留作对照</span><a href="./eye-study.html">看静态对照 ↗</a></footer>
+</main><script type="module" src="./eye-motion.js"></script></body></html>

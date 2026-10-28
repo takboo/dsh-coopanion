@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree identified by hashes",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/eye-study.html": "5aff1e526d8f09dd8f98959f0758897d29939f21f60d7a5701193b2e4c4f84b8",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-study.css": "1dc186d6a4b29d95a8f163632d0f9d67548cbbef03cc904d5c97fa9dc82a8181",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-study.js": "92fd63a40289f7665de6238298f2f72c78a8bfa14651a8c27398a0c711510b5a",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-studies.js": "bb49773cc9af3e6b0a54cd41b21616d9ac6593c4859f98da2200a4549884bf51",
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "867dc421d240c6ef36be4438b79f9f97900a9bc51bf1f1495467b5a0cb77270f",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "74832ac5426deee340c80cdaf49349f39d151d64ed22a4f804afa1dbf07bd2e9"
+  },
+  "scope": "First step only: A current eyes, B perspective eyes, C logo side eye. No selection or default-character replacement; hiding/petting work waits for feedback.",
+  "checks": {
+    "syntax": "eye-studies.js and eye-study.js passed node --check",
+    "sourceIdentity": "character.js and harness-tail.js still match organic-tail-review.json byte hashes",
+    "fixedPose": "Three Actors have identical body vertices, position and animation phase at the same fixed time and seed",
+    "offscreen": "All three candidates rendered with actual Livelings Actor/renderActor at large, 64px and 128px scales",
+    "browser": "Codex in-app browser via CUA; all nine samples loaded, Deep-blue/daylight and milk/night backgrounds observed. Final view restored to Deep-blue/daylight."
+  },
+  "previewSHA256": "0ef466a93f9865a37798cab9747e36b832c83a205988099eba391f23fd3fc248",
+  "notCovered": [
+    "user eye-style selection",
+    "full expression/gesture acceptance of candidates",
+    "native integration",
+    "publication"
+  ]
+}

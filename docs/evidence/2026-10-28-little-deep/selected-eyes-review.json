@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree identified by hashes",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "1ab98f6fca9e3efebd0bc8fcd6bb1d94500e9bffd7fa7f668c908ed95c89f703",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-studies.js": "95c3af69fae2cecb0dc8aaa647db55c033ef997bcd5fa6a85d61b39c3c89cf12",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-study.html": "febb7a9bd24f6b96b16f4c46a77acec454784a7b897312c83c1f944e12bc5e81",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-motion.html": "5ce856489cf65ce46a28bbe2b820e39a7c75fa3edc4cfdf7ac5fba5beac6c0ae"
+  },
+  "userSelection": "B perspective/asymmetric eyes selected after motion comparison; the curled white mark in C is not the chosen eye direction.",
+  "changes": "Default eyes and face position now match the selected B. Comparison B directly references the default definition; A and C retain explicit original reference eyes.",
+  "checks": {
+    "syntax": "character.js and eye-studies.js passed node --check",
+    "tailRegression": "node --test tests/little-deep-tail.mjs: both passed",
+    "changeBoundary": "Reversing exactly the two eye/face configuration lines reproduces the preceding character.js hash; harness-tail.js hash unchanged.",
+    "browser": "Codex in-app browser CUA: refreshed studio and observed new eyes in the action grid, then loaded the main preview and observed selected asymmetric eyes. This does not claim complete all-state visual acceptance."
+  },
+  "previewSHA256": "a56bb9bd2af3b08438f88b670139d58f630ec4967ac9fd29b7218ecf60b7022c",
+  "notCovered": [
+    "new staged hiding or sustained-petting choreography",
+    "native platform integration",
+    "publication"
+  ]
+}

@@ -18,6 +18,8 @@ The independent Little Deep design prototype uses the author-distributed Livelin
 
 These development files are outside the package's published file set. The prototype has not replaced the installed Coopanion runtime or been integrated as an API 2 character. The user-supplied DeepSeek reference and its provenance remain beside the prototype; vendor marks do not imply endorsement.
 
+The Little Deep prototype also adapts the curled tail flukes and the historical curled-white-mark study from DeepSeek Harness, commit `f3803c96974ad4a94195fb97e5c637e9c2a3afe3`, `packages/client/ui-primitives/src/FishLogo.tsx`, with a locally shaped stem. The earlier `packages/client/ui-chat/src/client/chat/RunningWhaleTail.tsx` and APNG are retained as motion references. Copyright (c) 2026 DeepSeek, MIT. The original sources, complete [MIT notice](docs/design/art-workflow/whale-little-deep-v3/reference/harness/LICENSE) and [provenance](docs/design/art-workflow/whale-little-deep-v3/reference/harness/source.json) are preserved with the prototype. Its vector movement is a local adaptation, not a frame-exact port of the APNG or supplied GIF. Vendor marks do not imply endorsement.
+
 ## Electron
 
 Electron 44.7.0 is installed as a dependency and retains its MIT license and Chromium's accompanying notices. Runtime download and verification remain unchanged.

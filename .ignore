@@ -4,3 +4,7 @@
 /docs/archive/
 /docs/design/art-workflow/vendor/
 /docs/release-notes.md
+# Eye choices are settled. Historical comparison tools remain reachable via the archive.
+/docs/design/art-workflow/whale-little-deep-v3/eye-*
+# Original artwork/code references are provenance, not the implementation to edit.
+/docs/design/art-workflow/whale-little-deep-v3/reference/

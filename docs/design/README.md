@@ -1,46 +1,49 @@
-# 小湛与 Livelings 当前设计入口
+# 小湛当前设计与接手
 
-2026-10-27：用户决定保留当前方向，下一轮继续打磨小湛。当前交付是可体验的纯代码角色原型；造型、DeepSeek 辨识度与长期鲜活感仍由用户实际反馈判断。
+更新于 2026-10-28。当前工作在 `codex/little-deep-livelings`：独立浏览器角色原型，尚未接入 Harness、API 2、NPC 或原生窗口。产品契约仍描述现有大肥鱼插件。`codex/aliveness-foundation` 是另一条生活感路线，未合并到本分支。
 
-## 分支与产品边界
+## 从这里继续
 
-| 项目 | 当前状态 |
-| --- | --- |
-| 续做分支 | `codex/little-deep-livelings` |
-| 基线 | main `41bd49a433234e1a06ffac3c6b6acaf2979845c1` |
-| 原型制作检查点 | `25b8523`：前两轮；`179594b`：第三轮完整互动 |
-| 生活感分支 | `codex/aliveness-foundation`，查阅时为 `20d51b9`；只读参考过，未合并到本分支 |
-| 已接入范围 | 独立浏览器体验页、角色定义和作者动作工作台 |
-| 产品接入 | Harness、API 2、NPC／原生窗口仍沿 main 原实现；小湛尚未接入 |
+当前停在藏尾巴表演的体验调整：用户认为尾柄旁额外长出的小头很奇怪，已撤掉。现在用原本鲸鱼的头、白腹和眼睛位置，在较小、收鳍的姿态中试探，再舒展开；思考中回应后回去想。**这版修改尚未得到用户体验确认。**
 
-本分支承接 main 上的原型提交，不包含旧生活感路线的默认装配。若后续任务涉及复用该分支的能力，应先读取该分支的接手入口和复用清单，再按实际需要选择模块。
+下一次先体验并收敛这段表演的造型和节奏，再做持续抚摸与松手余韵。后者尚未实现；现有 `pet-soft` 仍是一次性的舒服眯眼。不要把自动化通过或用户选定眼型解释为整套动作、美术或产品验收。
 
-## 当前资料与源码
+## 已确定的设计约束
 
-| 需要做什么 | 从哪里开始 |
-| --- | --- |
-| 理解用户目标、已选组合与开放问题 | [设计白板](companion-art-whiteboard.md) |
-| 查看当前角色、动作与手势说明 | [小湛当前原型](art-workflow/whale-little-deep-v3/README.md) |
-| 修改造型、配色和动作 | [character.js](art-workflow/whale-little-deep-v3/character.js) |
-| 修改体验控制、动作交接和演示 | [app.js](art-workflow/whale-little-deep-v3/app.js) |
-| 查引擎 API、来源与许可 | [Livelings 来源入口](art-workflow/vendor/livelings/README.md)，按需显式读取 |
-| 追溯前两轮方案或旧研讨 | [历史归档](../archive/2026-10-27-whale-studies/README.md) |
-| 核对固定浏览器观察与整理结果 | [证据索引](../evidence/2026-10-27-little-deep/README.md) |
+- 保留小湛主体、蓝色、白腹、额顶缺口，眼型采用用户看过动态后选定的 **B 大小眼**；原生眨眼与表情继续保留。
+- C 的弯弯白斑不是本轮选定的眼睛方向，A／C 仅作历史对照。额外腹鳍和尾柄旁新增头部均不加回。
+- 完整鲸鱼与纯尾巴使用同一套实心尾鳍轮廓，不能中空。尾柄采用短弯连接，尾鳍参考官方 `FishLogo.tsx`；比例自然与否仍需实际观察。
+- 思考尾巴保留用户 GIF 要求的明显左右扫摆、展开和侧转收窄，不收回到轻微晃动。
+- 交互顺序为眼睛选择 → 藏尾巴表演 → 抚摸余韵。其他 AI 角色、Blender、全方向制作与正式产品接入未开始。
 
 ## 本地预览
 
-从仓库根目录运行：
+在仓库根目录运行：
 
 ```bash
 python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow
 ```
 
-启动后打开 `http://127.0.0.1:4187/whale-little-deep-v3/`。页面内有当前动作工作台与小尺寸对照入口。预览结束后在启动终端按 Ctrl-C 结束服务；端口占用和本机进程状态以现场检查为准。
+打开 `http://127.0.0.1:4187/whale-little-deep-v3/`。先点“藏进尾巴”看整段，再选“想事情”并轻戳尾巴，体验回应后继续思考。手动切状态可打断，页面隐藏时不补播。服务是否仍运行以现场检查为准；预览结束后在启动终端按 Ctrl-C。
 
-## 下一轮接手
+## 文件与验证入口
 
-先读取用户最新反馈和设计白板，在当前原型目录继续迭代。重点观察白腹、额顶缺口、尾柄与分叉尾鳍的辨识度，以及眨眼、藏尾巴、探头和动作打断的观感。用户已经选定主体，不再把前两轮候选当作待选队列。
+| 需要做什么 | 入口 |
+| --- | --- |
+| 查看动作、手势、运行限制 | [原型说明](art-workflow/whale-little-deep-v3/README.md) |
+| 调整造型、表情和动作时序 | [character.js](art-workflow/whale-little-deep-v3/character.js) |
+| 调整共用尾鳍、短弯尾柄与思考摆动 | [harness-tail.js](art-workflow/whale-little-deep-v3/harness-tail.js) |
+| 调整手势、演示和状态交接 | [app.js](art-workflow/whale-little-deep-v3/app.js) |
+| 检查尾巴轮廓与动作交接 | [轮廓测试](../../tests/little-deep-tail.mjs)、[表演测试](../../tests/little-deep-performance.mjs) |
+| 查上游运行时与工作台 | [Livelings 来源入口](art-workflow/vendor/livelings/README.md)；第三方原文按需读取 |
+| 查官方参考、源码与许可 | [Harness 来源](art-workflow/whale-little-deep-v3/reference/harness/source.json)、[第三方声明](../../THIRD_PARTY_NOTICES.md) |
+| 追溯旧候选与本轮决定 | [历史归档](../archive/README.md) |
+| 核对每次固定验证的源码身份 | [10 月 28 日证据索引](../evidence/2026-10-28-little-deep/README.md) |
 
-原型语法、资源路径和浏览器观察分别记录；它们不代替美术认可。若范围转为正式角色接入，再进入 [API 2 角色契约](../characters.md)和相关产品测试，沿用共享完成语义及身体拥有权。当前没有启动 Blender、全方向制作或其他 AI 角色的实施队列。
+```bash
+node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs
+```
 
-原生十六格工作台保留上游布局，窄侧栏里部分摆尾帧可能裁边。判断完整轮廓时结合主体验和小尺寸对照；工作台能加载不代表所有窗口尺寸的视觉包络已经验收。
+这些检查覆盖引擎实际平滑后的尾鳍轮廓、摆尾长度保持、分段准备、重复触碰、状态交接、打断及减少动态的节点模拟。浏览器系统偏好、长期鲜活感、物理设备和用户审美分别验证。原生十六格工作台沿用上游布局，窄侧栏部分摆尾帧可能裁边，判断完整轮廓以主体验和小尺寸页为主。
+
+若以后范围转为产品接入，再读取 [API 2 角色契约](../characters.md)和对应产品测试。旧讨论与旧证据不安排当前任务。

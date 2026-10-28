@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-28",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree; identify code by hashes below",
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "867dc421d240c6ef36be4438b79f9f97900a9bc51bf1f1495467b5a0cb77270f",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "74832ac5426deee340c80cdaf49349f39d151d64ed22a4f804afa1dbf07bd2e9",
+    "tests/little-deep-tail.mjs": "c4ce3011938c4d5f104e6ac7347456075c7be8b17b03688ccd3b9e9c7d8fb7d1"
+  },
+  "userFeedback": "Official logo reference: tail appears forcibly attached and overall proportions feel unnatural.",
+  "changes": [
+    "Curled flukes adapted from official FishLogo.tsx instead of the upright running tail icon.",
+    "Short curved stem; body connectors follow its entry and exit tangent.",
+    "Lower tail height and nearer body placement; same 48 solid contour points in both appearances.",
+    "Large three-second thinking turn preserved, with whole fluke narrowing despite the shorter stem."
+  ],
+  "checks": {
+    "regressionCommand": "node --test tests/little-deep-tail.mjs",
+    "regressionTestsPassed": 2,
+    "syntax": "character.js and harness-tail.js passed node --check",
+    "actorSimulation": "All declared actions advanced for four seconds each at 60Hz; finite 96-point outlines within four body units; results entered from idle settled back to idle.",
+    "motionMath": {
+      "broadsideTipWidth": 1.542,
+      "edgeOnTipWidth": 0.75,
+      "threeSecondPeriod": true,
+      "calmUnchanged": true
+    },
+    "browser": "Codex in-app browser via CUA; main loaded, existing night palette restored, whole whale and thinking tail viewed, switched back to idle.",
+    "comparison": "organic-tail-comparison.png: supplied logo at left, actual current Actor/renderActor at centre/right, calm mode. This is an offscreen comparison, not a browser recording."
+  },
+  "notCovered": [
+    "user aesthetic acceptance of proportions and natural join",
+    "all palettes and window sizes",
+    "frame-exact GIF reproduction",
+    "native platform or Harness integration",
+    "release/publication"
+  ]
+}

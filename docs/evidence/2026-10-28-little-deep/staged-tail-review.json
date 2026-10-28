@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-28",
+  "recordedAt": "2026-10-28T17:59:20.143743+08:00",
+  "branch": "codex/little-deep-livelings",
+  "baseCommit": "ec645cd89e7b9efb14c25febd9893618badf416e",
+  "sourceState": "uncommitted working tree identified by hashes",
+  "host": {
+    "macOS": "15.8.1",
+    "build": "24H32",
+    "node": "v24.21.0",
+    "browser": "Codex in-app browser, localhost:4187"
+  },
+  "sourceFilesSHA256": {
+    "docs/design/art-workflow/whale-little-deep-v3/character.js": "e07dea25b334fd207db1dde046223194c1962da3ff65020202c45baa6a45ee1f",
+    "docs/design/art-workflow/whale-little-deep-v3/app.js": "872e4814feeb3112f2c0df96fbefcf76993d1c6b63ca4be1630f4af77f374b6c",
+    "docs/design/art-workflow/whale-little-deep-v3/index.html": "95eb2afe92b8bda30349f0f37855590fab7505f44600dd32bfd04b82ebd0bf71",
+    "docs/design/art-workflow/whale-little-deep-v3/eye-motion.js": "fea5eee7e375b9bbb749e28f29b305d921772d80b3d6cecac05b257a663d5398",
+    "docs/design/art-workflow/whale-little-deep-v3/harness-tail.js": "74832ac5426deee340c80cdaf49349f39d151d64ed22a4f804afa1dbf07bd2e9",
+    "tests/little-deep-performance.mjs": "7775bd1e1cf15db6a2c4811454dd6f68897c695c59ff45eff1bc755705697afc",
+    "tests/little-deep-tail.mjs": "c4ce3011938c4d5f104e6ac7347456075c7be8b17b03688ccd3b9e9c7d8fb7d1",
+    "docs/design/art-workflow/vendor/livelings/workspace/livelings.js": "d34d09fefd90650a800fd3ad3af5f55f6df5e821ca8f1141f83466c5e9fb78da"
+  },
+  "behavior": "6.2s staged hide; pause and original-whale curled-up observation pose; 4.2s peek response returns to thinking or the previous visible loop. The observer pose reuses rest geometry, belly and face, at scale .82 with fins tucked. No extra head attached beside the stem.",
+  "feedbackApplied": "User rejected the small extra head as strange; it was removed. User experience acceptance remains open.",
+  "checks": {
+    "nativeActorTests": "node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs: 7 passed, including interruption at six hiding phases, repeated taps, returning loops, eye visibility delay, original face and belly, and reduced-motion progression",
+    "browser": "Reloaded final source; hide control visibly reached original-whale observation pose; thinking > peek-out control > return > thinking verified through DOM state and page text; returned to idle. A coordinate tap on the thinking tail was exercised earlier in the same iteration before the visual pose revision.",
+    "browserErrors": "No warning or error entries returned by captured browser logs",
+    "render": "15fps deterministic Node canvas render, seed42, plus eight timed poses; not a screen recording",
+    "productIntegration": "Independent character prototype only; no Harness/API2/NPC/native integration or product UI tests"
+  },
+  "artifactsSHA256": {
+    "staged-tail-motion.gif": "30a9cd06c40b5c6973e717263e68944096d8871c7fa10c69a0410ae976079722",
+    "staged-tail-poses.png": "ba90cfb7815529ea893004205401ba725a2598f96f70a6f2cfc4ec01ba052064",
+    "staged-tail-browser-preview.png": "f1b06f29d012be8b8fccb365f94fde44b41515d9e57b9449422a160c465edc70"
+  },
+  "notCovered": [
+    "user acceptance of timing and form",
+    "sustained-petting and release choreography",
+    "OS reduced-motion browser setting exercise",
+    "native platform integration",
+    "publication"
+  ]
+}

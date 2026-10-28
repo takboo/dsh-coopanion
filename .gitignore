@@ -5,4 +5,8 @@ web/markdown-runtime.js
 artifacts/
 *.tgz
 paper-star.zip
+.DS_Store
 docs/design/art-workflow/space-v1/work-facts.generated.js
+
+# Durable local test VM disks and project-specific SSH identity.
+/.local/macos-vm/
