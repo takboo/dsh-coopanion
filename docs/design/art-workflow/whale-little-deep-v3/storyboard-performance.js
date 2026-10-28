@@ -67,6 +67,11 @@ export function createPerformance({palette='deep',calm=false}={}) {
     get actor(){return actor;},get time(){return time;},get duration(){return TIMING.end;},
     get pose(){return pose();},
     advance,setPalette,
-    seek(seconds){reset();advance(Math.max(0,Math.min(TIMING.end,seconds)));},
+    seek(seconds){
+      const target=Math.max(0,Math.min(TIMING.end,seconds));
+      reset();advance(target);
+      // Fixed-step accumulation may finish a fraction below a named boundary.
+      time=target;applyPose(actor,pose());
+    },
   };
 }
