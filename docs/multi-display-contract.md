@@ -16,6 +16,8 @@ Windows 的物理输入工具必须使用 Electron `screen.dipToScreenPoint`，�
 
 Main → Renderer 使用同包消息 `display-changed { revision, displayId, workArea, contentBounds, scaleFactor }`；revision 在本代单调增加，初始化完成后补发最新状态。`cursor { x, y, revision }` 中 x/y 是该 contentBounds 内的 DIP，只有匹配 revision 的消息参与命中测试。Renderer 依据实际 viewport 做本地换算，丢弃旧几何和旧 cursor；不复用变更前的 stationary cursor / hit-state。
 
+Renderer 订阅完成后通过独立的 `pet:geometry-request` 请求当前几何；Main 验证发送者是主 frame 后，重新读取实际 contentBounds 再重发。窗口 resize／resized／move 也重新核对边界。缺少几何或 viewport 与边界尺寸不一致时，Renderer 最多每秒重试一次，暂停 NPC 直到收到匹配状态；不以虚构显示器或零原点替代原生坐标，也不重载角色或正文。
+
 窗口 resize 与显示消息可先后到达。只用当前实际 viewport 更新角色 bounds，角色异步返回新 frame 后重置面板锚点；跨屏按先前水平比例放回新工作区地面，当前屏缩放或工作区调整只夹入新 bounds，不启动新角色。几何变化打断正在拖拽的角色时，释放本地指针捕获，等新 bounds 到达后用 API 2 的 drop 直接安全落地，不先 pointer(cancel) 生成 throw；避免上游 place 在 drag 下被忽略而留下屏外命中区。已经松手的空中角色沿原物理系统在新 bounds 内落地，不扩展跨屏抛掷。面板按实际尺寸夹入 viewport，保留文字三档和长代码/表格的滚动。
 
 切屏与布局变化只更新几何，不重建 Renderer、角色 frame 或正文，不调用内容 render；保留捕获阅读 DOM/正文、滚动像素偏移、草稿、焦点/选择、在途请求身份与气泡时钟，不增加 read/select/chat。不改变完成语义、准入去重、generation/visibilityRevision 和恢复基线、文字配置；崩溃后的临时状态丢失边界保持。

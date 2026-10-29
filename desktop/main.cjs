@@ -227,8 +227,11 @@ app.whenReady().then(async () => {
   displays = createDisplayController({ screen, win, send: forward, changed: syncTray });
   displays.refresh();
   if (displayTest) require('./test-display-probe.cjs').installDisplayProbe({ ipcMain, screen, win, displays });
-  for (const event of ['resize', 'move']) win.on(event, () => setImmediate(() => { if (!win.isDestroyed()) displays.refresh(); }));
+  for (const event of ['resize', 'resized', 'move']) win.on(event, () => setImmediate(() => { if (!win.isDestroyed()) displays.refresh(); }));
   win.webContents.on('did-finish-load', () => { if (lastFrame) forward(lastFrame); displays.publish(); });
+  ipcMain.on('pet:geometry-request', event => {
+    if (event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame) displays.publish();
+  });
   ipcMain.on('pet:diagnostics-response', (event, message) => {
     if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || options?.diagnostics !== true || !diagnosticRead || message?.requestId !== diagnosticRead.requestId) return;
     const value = diagnosticRenderer.safeParse(message.value);

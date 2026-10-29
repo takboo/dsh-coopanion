@@ -53,3 +53,23 @@ it('native controller replays switching, taskbars, unplugging and DPI/rotation c
   expect(messages.every(m => m.type === 'display-changed')).toBe(true);
   expect(moves.length).toBe(3);
 });
+
+it('re-reads settled content bounds when replaying geometry after an asynchronous resize', () => {
+  const target = display(1, 0, 25, 1440, 1104, 1.25);
+  let bounds = { ...target.workArea, height: 1152 }, content = { ...bounds };
+  const messages = [];
+  const controller = createDisplayController({
+    screen: { getPrimaryDisplay: () => target, getAllDisplays: () => [target] },
+    win: { getBounds: () => bounds, getContentBounds: () => ({ ...content }), setBounds: value => { bounds = { ...value }; } },
+    send: value => messages.push(value),
+  });
+  controller.refresh();
+  expect(controller.state.contentBounds.height).toBe(1152);
+  const revision = controller.state.revision;
+  content = { ...bounds }; // Native content bounds settle after setBounds returns.
+  controller.publish();
+  expect(messages.at(-1).contentBounds.height).toBe(1104);
+  expect(messages.at(-1).revision).toBeGreaterThan(revision);
+  controller.publish();
+  expect(messages.at(-1).revision).toBe(controller.state.revision);
+});

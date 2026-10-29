@@ -79,7 +79,7 @@ dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.14
 
 [下载最新插件包 `dsh-coopanion.tgz`](https://github.com/takboo/dsh-coopanion/releases/latest/download/dsh-coopanion.tgz)，在 **插件 → 添加插件** 中填入压缩包的绝对路径，安装并启用，然后重启 Harness。
 
-安装后在 **Settings → 桌宠** 查看运行状态。首次启动需要联网下载并校验 Electron 运行时。
+安装后在 **Settings → 桌宠** 查看运行状态。首次启动会在后台下载并校验 Electron 运行时，期间桌宠显示“正在启动”，Harness 可继续使用；网络受限时可按[运行时准备说明](docs/usage.md#electron-运行时准备)配置镜像或提前安装。
 
 | 操作 | 会发生什么 |
 |---|---|

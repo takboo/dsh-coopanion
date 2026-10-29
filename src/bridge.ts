@@ -1,11 +1,11 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { EventEmitter } from 'node:events';
 import type { ChatReceipt } from '../web/chat-contract.js';
 import type { PetSnapshot, PetNotice } from './model.ts';
 import type { NotificationRuntime, NotificationSnapshot, TaskNotice } from './notification-contract.ts';
 import { NativeStartError, type StartLifetime, type NativeLifecycle } from './desktop-lifecycle.ts';
+import { electronExecutable } from './electron-runtime.ts';
 export { NativeStartError, type StartLifetime, type NativeLifecycle } from './desktop-lifecycle.ts';
 
 import type { CompanionshipMode } from '../web/companionship.js';
@@ -37,6 +37,8 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   private latestOptions?: DesktopOptions;
   private resultKey?: string;
   private closing = false;
+  private preparing?: AbortController;
+  private preparation?: Promise<string>;
 
   private generation = 0;
   private visibilityRevision = 0;
@@ -47,7 +49,7 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   private lastNotificationState?: NotificationSnapshot;
 
   async start(options: DesktopOptions, lifetime?: StartLifetime): Promise<void> {
-    if (this.child) throw new NativeStartError('Desktop pet is already running', false);
+    if (this.child || this.preparing) throw new NativeStartError('Desktop pet is already running or starting', false);
     if (lifetime?.signal.aborted) throw new Error('桌宠启动已取消');
     this.latestOptions = { ...options };
     this.closing = false;
@@ -55,8 +57,19 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     this.visibilityRevision = 0; this.nativeVisible = false;
     if (process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) throw new NativeStartError('桌宠需要桌面显示环境。', false);
     let executable: string;
-    try { executable = options.electronPath ?? createRequire(import.meta.url)('electron'); }
-    catch (error) { throw new NativeStartError(String(error).slice(0, 600), false); }
+    if (options.electronPath !== undefined) executable = options.electronPath;
+    else {
+      const preparing = new AbortController(); this.preparing = preparing;
+      const abort = () => preparing.abort();
+      lifetime?.signal.addEventListener('abort', abort, { once: true });
+      if (lifetime?.signal.aborted) abort();
+      try {
+        this.preparation = electronExecutable(preparing.signal);
+        executable = await this.preparation;
+        if (preparing.signal.aborted || this.closing) throw new Error('桌宠启动已取消');
+      } catch (error) { throw error instanceof NativeStartError ? error : new NativeStartError(String(error).slice(0, 600), false); }
+      finally { lifetime?.signal.removeEventListener('abort', abort); this.preparing = undefined; this.preparation = undefined; }
+    }
     const env: NodeJS.ProcessEnv = { ...process.env, DSH_PET_GENERATION: String(this.generation), DSH_PET_VISIBLE: lifetime?.visible === false ? '0' : '1', DSH_PET_SCREEN_LOCKED: this.screenLocked ? '1' : '0', DSH_PET_SYSTEM_ASLEEP: this.systemAsleep ? '1' : '0' };
     delete (env as NodeJS.ProcessEnv).ELECTRON_RUN_AS_NODE;
     const args = [fileURLToPath(new URL('../desktop/main.cjs', import.meta.url))];
@@ -147,6 +160,8 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
 
   async dispose(): Promise<void> {
     this.closing = true;
+    this.preparing?.abort();
+    await this.preparation?.catch(() => undefined);
     const child = this.child;
     if (!child) return;
     if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null) { if (this.child === child) this.child = undefined; return; }
