@@ -7,6 +7,7 @@
 | 范围 | 文件与入口 |
 | --- | --- |
 | 当前工作／生活段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为连续对照 |
+| 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
 | 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |
 | 请求局部复查 | [出场](storyboard.html#preview)、[提问交接](request-study.html)、[审批交接](approval-study.html)，后两页共用手势脚本与样式 |
 | 会话机制对照 | [会话观察说明](../../session-observation.md) 说明固定结构回放、进行中只读观察及旧固定分镜；这些页未采用当前段落策略 |
@@ -63,11 +64,11 @@
 在仓库根目录执行：
 
 ```bash
-node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs tests/little-deep-mainline.mjs tests/little-deep-replay.mjs tests/little-deep-completion.mjs tests/little-deep-work-rhythm.mjs tests/little-deep-work-life.mjs
+node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs tests/little-deep-mainline.mjs tests/little-deep-replay.mjs tests/little-deep-completion.mjs tests/little-deep-work-rhythm.mjs tests/little-deep-work-life.mjs tests/little-deep-life-touch.mjs
 node --experimental-transform-types --test tests/little-deep-live.mjs
 ```
 
-检查覆盖真实引擎轮廓、请求身份与手势、旧机制回放、双时钟、当前段落续点／相位、最新意图和生活退让。浏览器画面、用户体验、系统偏好实机及产品宿主各自验证；用户确认范围统一从设计入口读取。
+检查覆盖真实引擎轮廓、请求身份与手势、旧机制回放、双时钟、当前段落续点／相位、最新意图、生活退让和持续抚摸／松手的取消语义。浏览器画面、用户体验、系统偏好实机及产品宿主各自验证；用户确认范围统一从设计入口读取。
 
 旧版固定证据见[证据索引](../../../evidence/2026-10-28-little-deep/README.md)；工作主线过程稿与当前本机验证位置见[本轮归档](../../../archive/2026-10-29-work-mainline/README.md)；眼型及早期造型见[历史索引](../../../archive/README.md)。原始证据和许可按来源保留字节。
 

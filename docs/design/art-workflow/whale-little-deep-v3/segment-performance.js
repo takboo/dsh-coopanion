@@ -11,7 +11,9 @@ export function lifePhase(time) {
   return t<3?'stretch':t<7?'observe':t<12?'belly':t<16?'bubble':t<20?'rest':'return';
 }
 
-export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1'}={}) {
+export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1',lifePerformance=null}={}) {
+  if(lifePerformance&&(!['apply','advance'].every(key=>typeof lifePerformance[key]==='function')))
+    throw new Error('Expected a local life performance with apply and advance');
   const context={mode:null,pending:[],eventTimeMs:0,lastFactMs:0,animationTime:0,visible:true,
     work:{id:workId,stage:'focus',group:'deep',clock:0,groupClock:0,tailPhase:0,tailSpeed:1,entries:0,
       initial:true,fromDepth:0,resumeClock:RESUME_DURATION,resumeFrom:0},
@@ -40,6 +42,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
     a.fx('belly').target=0;
   }
   function lifePose(a) {
+    if(lifePerformance?.apply(a))return;
     const t=context.life.clock%LIFE_DURATION,phase=lifePhase(context.life.clock),amp=a.calm?.28:1;
     a.morph('rest',{squash:0,blink:false});a.fx('hidden').target=0;a.fx('eyesOpacity').target=1;
     a.scale.target=1;a.hover.target=.13;a.fx('belly').target=0;
@@ -126,7 +129,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
           if(context.mode==='work') {
             const w=context.work;w.clock+=dt;w.groupClock+=dt;w.resumeClock=Math.min(RESUME_DURATION,w.resumeClock+dt);
             if(w.group==='deep'){w.tailSpeed+=((w.stage==='tools'?1.2:.8)-w.tailSpeed)*(1-Math.exp(-dt/.45));w.tailPhase+=dt*w.tailSpeed;}
-          } else context.life.clock+=dt;
+          } else if(!lifePerformance?.advance(dt))context.life.clock+=dt;
         }
         engine.advance(dt);
         if(context.mode==='work'&&!context.pending.length)engine.actor.cues.tailClock=context.work.tailPhase;
@@ -134,6 +137,8 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       context.animationTime=target;
     },
     advanceEventTime(ms){if(!Number.isFinite(ms)||ms+1e-6<context.eventTimeMs)throw new Error('Expected monotonic event time');context.eventTimeMs=Math.max(ms,context.eventTimeMs);},
+    // A completed manual life interaction starts a fresh plan; no queued old cues.
+    restartLife(){Object.assign(context.life,{clock:0,entries:context.life.entries+1,bubbleCycle:-1});},
     setPalette:engine.setPalette,setCalm:engine.setCalm,
     setVisible(value){context.visible=Boolean(value);engine.setVisible(context.visible);},
   };

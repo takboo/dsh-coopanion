@@ -8,7 +8,7 @@
 
 用户已确认 `?`、`!` 的出场、结算退场与基本交互，并于 2026-10-29 对工作／生活样片反馈“整体观感可以”。这些作为当前表演基线；连续观看能区分工作与生活，汇报与安静生活的个别静态姿态仍接近。
 
-**下一步：按分镜 → 连续样片 → 观看反馈，增强生活交互、藏身与恢复。** 具体触发、藏身程度及回到生活的方式尚待制作；保持已通过的工作段和请求表演。异常／停止、目标完成候选与正式产品接入分别推进。
+**续做候选：[生活交互分镜](storyboards/little-deep-life-touch-v0.md)与[16 秒连续样片](art-workflow/whale-little-deep-v3/life-touch-study.html)。** 已制作靠近、轻触、持续抚摸与松手余韵，支持手动体验及请求／工作接管，尚待观看反馈。下一段为藏身／隐身及恢复，其触发和具体表现待分镜。已通过的工作／请求基线保留；异常／停止、目标完成和产品接入分别推进。
 
 | 范围 | 状态与权威说明 |
 | --- | --- |
@@ -16,7 +16,8 @@
 | 提问 `?`、审批 `!` | [提问](storyboards/little-deep-work-v0.md)、[审批](storyboards/little-deep-approval-v0.md)，局部样片已确认 |
 | 目标完成 | [独立候选](storyboards/little-deep-completion-v0.md)，尚未获体验确认，未串入当前工作／生活页 |
 | 真实会话结构、双时钟、请求身份 | [会话观察说明](session-observation.md)，机制参照，使用旧表面动作 |
-| 生活交互／藏身、异常与停止 | 待分镜；原动作库中的实现不等于新场景已确认 |
+| 生活交互 | [新候选](storyboards/little-deep-life-touch-v0.md)，分镜与连续样片已制作，尚待观看 |
+| 藏身／隐身、异常与停止 | 待分镜；原动作库中的实现不等于新场景已确认 |
 | Harness、API 2、NPC、原生窗口 | 尚未接入，不由浏览器样片或日志回放结算 |
 
 ## 固定造型
@@ -34,6 +35,7 @@
 | --- | --- |
 | 当前工作／生活持续编排 | [segment-performance.js](art-workflow/whale-little-deep-v3/segment-performance.js) |
 | 24 秒分镜 cue 与查看控制 | [work-life-performance.js](art-workflow/whale-little-deep-v3/work-life-performance.js)、[work-life-study.js](art-workflow/whale-little-deep-v3/work-life-study.js) |
+| 生活交互候选与模拟输入 | [life-touch-performance.js](art-workflow/whale-little-deep-v3/life-touch-performance.js)、[life-touch-film.js](art-workflow/whale-little-deep-v3/life-touch-film.js)，可选生活表演接管不改默认工作段 |
 | 已确认请求身体、笔画与身份交接 | [request-performance.js](art-workflow/whale-little-deep-v3/request-performance.js)、[storyboard-performance.js](art-workflow/whale-little-deep-v3/storyboard-performance.js)、[storyboard-symbol.js](art-workflow/whale-little-deep-v3/storyboard-symbol.js) |
 | 造型、尾巴、原动作素材与检查命令 | [原型说明](art-workflow/whale-little-deep-v3/README.md) |
 
