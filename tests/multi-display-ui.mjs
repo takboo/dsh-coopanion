@@ -51,9 +51,15 @@ test('native NPC requests missing and stale geometry and resumes without restart
   await page.waitForFunction(() => window.geometryRequests > 0, null, { timeout: 5000 });
   await page.waitForFunction(() => document.querySelector('#pet').dataset.npcReason !== 'geometry', null, { timeout: 5000 });
   await npcUntil(page, 'outbound');
-  await page.evaluate(() => window.displayReceive({ type: 'display-changed', displayId: 2, revision: ++window.geometryRevision, contentBounds: { x: -420, y: 25, width: 980, height: 768 }, workArea: { x: -420, y: 25, width: 980, height: 720 }, scaleFactor: 1.25 }));
+  await page.evaluate(() => {
+    // Hold the reply until the paused state is observed. A correct, fast heal
+    // must not make an external poll miss the transient geometry state.
+    window.geometryAvailable = false;
+    window.displayReceive({ type: 'display-changed', displayId: 2, revision: ++window.geometryRevision, contentBounds: { x: -420, y: 25, width: 980, height: 768 }, workArea: { x: -420, y: 25, width: 980, height: 720 }, scaleFactor: 1.25 });
+  });
   await page.waitForSelector('#pet[data-npc-reason=geometry]');
   const requests = await page.evaluate(() => window.geometryRequests);
+  await page.evaluate(() => { window.geometryAvailable = true; });
   await page.waitForFunction(n => window.geometryRequests > n && document.querySelector('#pet').dataset.npcReason !== 'geometry', requests, { timeout: 5000 });
   await npcUntil(page, 'outbound');
   assert.equal(await page.evaluate(() => document.querySelector('#body-layer iframe') === window.originalBody), true);

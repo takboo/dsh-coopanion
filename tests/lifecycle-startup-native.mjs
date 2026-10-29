@@ -19,13 +19,17 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
   else { env.DSH_PET_TEST_NO_SANDBOX = '1'; env.DSH_PET_TEST_DEBUG_PORT = '0'; env.DSH_PET_TEST_INITIAL_LOCK_STATE = initialState === 'restore-locked' ? 'unlocked' : initialState; }
   const child = spawn(require('electron'), [...(real ? [] : ['--no-sandbox']), join(packageRoot, 'desktop/main.cjs')], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   const exited = once(child, 'exit'); let stderr = '';
+  let nativeReady = false;
+  child.on('message', message => { if (message?.type === 'ready') nativeReady = true; });
   child.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-4000); });
   try {
     child.send({ type: 'init', baseline: true, options: { size: 150, companionship: 'quiet', roam: true, diagnostics: true, notifications: false }, snapshot: { mood: 'idle', active: false, sessionId: null, sessions: [], results: [] } });
     let snapshot;
     for (let attempt = 0; attempt < 80; attempt++) {
       const [endpoint] = await listDiagnostics(join(root, 'registry'));
-      if (endpoint) { snapshot = await readDiagnostics(endpoint); break; }
+      // The diagnostic endpoint exists before loadURL finishes. Quitting on
+      // that signal alone cancels a slow first navigation and exits with error.
+      if (endpoint && nativeReady) { snapshot = await readDiagnostics(endpoint); break; }
       assert.equal(child.exitCode, null, stderr); await new Promise(r => setTimeout(r, 100));
     }
     assert.ok(snapshot, 'Initial diagnostic endpoint must become available');

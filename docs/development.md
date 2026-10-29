@@ -45,6 +45,8 @@ npm run test:install
 
 原生 NPC 用例控制时钟、粗粒度输入和鼠标感知；身体移动及 arrived／interrupted 保持真实。受控循环通过与物理输入、自然体验分别报告。
 
+Windows 的 125% 缩放与任务栏回归可在已登录、解锁的隔离控制台运行 `node tests/windows-geometry-native.mjs`。先通过系统显示设置选择 125%；脚本核对 Electron 读取的真实 DPI，不强制 Chromium 比例。它通过 Windows Shell API 切换任务栏自动隐藏、核对实际工作区及 viewport，再注入过期边界检查重同步与角色保持，结束时恢复原任务栏状态。NPC 时钟和感知为受控输入；这项 VM 检查不代替物理多屏或用户体验验收。RDP 会话不允许更改显示缩放时，先在虚拟机控制台设置并验证实际比例。
+
 小窝回归支持录制隔离页面，不录桌面其他窗口或音频：
 
 ```bash

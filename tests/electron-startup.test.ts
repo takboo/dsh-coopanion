@@ -28,17 +28,20 @@ async function fixture(install = '') {
     await writeFile(join(directory, 'package.json'), '{"type":"module"}');
     await writeFile(join(electron, 'package.json'), '{"main":"index.js"}');
     await writeFile(join(electron, 'index.js'), await readFile(createRequire(import.meta.url).resolve('electron')));
-    const peer = `#!${process.execPath}\nprocess.on('message', m => { if(m.type === 'quit') process.exit(0); }); process.send({type:'ready'});\n`;
-    const success = `setTimeout(()=>{fs.mkdirSync(path.join(__dirname,'dist'));fs.writeFileSync(path.join(__dirname,'dist/peer'),${JSON.stringify(peer)},{mode:0o700});fs.writeFileSync(path.join(__dirname,'path.txt'),'peer');},800);`;
+    await mkdir(join(directory, 'desktop'));
+    await writeFile(join(directory, 'desktop/main.cjs'), `process.on('message', m => { if(m.type === 'quit') process.exit(0); }); process.send({type:'ready'});`);
+    // A real executable plus a JS main works on Windows as well as POSIX;
+    // spawning a shebang-only fixture silently omitted the Windows regression.
+    const success = `setTimeout(()=>{fs.mkdirSync(path.join(__dirname,'dist'));const executable=path.join(__dirname,'dist/peer.exe');try{fs.linkSync(process.execPath,executable);}catch(error){if(error.code!=='EXDEV')throw error;fs.copyFileSync(process.execPath,executable);fs.chmodSync(executable,0o700);}fs.writeFileSync(path.join(__dirname,'path.txt'),'peer.exe');},800);`;
     await writeFile(join(electron, 'install.js'), `const fs=require('node:fs'),path=require('node:path');fs.writeFileSync(path.join(__dirname,'installer-pid'),String(process.pid));${install || success}`);
-    await build({ entryPoints: ['src/bridge.ts'], outfile: join(directory, 'bridge.mjs'), bundle: true, packages: 'external', platform: 'node', format: 'esm' });
-    const { ElectronBridge } = await import(pathToFileURL(join(directory, 'bridge.mjs')).href);
+    await build({ entryPoints: ['src/bridge.ts'], outfile: join(directory, 'dist/bridge.mjs'), bundle: true, packages: 'external', platform: 'node', format: 'esm' });
+    const { ElectronBridge } = await import(pathToFileURL(join(directory, 'dist/bridge.mjs')).href);
     bridge = new ElectronBridge();
     return { bridge: bridge!, electron, close };
   } catch (error) { await close(); throw error; }
 }
 const options = { size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 };
-it.skipIf(process.platform === 'win32')('keeps the Host event loop responsive during Electron first-run preparation', async () => {
+it('keeps the Host event loop responsive during Electron first-run preparation', async () => {
   const { bridge, close } = await fixture();
   const ticks: number[] = [];
   const timer = setInterval(() => ticks.push(performance.now()), 20);
@@ -55,7 +58,7 @@ it.skipIf(process.platform === 'win32')('keeps the Host event loop responsive du
     clearInterval(timer);
     await close();
   }
-});
+}, 15000);
 
 it('reports installer failure without launching a native window', async () => {
   const { bridge, close } = await fixture('process.exit(7);');
