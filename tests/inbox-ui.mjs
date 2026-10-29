@@ -60,6 +60,7 @@ try {
   assert.deepEqual(await actions(), [], 'opening a list neither reads replies nor selects a conversation');
   await page.locator(`[data-result-id="${second.id}"][data-action=open]`).click();
   assert.deepEqual(await actions(), [{ type: 'read', resultId: second.id }, { type: 'select', sessionId: a.id }], 'a reply row continues its exact source in the composer');
+  await receive({ type: 'snapshot', snapshot: { ...frame([waitingA, b, issue], [{ ...second, read: true }, third]), sessionId: a.id } });
 
   await page.locator('#chat-close').click();
   const fourth = reply('multi-c-full', a, 4, '另一份完整回复。');

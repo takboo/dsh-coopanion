@@ -164,10 +164,32 @@ test('full-result continue opens the exact source composer without replacing the
   await page.locator('#reader-session').click();
   assert.equal(await page.locator('#chat').isVisible(), true);
   assert.equal(await page.locator('#chat-session-name').innerText(), source.label);
+  // The preceding read action can publish its old selection before the Host
+  // acknowledges the select action sent by Continue.
+  await receive(frame([{ ...old, read: true }, newer]));
+  assert.equal(await page.locator('#chat-session-name').innerText(), source.label, 'an earlier read snapshot cannot undo the requested source');
   await page.locator('#message').fill('继续来源会话'); await page.locator('#send').click();
   const actions = await page.evaluate(() => window.replyActions);
   assert.equal(actions.filter(a => a.type === 'chat').at(-1).sessionId, source.id);
   assert.equal(actions.some(a => a.type === 'read' && a.resultId === newer.id), false);
+  await page.locator('#chat-session').click();
+  assert.equal(await page.evaluate(() => window.replyActions.filter(a => a.type === 'open-session').at(-1).sessionId), source.id);
+  await receive({ ...frame([{ ...old, read: true }, newer]), sessionId: source.id });
+  await receive(frame([{ ...old, read: true }, newer]));
+  assert.equal(await page.locator('#chat-session-name').innerText(), focus.label, 'after Host confirms the choice, later Host selection changes apply');
+});
+
+test('the latest explicit selection survives an earlier selection receipt and releases a removed target', async t => {
+  const old = reply('source:1:3', source.id, 1, '完整旧正文');
+  const { page, receive } = await fixture(t, [old]);
+  await page.locator('#attention').click();
+  await page.locator('#reader-session').click();
+  await page.locator('#chat-current').click();
+  await page.locator(`#conversation-list [data-session-id="${other.id}"]`).click();
+  await receive({ ...frame([old]), sessionId: source.id });
+  assert.equal(await page.locator('#chat-session-name').innerText(), other.label);
+  await receive({ ...frame([old]), sessions: [focus, source] });
+  assert.equal(await page.locator('#chat-session-name').innerText(), focus.label, 'a missing requested target is not kept alive locally');
 });
 
 test('composer timeout preserves identity and acceptance remains monotonic', async () => {
