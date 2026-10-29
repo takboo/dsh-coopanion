@@ -58,7 +58,7 @@
 打开侧边栏 **插件 → 添加插件**，在「包名或地址」中填入：
 
 ```text
-@takboo/dsh-coopanion@0.4.14
+@takboo/dsh-coopanion@0.4.15
 ```
 
 点击安装，完成后启用 `dsh-coopanion`，再完全退出并重新打开 Harness。
@@ -70,7 +70,7 @@
 使用 **Desktop 自带的 `dsh` 命令**。先启动 Desktop 一次完成初始化，完全退出应用后执行：
 
 ```bash
-dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.14
+dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.15
 ```
 
 完成后重新打开 Desktop。其他 profile 的安装方法见[使用指南](docs/usage.md#通过-dsh-命令行安装)。
