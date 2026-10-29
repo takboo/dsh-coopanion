@@ -47,6 +47,8 @@ npm run test:install
 
 Windows 的 125% 缩放与任务栏回归可在已登录、解锁的隔离控制台运行 `node tests/windows-geometry-native.mjs`。先通过系统显示设置选择 125%；脚本核对 Electron 读取的真实 DPI，不强制 Chromium 比例。它通过 Windows Shell API 切换任务栏自动隐藏、核对实际工作区及 viewport，再注入过期边界检查重同步与角色保持，结束时恢复原任务栏状态。NPC 时钟和感知为受控输入；这项 VM 检查不代替物理多屏或用户体验验收。RDP 会话不允许更改显示缩放时，先在虚拟机控制台设置并验证实际比例。
 
+同一控制台运行 `node tests/windows-pointer-native.mjs` 可核对真实 125% 下的右键菜单及面板点击；在 100% 下用 `DSH_WINDOWS_EXPECT_SCALE=1` 明确对应预期比例。Windows 输入辅助线程先启用 Per-Monitor V2 DPI 感知，再使用 Electron 换算出的物理坐标移动并读回光标，避免 DPI-unaware 辅助进程的坐标虚拟化造成误判。此检查同时使用 OS 光标和 CDP 点击，不代替物理混合 DPI 实机验收。
+
 小窝回归支持录制隔离页面，不录桌面其他窗口或音频：
 
 ```bash

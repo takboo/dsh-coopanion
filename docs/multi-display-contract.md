@@ -8,6 +8,8 @@ Electron 44 的 `screen.getAllDisplays().workArea`、`getCursorScreenPoint()`、
 
 Windows 的物理输入工具必须使用 Electron `screen.dipToScreenPoint`，不能把多屏全局 DIP 原点乘目标屏比例；macOS CoreGraphics 光标使用逻辑全局点；Linux X11 输入应按 Electron 转换（Wayland 的光标查询/转换能力未声明支持）。隔离测试 profile 只有同时启用测试沙箱参数与 debug port 时才加载只读坐标探针，preload 通过额外启动参数开放测试测量；普通安装及角色 frame 均没有该入口。不添加强制设备缩放参数。混合 DPI 的真实转换和点击必须另列原生实测，受控比例不能代替物理显示器。
 
+Windows 测试输入与物理坐标读回在 Per-Monitor V2 DPI-aware 辅助线程中执行。停放光标也先将窗口内 CSS 点经同一原生探针转换为物理坐标。DPI-unaware 辅助进程的读数不能直接作为物理基准再次缩放。
+
 原生归属记录完整显示器 ID。布局变化优先保留仍存在的当前 ID；移除当前屏后，从旧工作区中心选择最近有效 workArea，同距保持稳定。新增、移除其他屏不移动当前窗口；workArea / bounds / scaleFactor / rotation 更新重新核对当前屏与实际内容矩形。任务栏条带与布局空洞按到各 workArea 的距离选择，不能按所有屏幕包围盒命中。
 
 拖拽在本地松手或取消时通过 API 2 drop 放下，不延续抛掷惯性；普通松手发出本地 `move-display`，主进程从真实原生光标选择目标，覆盖左右、上下与错位屏。托盘提供按显示器标签及 ID 的显式切屏入口，隐藏时切屏不改变显示意图；不依赖拖拽跨过空洞。显示器 ID 只在本进程保留，不新增持久配置。自由跨屏漫游、抛掷与贴边休息不在本项范围。
