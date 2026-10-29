@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { once } from 'node:events';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
@@ -7,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { listDiagnostics, readDiagnostics } from '../scripts/diagnostics-client.mjs';
 const require = createRequire(import.meta.url), packageRoot = resolve(process.env.DSH_LIFECYCLE_PACKAGE_ROOT ?? '.');
+const run = promisify(execFile);
 const real = process.env.DSH_LIFECYCLE_NATIVE_REAL === '1';
 const expectedRealState = process.env.DSH_LIFECYCLE_EXPECT_STATE ?? 'locked';
 assert.ok(['locked', 'unlocked'].includes(expectedRealState));
@@ -64,7 +66,15 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
     records.push({ platform: process.platform, build: snapshot.build, controlledInitialState: real ? null : initialState, expectedRealState: real ? expectedRealState : null, normalSandbox: real, runtime: state, npc: snapshot.value.renderer?.npc });
   } catch (error) { originalError = error; }
   finally {
-    const began = performance.now(); let forced = false;
+    const began = performance.now(); let forced = false, exitedAt, sample, sampleFile, sampleError;
+    exited.then(() => { exitedAt = performance.now(); });
+    // Capture the owned process before the existing kill guard. A quit event
+    // alone cannot identify a native shutdown stall after JavaScript stops.
+    const sampling = traceShutdown && process.platform === 'darwin' ? setTimeout(() => {
+      sampleFile = `artifacts/lifecycle-shutdown-${initialState}.txt`;
+      sample = mkdir('artifacts', { recursive: true }).then(() => run('/usr/bin/sample', [String(child.pid), '1', '1', '-file', resolve(sampleFile)], { timeout: 3000 }))
+        .catch(error => { sampleError = String(error.message).slice(0, 600); });
+    }, 1500) : undefined;
     const deadline = setTimeout(() => { forced = true; child.kill('SIGKILL'); }, 10000);
     try {
       // Windows SIGTERM forcibly terminates the main process before Chromium
@@ -75,8 +85,9 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
       assert.equal(signal, null, stderr); assert.equal(code, 0, stderr);
     } catch (error) { shutdownError = error;
     } finally {
-      clearTimeout(deadline);
-      shutdowns.push({ initialState, nativeReady, code: child.exitCode, signal: child.signalCode, forced, elapsedMs: Math.round(performance.now() - began), phases,
+      clearTimeout(deadline); clearTimeout(sampling); await sample;
+      shutdowns.push({ initialState, nativeReady, code: child.exitCode, signal: child.signalCode, forced, elapsedMs: Math.round((exitedAt ?? performance.now()) - began), phases,
+        ...(sampleFile ? { sampleFile, ...(sampleError ? { sampleError } : {}) } : {}),
         originalError: originalError ? String(originalError) : null, shutdownError: shutdownError ? String(shutdownError) : null });
       await mkdir('artifacts', { recursive: true });
       await writeFile(reportPath, JSON.stringify({ records, shutdowns }, null, 2) + '\n');

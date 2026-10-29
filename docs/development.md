@@ -74,6 +74,8 @@ node tests/lifecycle-startup-native.mjs
 
 CI 的受控冷启动检查先启用 `DSH_LIFECYCLE_TRACE=1`，在退出消息、窗口关闭与进程退出边界记录阶段和资源类型，不记录路径、URL 或正文；随后关闭诊断入口再次检查，避免诊断代码的时序变化掩盖退出问题。两次均保留原有断言和退出期限，报告分别写入 `lifecycle-startup-traced.json` 和 `lifecycle-startup-native.json`。失败也写报告；原始断言与清理错误分别保留。普通沙箱实测不加载该诊断入口。
 
+受控 macOS 检查退出超过 1.5 秒时，用系统 `sample` 对本次启动的隔离原生进程采样一秒，采集器自身最多运行三秒；原有十秒退出期限和失败断言保持不变，耗时只计进程退出。堆栈随 `lifecycle-shutdown-*.txt` 上传，用于定位窗口已关闭、`quit` 已触发后的原生停留；该探针没有用户会话或模型内容。
+
 ## 资源与诊断
 
 先按[使用指南](usage.md#自主陪伴)核对开关，再按[诊断契约](diagnostics-contract.md)解释时长、缺口和报告状态。独立采样器 `scripts/sample-companion.mjs` 使用本地诊断接口及 OS 指标，不操作窗口、不读取聊天正文、不启动模型。
