@@ -10,7 +10,7 @@
 
 ### 在 Harness 中从 npm 安装
 
-打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.14`**，点击安装，再启用 `dsh-coopanion`。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
+打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.15`**，点击安装，再启用 `dsh-coopanion`。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
 
 ### 安装版本与发布时间保护
 
@@ -23,7 +23,7 @@ pnpm 11 的 `minimumReleaseAge` 默认为 1440 分钟（24 小时）。详情页
 **Desktop：** 使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，再执行：
 
 ```bash
-dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.14
+dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.15
 ```
 
 npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到 Desktop 的命令，先在 Desktop 的菜单栏中使用 **Manage dsh command／管理 dsh 命令** 安装命令入口。
@@ -31,7 +31,7 @@ npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到
 **本机 Web profile：** 使用 npm 安装的 dsh 时，向实际使用的 profile 安装。例如默认 `web` profile：
 
 ```bash
-dsh plugin --profile web add @takboo/dsh-coopanion@0.4.14
+dsh plugin --profile web add @takboo/dsh-coopanion@0.4.15
 dsh --profile web
 ```
 
@@ -50,6 +50,19 @@ dsh plugin --profile desktop add /absolute/path/dsh-coopanion.tgz
 ### 安装完成后
 
 完全退出并重新打开 Harness。首次启动会下载并校验 Electron 44 运行时；在 **Settings → 桌宠** 查看运行状态，打开一段会话后双击角色即可聊天。
+
+### Electron 运行时准备
+
+首次安装或升级 Electron 后，桌宠在独立子进程中下载、校验并解压运行时；准备期间设置页显示“正在启动”，Harness 的窗口、服务和其他插件继续响应，也可随时关闭桌宠来取消准备。准备最多等待四分钟，失败后设置页显示错误；检查网络后点击启动重试。运行时准备完成后才开始原生窗口的 20 秒启动检查。
+
+网络受限时可设置 Electron 支持的 `ELECTRON_MIRROR`，并从设置了该变量的终端启动 Harness。也可完全退出 Harness 后，在实际 profile 目录手动准备（下面以 Windows PowerShell 为例）：
+
+```powershell
+$env:ELECTRON_MIRROR='https://npmmirror.com/mirrors/electron/'
+node "$env:DSH_HOME\profiles\desktop\node_modules\electron\install.js"
+```
+
+使用实际配置的 `DSH_HOME`；CLI 的其他 profile 替换 `desktop`。运行时继续按 Electron 的安装器校验。成功后重新打开 Harness；已准备好的二进制直接复用。自备运行时也可使用 `electronPath` 的绝对路径配置。
 
 ## 配置与会话
 
@@ -75,7 +88,7 @@ dsh plugin --profile desktop add /absolute/path/dsh-coopanion.tgz
 
 鼠标靠近先停；最近键盘活动时暂停外出和邀请，保留未完成目标。角色始终保持设置中的尺寸，打字、选中、悬停或拖动都不自动缩放；稳定空闲至少 12 秒后重新评估活动。键盘感知包含 macOS 聚合事件时间、Windows Raw Input 通知和 Linux X11／XInput2 适配，辅助进程仅输出 active／idle／unknown；不能区分打字与快捷键，也不读取具体按键或其他应用内容。Windows 需要系统 Windows PowerShell；X11 需要 `/usr/bin/python3`、libX11 与 libXi。Wayland（含 Xwayland）、无图形会话、非交互／远程 Windows、接口或依赖不可用均为 unknown，此时安静停留。macOS 不再将“事件监听授权”误当成聚合时间接口的前置条件，无需先授予额外权限。若辅助进程失效，可关闭再开启陪伴重试；诊断中的 keyboardBackend／keyboardStatus 可区分不支持、缺依赖、失败与过期。物理键盘、跨应用／锁屏场景及资源表现按平台分别验证。
 
-无需 DSH 在前台或先打开会话。新工作、异常和审批优先；已呈现的长期待办保留入口，可允许小窝内安静观察。任务与 NPC 情绪各自保留。关闭闲时走动、用户休息、隐藏、锁屏／休眠及减少动态效果暂停自动路径，宿主退出后桌宠仍退出。详见[日常契约](companionship-contract.md)。
+无需 DSH 在前台或先打开会话。新工作、异常和审批优先；已呈现的长期待办保留入口，可允许小窝内安静观察。任务与 NPC 情绪各自保留。关闭闲时走动、用户休息、隐藏、锁屏／休眠及减少动态效果暂停自动路径，宿主退出后桌宠仍退出。显示器工作区变化或几何消息遗漏时，会向原生窗口重新同步；尺寸确认前暂停，确认后恢复，无需重启角色。详见[日常契约](companionship-contract.md)。
 
 在角色上连续轻轻抚摸，或从右键菜单选择“一起活动”；实际完成的互动才计入熟悉度，五分钟内不重复增长，每天最多三次。跨至少三天累计六次会解锁挥手后的爱心招呼，缺席和忽略不会扣分。角色更新或换配色不重置，换角色各自保存。菜单可查看相处进展。
 

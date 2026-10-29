@@ -3,6 +3,33 @@ import assert from 'node:assert/strict';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
+
+// Electron supplies physical pixels for Windows input. PowerShell starts DPI
+// unaware: both cursor movement and readback can otherwise be virtualized.
+async function warpWindowsCursor({ x, y }) {
+  assert.ok(Number.isFinite(x) && Number.isFinite(y), 'Native cursor requires finite physical coordinates');
+  const point = { x: Math.round(x), y: Math.round(y) };
+  const script = `
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class PetNativeCursor {
+  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int x; public int y; }
+  [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
+  [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [DllImport("user32.dll")] public static extern bool GetPhysicalCursorPos(out POINT point);
+}
+'@
+$previous = [PetNativeCursor]::SetThreadDpiAwarenessContext([IntPtr](-4))
+if ($previous -eq [IntPtr]::Zero) { throw 'Cannot set native input DPI awareness' }
+if (-not [PetNativeCursor]::SetCursorPos(${point.x}, ${point.y})) { throw 'Cannot move the native test cursor' }
+$actual = New-Object PetNativeCursor+POINT
+if (-not [PetNativeCursor]::GetPhysicalCursorPos([ref]$actual)) { throw 'Cannot read the physical cursor' }
+if ($actual.x -ne ${point.x} -or $actual.y -ne ${point.y}) { throw 'Native cursor did not reach the requested physical point' }
+`;
+  await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')]);
+}
+
 const warpMacCursor = `
 import ctypes, sys
 class Point(ctypes.Structure):
@@ -77,9 +104,7 @@ export async function petClick(page, options = {}, twice = false) {
   }
   if (process.platform === 'win32') {
     const { point } = await nativeMeasurement(page, '#pet');
-    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class PetCursor { [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y); }'; if (-not [PetCursor]::SetCursorPos(${point.x}, ${point.y})) { throw 'Cannot move the native test cursor' }`,
-    ]);
+    await warpWindowsCursor(point);
   }
   await pet.hover();
   await page.waitForSelector('#pet[data-native-hit=true]');
@@ -120,8 +145,7 @@ export async function nativeClick(page, selector) {
   const measurement = await nativeMeasurement(page, selector), p = measurement.point;
   if (process.platform === 'darwin') await run('python3', ['-c', warpMacCursor, String(p.x), String(p.y)]);
   else if (process.platform === 'linux') await run('python3', ['-c', warpCursor, String(p.x), String(p.y)]);
-  else await run('powershell.exe', ['-NoProfile','-NonInteractive','-Command',
-    `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class PetPanelCursor { [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y); }'; if (-not [PetPanelCursor]::SetCursorPos(${p.x}, ${p.y})) { throw 'Cannot move the native test cursor' }`]);
+  else await warpWindowsCursor(p);
   // A font/size update can reflow the panel while the OS helper starts. Keep
   // CDP and the physical cursor on the same measured point rather than mixing
   // two layout samples; locator trial above waits for actionability/stability.
@@ -140,7 +164,9 @@ export async function parkNativePointer(page) {
   const origin = await page.evaluate(() => ({ x: screenX + 2, y: screenY + 2 }));
   if (process.platform === 'darwin') await run('python3', ['-c', warpMacCursor, String(origin.x), String(origin.y)]);
   else if (process.platform === 'linux' && process.env.DISPLAY) await run('python3', ['-c', warpCursor, String(origin.x), String(origin.y)]);
-  else if (process.platform === 'win32') await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class PetParkCursor { [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y); }'; if (-not [PetParkCursor]::SetCursorPos(${Math.round(origin.x)}, ${Math.round(origin.y)})) { throw 'Cannot park native cursor' }`]);
+  else if (process.platform === 'win32') {
+    const point = await page.evaluate(() => window.dshPetBridge.testScreenPoint({ x: 2, y: 2, width: innerWidth, height: innerHeight }).then(value => value.point));
+    await warpWindowsCursor(point);
+  }
   await page.mouse.move(2, 2);
 }

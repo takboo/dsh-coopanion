@@ -90,7 +90,7 @@ export class PetControls {
     if (this.disposed || !this.wanted || epoch !== this.epoch) return;
     const startup = new AbortController(); this.startup = startup; this.startupExit = undefined;
     this.set({ ...this.state, phase: 'starting', error: undefined, retryAt: undefined, visible: false, generation: this.state.generation + 1, visibilityRevision: 0, suspended: false });
-    try { await this.withDeadline(this.bridge.start(this.options(), { signal: startup.signal, generation: this.state.generation, visible: this.state.desiredVisible }), this.limits.startTimeoutMs ?? 25_000, '桌宠启动超时', startup.signal, true); }
+    try { await this.withDeadline(this.bridge.start(this.options(), { signal: startup.signal, generation: this.state.generation, visible: this.state.desiredVisible }), this.limits.startTimeoutMs ?? 265_000, '桌宠启动超时', startup.signal, true); }
     catch (error) { throw this.startupExit ?? error; }
     if (startup.signal.aborted || this.disposed || epoch !== this.epoch) throw new Error('桌宠启动已取消');
     this.startup = undefined;

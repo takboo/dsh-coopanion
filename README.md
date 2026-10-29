@@ -58,7 +58,7 @@
 打开侧边栏 **插件 → 添加插件**，在「包名或地址」中填入：
 
 ```text
-@takboo/dsh-coopanion@0.4.14
+@takboo/dsh-coopanion@0.4.15
 ```
 
 点击安装，完成后启用 `dsh-coopanion`，再完全退出并重新打开 Harness。
@@ -70,7 +70,7 @@
 使用 **Desktop 自带的 `dsh` 命令**。先启动 Desktop 一次完成初始化，完全退出应用后执行：
 
 ```bash
-dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.14
+dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.15
 ```
 
 完成后重新打开 Desktop。其他 profile 的安装方法见[使用指南](docs/usage.md#通过-dsh-命令行安装)。
@@ -79,7 +79,7 @@ dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.14
 
 [下载最新插件包 `dsh-coopanion.tgz`](https://github.com/takboo/dsh-coopanion/releases/latest/download/dsh-coopanion.tgz)，在 **插件 → 添加插件** 中填入压缩包的绝对路径，安装并启用，然后重启 Harness。
 
-安装后在 **Settings → 桌宠** 查看运行状态。首次启动需要联网下载并校验 Electron 运行时。
+安装后在 **Settings → 桌宠** 查看运行状态。首次启动会在后台下载并校验 Electron 运行时，期间桌宠显示“正在启动”，Harness 可继续使用；网络受限时可按[运行时准备说明](docs/usage.md#electron-运行时准备)配置镜像或提前安装。
 
 | 操作 | 会发生什么 |
 |---|---|

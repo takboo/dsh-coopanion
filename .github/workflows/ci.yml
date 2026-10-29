@@ -43,7 +43,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Pin the Apple Silicon image used for native graphics validation.
+        os: [ubuntu-latest, macos-15, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -64,6 +65,16 @@ jobs:
       - uses: ./.github/actions/setup-linux-display
         if: runner.os == 'Linux'
       - run: npm run character:pack -- examples/star paper-star.zip
+      - name: Verify native desktop with process logs
+        timeout-minutes: 6
+        env:
+          DEBUG: pw:browser
+          DSH_LIFECYCLE_TRACE: '1'
+        run: |
+          npm run test:desktop
+          node -e "require('node:fs').copyFileSync('artifacts/lifecycle-startup-native.json', 'artifacts/lifecycle-startup-traced.json')"
+          node -e "const {spawnSync}=require('node:child_process'); const result=spawnSync(process.execPath,['tests/lifecycle-startup-native.mjs'],{stdio:'inherit',env:{...process.env,DSH_LIFECYCLE_TRACE:'0'}}); if(result.error) throw result.error; process.exit(result.status ?? 1)"
+          node -e "const {spawnSync}=require('node:child_process'); const result=spawnSync(process.execPath,['tests/lifecycle-startup-native.mjs'],{stdio:'inherit',env:{...process.env,DSH_LIFECYCLE_TRACE:'1',DSH_LIFECYCLE_LATE_DISPLAY:'1'}}); if(result.error) throw result.error; process.exit(result.status ?? 1)"
       - run: npm run test:ui
       - run: npm run test:notification-ui
       - run: npm run test:inbox-ui
@@ -71,11 +82,6 @@ jobs:
         env:
           DSH_KEYBOARD_TEST_X11_INPUT: ${{ runner.os == 'Linux' && '1' || '' }}
         run: npm run test:keyboard-native
-      - name: Verify native desktop with process logs
-        timeout-minutes: 6
-        env:
-          DEBUG: pw:browser
-        run: npm run test:desktop
       - name: Check distributable and create canonical Linux package
         if: runner.os == 'Linux'
         run: |
@@ -112,6 +118,7 @@ jobs:
             artifacts/companionship-*.json
             artifacts/diagnostics-*.json
             artifacts/lifecycle-startup-*.json
+            artifacts/lifecycle-shutdown-*.txt
             artifacts/companionship-*.png
           retention-days: 7
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -132,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-15, windows-latest]
         dsh: ['0.2.0-rc.2', '0.2.1-alpha.1', '0.2.1-rc.1', '0.2.1-rc.2', '0.2.1-rc.3']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

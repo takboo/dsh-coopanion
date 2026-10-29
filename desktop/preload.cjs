@@ -10,8 +10,10 @@ contextBridge.exposeInMainWorld('dshPetBridge', {
   subscribe(callback) {
     const listener = (_event, message) => callback(message);
     ipcRenderer.on('pet:update', listener);
+    ipcRenderer.send('pet:geometry-request');
     return () => ipcRenderer.removeListener('pet:update', listener);
   },
+  requestGeometry() { ipcRenderer.send('pet:geometry-request'); },
   // Chat carries its immutable target and client request identity unchanged.
   action(value) { ipcRenderer.send('pet:action', value); },
   hit(active) { ipcRenderer.send('pet:hit', active); },

@@ -227,8 +227,11 @@ app.whenReady().then(async () => {
   displays = createDisplayController({ screen, win, send: forward, changed: syncTray });
   displays.refresh();
   if (displayTest) require('./test-display-probe.cjs').installDisplayProbe({ ipcMain, screen, win, displays });
-  for (const event of ['resize', 'move']) win.on(event, () => setImmediate(() => { if (!win.isDestroyed()) displays.refresh(); }));
+  for (const event of ['resize', 'resized', 'move']) win.on(event, () => setImmediate(() => { if (!win.isDestroyed()) displays.refresh(); }));
   win.webContents.on('did-finish-load', () => { if (lastFrame) forward(lastFrame); displays.publish(); });
+  ipcMain.on('pet:geometry-request', event => {
+    if (event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame) displays.publish();
+  });
   ipcMain.on('pet:diagnostics-response', (event, message) => {
     if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || options?.diagnostics !== true || !diagnosticRead || message?.requestId !== diagnosticRead.requestId) return;
     const value = diagnosticRenderer.safeParse(message.value);
@@ -266,7 +269,10 @@ app.whenReady().then(async () => {
   const icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).resize({ height: 24 });
   tray = new Tray(icon); syncTray();
   tray.on('click', show);
-  for (const event of ['display-added', 'display-removed', 'display-metrics-changed']) screen.on(event, () => { displays.refresh(); lastTrayKey = undefined; syncTray(); });
+  const displayEvents = ['display-added', 'display-removed', 'display-metrics-changed'];
+  const displayChanged = () => { if (!win.isDestroyed()) { displays.refresh(); lastTrayKey = undefined; syncTray(); } };
+  for (const event of displayEvents) screen.on(event, displayChanged);
+  win.once('closed', () => { for (const event of displayEvents) screen.off(event, displayChanged); });
   process.send?.({ type: 'ready' });
 }).catch(error => {
   console.error(error);

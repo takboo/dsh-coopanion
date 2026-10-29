@@ -29,6 +29,8 @@ npm run test:install
 
 浏览器检查真实 API 2 动画、聊天、完整阅读、角色导入及脚本隔离；桌面检查真实 Electron 窗口、IPC、托盘和恢复；安装检查使用官方 DSH loader 安装实际 `.tgz`。用 `DSH_TEST_VERSION=<支持版本>` 选择宿主，用 `DSH_TEST_PACKAGE_DIR=<规范包目录>` 消费已有规范包及校验文件。完整平台／宿主列表以 CI 矩阵为准。
 
+macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner，原生图形检查先于完整浏览器回归执行，尽早识别图形环境不可用。三平台测试和十五组宿主安装保留全部断言与期限；本地 VM 验证仍单独记录实际系统、提交与包摘要。
+
 原生测试和安装使用隔离数据目录，系统桌面操作串行执行。CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox 与 contextIsolation，关闭 Node integration。测试通知适配器和模型答复器属于受控边界，不能代替通知中心实机送达或真实模型会话验收。
 
 ## 关键行为回归
@@ -44,6 +46,10 @@ npm run test:install
 | 原生冷启动 | `tests/lifecycle-startup-native.mjs`：受控 unknown／locked 与实际系统状态分别检查 |
 
 原生 NPC 用例控制时钟、粗粒度输入和鼠标感知；身体移动及 arrived／interrupted 保持真实。受控循环通过与物理输入、自然体验分别报告。
+
+Windows 的 125% 缩放与任务栏回归可在已登录、解锁的隔离控制台运行 `node tests/windows-geometry-native.mjs`。先通过系统显示设置选择 125%；脚本核对 Electron 读取的真实 DPI，不强制 Chromium 比例。它通过 Windows Shell API 切换任务栏自动隐藏、核对实际工作区及 viewport，再注入过期边界检查重同步与角色保持，结束时恢复原任务栏状态。NPC 时钟和感知为受控输入；这项 VM 检查不代替物理多屏或用户体验验收。RDP 会话不允许更改显示缩放时，先在虚拟机控制台设置并验证实际比例。
+
+同一控制台运行 `node tests/windows-pointer-native.mjs` 可核对真实 125% 下的右键菜单及面板点击；在 100% 下用 `DSH_WINDOWS_EXPECT_SCALE=1` 明确对应预期比例。Windows 输入辅助线程先启用 Per-Monitor V2 DPI 感知，再使用 Electron 换算出的物理坐标移动并读回光标，避免 DPI-unaware 辅助进程的坐标虚拟化造成误判。此检查同时使用 OS 光标和 CDP 点击，不代替物理混合 DPI 实机验收。
 
 小窝回归支持录制隔离页面，不录桌面其他窗口或音频：
 
@@ -67,6 +73,14 @@ node tests/lifecycle-startup-native.mjs
 ```
 
 它要求真实初态已知、未挂起且键盘适配器 available。锁屏场景使用 `DSH_LIFECYCLE_EXPECT_STATE=locked`，在实际锁屏环境单独执行；探针不改变锁屏状态。物理键盘、跨应用、锁屏／休眠、远程会话与平台资源分别验证。
+
+CI 的受控冷启动检查先启用 `DSH_LIFECYCLE_TRACE=1`，在退出消息、窗口关闭与进程退出边界记录阶段和资源类型，不记录路径、URL 或正文；随后关闭诊断入口再次检查，避免诊断代码的时序变化掩盖退出问题。两次均保留原有断言和退出期限，报告分别写入 `lifecycle-startup-traced.json` 和 `lifecycle-startup-native.json`。失败也写报告；原始断言与清理错误分别保留。普通沙箱实测不加载该诊断入口。
+
+受控 macOS 检查退出超过 1.5 秒时，用系统 `sample` 对本次启动的隔离原生进程采样一秒，采集器自身最多运行三秒；原有十秒退出期限和失败断言保持不变，耗时只计进程退出。堆栈随 `lifecycle-shutdown-*.txt` 上传，用于定位窗口已关闭、`quit` 已触发后的原生停留；该探针没有用户会话或模型内容。
+
+同一诊断入口通过 `uncaughtExceptionMonitor` 观察默认异常路径，只记录分类、错误码与源码文件名／函数帧，不拦截异常或关闭原生错误框；出现异常也判为失败。Windows 手动几何探针先等待首个本地页面加载完成，再刷新以注入受控时钟，避免窗口刚创建便取消尚未完成的首次导航。
+
+CI 额外用 `DSH_LIFECYCLE_LATE_DISPLAY=1` 在原生窗口关闭后强制派发显示器更新，复现排队回调的寿命竞态；同样要求正常退出、无未处理异常，报告单独写入 `lifecycle-startup-late-display.json`。这是受控事件验证，不改变系统显示设置。
 
 ## 资源与诊断
 

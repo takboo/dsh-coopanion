@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { chromium } from 'playwright-core';
 import { previewServer } from '../scripts/preview.mjs';
+import { controlNpc, npcUntil } from './helpers/npc-life.mjs';
 let directory, server, browser;
 before(async () => {
   directory = await mkdtemp(join(tmpdir(),'dsh-display-ui-'));
@@ -22,6 +23,47 @@ const cases = [
   {displayId:3,contentBounds:{x:160,y:-640,width:520,height:720},scaleFactor:2},
   {displayId:1,contentBounds:{x:0,y:25,width:980,height:680},scaleFactor:2},
 ];
+test('native NPC requests missing and stale geometry and resumes without restarting its character', async t => {
+  const page = await browser.newPage({ viewport: { width: 980, height: 720 } }); t.after(() => page.close());
+  await controlNpc(page);
+  await page.addInitScript(() => {
+    window.geometryRequests = 0;
+    window.dshPetBridge = {
+      nativeGeometry: true,
+      subscribe(fn) { window.displayReceive = fn; }, action() {}, hit() {},
+      requestGeometry() {
+        window.geometryRequests++;
+        if (!window.geometryAvailable) return;
+        const bounds = { x: -420, y: 25, width: innerWidth, height: innerHeight };
+        window.displayReceive({ type: 'display-changed', displayId: 2, revision: ++window.geometryRevision, contentBounds: bounds, workArea: bounds, scaleFactor: 1.25 });
+      },
+    };
+    window.geometryRevision = 0;
+  });
+  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.waitForSelector('#pet[data-mode]');
+  await page.evaluate(() => {
+    window.originalBody = document.querySelector('#body-layer iframe');
+    window.displayReceive({ type: 'init', options: { companionship: 'quiet', roam: true }, snapshot: { mood: 'idle', active: false, sessions: [], results: [] } });
+  });
+  await page.waitForSelector('#pet[data-npc-reason=geometry]');
+  await page.evaluate(() => { window.geometryAvailable = true; });
+  await page.waitForFunction(() => window.geometryRequests > 0, null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('#pet').dataset.npcReason !== 'geometry', null, { timeout: 5000 });
+  await npcUntil(page, 'outbound');
+  await page.evaluate(() => {
+    // Hold the reply until the paused state is observed. A correct, fast heal
+    // must not make an external poll miss the transient geometry state.
+    window.geometryAvailable = false;
+    window.displayReceive({ type: 'display-changed', displayId: 2, revision: ++window.geometryRevision, contentBounds: { x: -420, y: 25, width: 980, height: 768 }, workArea: { x: -420, y: 25, width: 980, height: 720 }, scaleFactor: 1.25 });
+  });
+  await page.waitForSelector('#pet[data-npc-reason=geometry]');
+  const requests = await page.evaluate(() => window.geometryRequests);
+  await page.evaluate(() => { window.geometryAvailable = true; });
+  await page.waitForFunction(n => window.geometryRequests > n && document.querySelector('#pet').dataset.npcReason !== 'geometry', requests, { timeout: 5000 });
+  await npcUntil(page, 'outbound');
+  assert.equal(await page.evaluate(() => document.querySelector('#body-layer iframe') === window.originalBody), true);
+});
 test('controlled irregular layout and mixed DPR preserve reading, draft, in-flight identity and hit areas', async t => {
   const page = await browser.newPage({viewport:{width:980,height:720},reducedMotion:'reduce'}); t.after(()=>page.close());
   const errors=[]; page.on('pageerror',e=>errors.push(e.message)); t.after(()=>assert.deepEqual(errors,[]));

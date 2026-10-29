@@ -48,6 +48,7 @@ let renderedSessionId = null, reactionUntil = 0, reactionMood, bubbleSession, tr
 let bubbleResult, readerResult, pendingOnly = false, talkAt = 0;
 let readerQueue, inboxState = { requests: [], issues: [], replies: [], total: 0 };
 let resizeLayout, displayGeometry, pendingDisplayPlacement, resizeOrigin;
+let geometryRequestedAt = -Infinity;
 let stageWidth = innerWidth, pressedPointerId;
 const composer = new ChatComposer();
 const sessionAttention = new SessionAttention();
@@ -289,6 +290,9 @@ function updateNpc(now, active, readingAttention) {
     !layout || layout.busy || ['air', 'drag', 'crouch', 'sleep'].includes(layout.mode);
   const keyboard = performance.now() - keyboardAt <= 2500 ? keyboardActivity : 'unknown';
   const geometryReady = !native?.nativeGeometry || displayGeometry && innerWidth === displayGeometry.contentBounds.width && innerHeight === displayGeometry.contentBounds.height;
+  if (!geometryReady && performance.now() - geometryRequestedAt >= 1000) {
+    geometryRequestedAt = performance.now(); native?.requestGeometry?.();
+  }
   // A held body's x stays at its old foot anchor while box follows the pointer.
   // Only grounded frames describe a footprint relative to the same anchor.
   if (layout && !layout.busy && !['air', 'drag', 'crouch'].includes(layout.mode)) npcGroundLayout = layout;
