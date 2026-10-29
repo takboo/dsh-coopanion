@@ -10,7 +10,9 @@ const require = createRequire(import.meta.url), packageRoot = resolve(process.en
 const real = process.env.DSH_LIFECYCLE_NATIVE_REAL === '1';
 const expectedRealState = process.env.DSH_LIFECYCLE_EXPECT_STATE ?? 'locked';
 assert.ok(['locked', 'unlocked'].includes(expectedRealState));
-const records = [];
+const records = [], shutdowns = [];
+const traceShutdown = !real && process.env.DSH_LIFECYCLE_TRACE === '1';
+const reportPath = real ? 'artifacts/lifecycle-startup-real.json' : 'artifacts/lifecycle-startup-native.json';
 for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-locked', 'system']) {
   console.log(`Lifecycle startup case: ${initialState}`);
   const root = await mkdtemp(join(tmpdir(), 'dsh-initial-lock-'));
@@ -18,10 +20,14 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
   delete env.ELECTRON_RUN_AS_NODE;
   if (real) { delete env.DSH_PET_TEST_NO_SANDBOX; delete env.DSH_PET_TEST_DEBUG_PORT; delete env.DSH_PET_TEST_INITIAL_LOCK_STATE; }
   else { env.DSH_PET_TEST_NO_SANDBOX = '1'; env.DSH_PET_TEST_DEBUG_PORT = '0'; env.DSH_PET_TEST_INITIAL_LOCK_STATE = initialState === 'restore-locked' ? 'unlocked' : initialState; }
-  const child = spawn(require('electron'), [...(real ? [] : ['--no-sandbox']), join(packageRoot, 'desktop/main.cjs')], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  const child = spawn(require('electron'), [...(traceShutdown ? ['--require', resolve('tests/fixtures/lifecycle-shutdown-trace.cjs')] : []), ...(real ? [] : ['--no-sandbox']), join(packageRoot, 'desktop/main.cjs')], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   const exited = once(child, 'exit'); let stderr = '';
-  let nativeReady = false;
-  child.on('message', message => { if (message?.type === 'ready') nativeReady = true; });
+  let nativeReady = false, originalError, shutdownError;
+  const phases = [];
+  child.on('message', message => {
+    if (message?.type === 'ready') nativeReady = true;
+    if (message?.type === 'lifecycle-shutdown-trace' && phases.length < 64) phases.push(message);
+  });
   child.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-4000); });
   try {
     child.send({ type: 'init', baseline: true, options: { size: 150, companionship: 'quiet', roam: true, diagnostics: true, notifications: false }, snapshot: { mood: 'idle', active: false, sessionId: null, sessions: [], results: [] } });
@@ -56,8 +62,10 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
       if (!state.lockStateKnown || state.screenLocked) assert.equal(state.suspended, true);
     }
     records.push({ platform: process.platform, build: snapshot.build, controlledInitialState: real ? null : initialState, expectedRealState: real ? expectedRealState : null, normalSandbox: real, runtime: state, npc: snapshot.value.renderer?.npc });
-  } finally {
-    const deadline = setTimeout(() => child.kill('SIGKILL'), 10000);
+  } catch (error) { originalError = error; }
+  finally {
+    const began = performance.now(); let forced = false;
+    const deadline = setTimeout(() => { forced = true; child.kill('SIGKILL'); }, 10000);
     try {
       // Windows SIGTERM forcibly terminates the main process before Chromium
       // releases its profile. Use the desktop's normal IPC quit path instead.
@@ -65,12 +73,18 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
       if (child.connected) child.send({ type: 'quit' }); else child.kill('SIGTERM');
       const [code, signal] = await exited;
       assert.equal(signal, null, stderr); assert.equal(code, 0, stderr);
+    } catch (error) { shutdownError = error;
     } finally {
       clearTimeout(deadline);
+      shutdowns.push({ initialState, nativeReady, code: child.exitCode, signal: child.signalCode, forced, elapsedMs: Math.round(performance.now() - began), phases,
+        originalError: originalError ? String(originalError) : null, shutdownError: shutdownError ? String(shutdownError) : null });
+      await mkdir('artifacts', { recursive: true });
+      await writeFile(reportPath, JSON.stringify({ records, shutdowns }, null, 2) + '\n');
       await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     }
   }
+  if (originalError && shutdownError) throw new AggregateError([originalError, shutdownError], 'Native lifecycle assertion and cleanup failed; see ' + reportPath);
+  if (originalError) throw originalError;
+  if (shutdownError) throw shutdownError;
 }
-await mkdir('artifacts', { recursive: true });
-await writeFile(real ? 'artifacts/lifecycle-startup-real.json' : 'artifacts/lifecycle-startup-native.json', JSON.stringify({ records }, null, 2) + '\n');
 console.log('Native lifecycle startup passed: ' + (real ? 'ordinary sandbox, expected ' + expectedRealState : 'controlled locked/unknown and system adapter observation') + '.');
