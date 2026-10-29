@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { once } from 'node:events';
 import { request } from 'node:http';
+import { createConnection } from 'node:net';
 import { zipSync, strToU8, unzipSync, strFromU8 } from 'fflate';
 import { CharacterStore, knownScheme, PACK_LIMIT } from '../src/character-store.ts';
 import { createPetServer } from '../src/figure-server.ts';
@@ -66,6 +67,46 @@ describe('upstream API 2 packs', () => {
     await expect(store.load('paper-star')).rejects.toThrow(/索引/);
   }));
 });
+
+it('serves accepted pipelined requests after the listening socket closes', async () => withStore(async store => {
+  const listing = await store.list();
+  let release!: () => void, entered!: () => void, second!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const firstRequest = new Promise<void>(resolve => { entered = resolve; });
+  const secondRequest = new Promise<void>(resolve => { second = resolve; });
+  store.list = async () => { entered(); await blocked; return listing; };
+  const server = createPetServer({ webRoot: resolve('web'), store });
+  const handler = server.listeners('request')[0]!;
+  const escaped: unknown[] = [];
+  let requests = 0;
+  // Observe escaped async listener errors without letting the test runner's
+  // process-wide rejection handler replace the assertion about this request.
+  server.removeListener('request', handler);
+  server.on('request', (req, res) => {
+    if (++requests === 2) second();
+    void Promise.resolve(handler(req, res)).catch(error => {
+      escaped.push(error); res.writeHead(500).end();
+    });
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const port = (server.address() as { port: number }).port;
+  const socket = createConnection({ host: '127.0.0.1', port });
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await once(socket, 'connect'); socket.setEncoding('utf8');
+    let response = ''; socket.on('data', part => { response += part; });
+    const ended = once(socket, 'close');
+    const send = (connection: string) => socket.write(`GET /api/characters/list HTTP/1.1\r\nHost: 127.0.0.1:${port}\r\nConnection: ${connection}\r\n\r\n`);
+    send('keep-alive'); await firstRequest;
+    const closed = new Promise<void>(resolve => { server.close(() => resolve()); });
+    expect(server.address()).toBeNull();
+    send('close');
+    await Promise.race([secondRequest, new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error('Queued request did not arrive')), 2000); })]);
+    release(); await ended; await closed;
+    expect(escaped).toEqual([]);
+    expect(response.match(/HTTP\/1\.1 200/g)).toHaveLength(2);
+  } finally { clearTimeout(deadline); release(); socket.destroy(); server.close(); }
+}));
 
 // This checks the complete source archive's contents, including original assets.
 // Disk and ZIP work can exceed Vitest's default 5 s on the Windows test VM.

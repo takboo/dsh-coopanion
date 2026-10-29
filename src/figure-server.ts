@@ -35,7 +35,9 @@ async function sourceArchive(project: string): Promise<Uint8Array> {
 export function createPetServer({ webRoot, store, companions, prefix = '/' }: { webRoot: string; store: CharacterStore; companions?: CompanionStore; prefix?: string }) {
   let operation = Promise.resolve();
   const server = createServer(async (req, res) => {
-    const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+    // Accepted connections can deliver queued requests after close() has made
+    // server.address() null. Their local port still identifies the bound origin.
+    const origin = `http://127.0.0.1:${req.socket.localPort}`;
     const json = (value: unknown, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); };
     try {
       if (req.headers.host !== new URL(origin).host) { res.writeHead(403).end(); return; }
