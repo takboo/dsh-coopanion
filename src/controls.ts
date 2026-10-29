@@ -5,6 +5,15 @@ export { NativeStartError, type NativeLifecycle, type StartLifetime } from './de
 
 export type PetCommand = 'start' | 'show' | 'hide' | 'restart' | 'stop' | 'characters';
 export type PetStatus = NotificationRuntime;
+/** A host-authored hint. Views render it as a transient toast; it never carries task state or delivery claims. */
+export interface PetHint {
+  /** One-line headline. Blank headlines are dropped. */
+  title: string;
+  /** Optional supporting line; the view keeps it to two visible lines. */
+  body?: string;
+  /** Optional Harness session the hint belongs to. It is not revalidated against live sessions. */
+  sessionId?: string;
+}
 export interface ControlLimits { startTimeoutMs?: number; cleanupTimeoutMs?: number; retryDelaysMs?: readonly [number, number, number]; stableMs?: number; }
 
 /** Commands own a cancellable native generation. Lifecycle acknowledgements alone establish visibility. */
@@ -44,6 +53,20 @@ export class PetControls {
     this.listeners.add(listener); try { listener(this.status()); } catch { /* A view is optional. */ } return () => this.listeners.delete(listener);
   }
   configure(): void { this.bridge.configure?.(this.options()); }
+  /**
+   * Relay a host-authored hint to the pet as a toast. Delivery is best-effort:
+   * it needs a running, visible, awake pet with notices enabled, and returns
+   * whether the native window accepted it. Task notices, session replies and
+   * delivery claims stay owned by the broker; a hint can never fabricate them.
+   */
+  hint(value: PetHint): boolean {
+    if (this.disposed || !this.options().notifications) return false;
+    if (this.state.phase !== 'running' || !this.state.visible || this.state.suspended) return false;
+    const title = hintText(value.title, 256), body = hintText(value.body, 2048);
+    if (!title) return false;
+    this.bridge.notify({ title, body, sessionId: hintText(value.sessionId, 2048), kind: 'message' });
+    return true;
+  }
   command(command: PetCommand): Promise<PetStatus> {
     // Intent and cancellation take effect before queued work, including queued starts.
     if (command === 'hide') this.set({ ...this.state, desiredVisible: false });
@@ -157,4 +180,9 @@ export class PetControls {
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const pending = this.queue.then(operation); this.queue = pending.catch(() => undefined); return pending;
   }
+}
+
+/** Collapse layout-breaking whitespace so one hint cannot grow the toast unbounded. */
+function hintText(value: unknown, limit: number): string {
+  return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, limit);
 }

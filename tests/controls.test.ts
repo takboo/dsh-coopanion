@@ -3,7 +3,7 @@ import { PetControls, NativeStartError, type NativeLifecycle, type StartLifetime
 import type { DesktopOptions, PetBridge } from '../src/bridge.ts';
 
 const options: DesktopOptions = { size: 150, roam: true, notifications: true, bubbleDurationMs: 12000 };
-function fixture(limits = {}) {
+function fixture(limits = {}, overrides: Partial<DesktopOptions> = {}) {
   let lifecycle: (state: NativeLifecycle) => void = () => {}, generation = 0, revision = 0;
   const bridge: PetBridge = {
     start: vi.fn(async (_options: DesktopOptions, lifetime?: StartLifetime) => { generation = lifetime?.generation ?? 0; revision = 1; lifecycle({ running: true, visible: lifetime?.visible !== false, generation, visibilityRevision: revision }); }),
@@ -12,7 +12,7 @@ function fixture(limits = {}) {
     control: vi.fn(command => { if (command !== 'characters') lifecycle({ running: true, visible: command !== 'hide', generation, visibilityRevision: ++revision }); }),
     onLifecycle: listener => { lifecycle = listener; }, removeLifecycle: vi.fn(),
   };
-  return { bridge, controls: new PetControls(bridge, () => options, limits), lifecycle: (value: NativeLifecycle) => lifecycle(value) };
+  return { bridge, controls: new PetControls(bridge, () => ({ ...options, ...overrides }), limits), lifecycle: (value: NativeLifecycle) => lifecycle(value) };
 }
 it('serializes concurrent starts, recovers after native close, and shows a hidden pet without spawning another', async () => {
   const { controls, bridge, lifecycle } = fixture();
@@ -210,4 +210,34 @@ it('unload aborts startup, detaches listeners and isolates broken state observer
   const dispose = controls.dispose(); expect(signal.aborted).toBe(true);
   await Promise.all([start, dispose]); expect(controls.status().phase).toBe('stopped');
   expect(bridge.removeLifecycle).toHaveBeenCalledOnce();
+});
+it('delivers host hints only while the pet is running, visible and awake', async () => {
+  const { controls, bridge, lifecycle } = fixture();
+  expect(controls.hint({ title: '电话接通了' })).toBe(false);
+  await controls.command('start');
+  expect(controls.hint({ title: '电话接通了', body: '挂件正在听你说话', sessionId: 'session-1' })).toBe(true);
+  expect(bridge.notify).toHaveBeenCalledWith({ title: '电话接通了', body: '挂件正在听你说话', sessionId: 'session-1', kind: 'message' });
+  lifecycle({ running: true, visible: true, generation: 1, visibilityRevision: 2, suspended: true });
+  expect(controls.hint({ title: '游戏模式' })).toBe(false);
+  lifecycle({ running: true, visible: false, generation: 1, visibilityRevision: 3 });
+  expect(controls.hint({ title: '游戏模式' })).toBe(false);
+  await controls.command('hide'); expect(controls.hint({ title: '游戏模式' })).toBe(false);
+  await controls.dispose(); expect(controls.hint({ title: '游戏模式' })).toBe(false);
+  expect(bridge.notify).toHaveBeenCalledOnce();
+});
+it('honours the notices preference and bounds hint text', async () => {
+  const off = fixture({}, { notifications: false });
+  await off.controls.command('start');
+  expect(off.controls.hint({ title: '电话接通了' })).toBe(false);
+  expect(off.bridge.notify).not.toHaveBeenCalled();
+  await off.controls.dispose();
+  const { controls, bridge } = fixture();
+  await controls.command('start');
+  expect(controls.hint({ title: '  ', body: '只有正文' })).toBe(false);
+  expect(controls.hint({ title: 'T'.repeat(300), body: 'B'.repeat(3000) })).toBe(true);
+  const notice = vi.mocked(bridge.notify).mock.calls[0]![0] as { title: string; body: string; kind: string };
+  expect(notice.kind).toBe('message');
+  expect(notice.title).toHaveLength(256); expect(notice.body).toHaveLength(2048);
+  expect(bridge.notify).toHaveBeenCalledOnce();
+  await controls.dispose();
 });
