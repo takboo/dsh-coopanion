@@ -32,7 +32,7 @@ export function samplePose(time,{calm=false}={}) {
   return pose;
 }
 
-function applyPose(actor,pose) {
+export function applyPose(actor,pose) {
   actor.lookAt(...pose.look);actor.express({...pose.eyes,asym:character.eyes.asym});
   actor.rootX.target=pose.rootX;actor.lean.target=pose.lean;
   actor.fx('tail').target=pose.tail;actor.fx('fin').target=pose.fin;

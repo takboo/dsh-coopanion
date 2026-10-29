@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-29",
+  "baseCommit": "4315d605f5683d05792998e119bca2b63d0d5787",
+  "scope": "Includes authorized, previously uncommitted work; snapshots preserve pre-cleanup bytes, not a historical committed release",
+  "files": [
+    {
+      "originalPath": "docs/design/README.md",
+      "snapshot": "snapshots/README.md",
+      "sha256": "7a09274c152221cc321c1543f64ca6e8377b4161fe83bf1975af4e6dddbad4aa",
+      "reason": "Superseded process narrative; current status is maintained in docs/design/README.md"
+    },
+    {
+      "originalPath": "docs/design/character-production-workflow.md",
+      "snapshot": "snapshots/character-production-workflow.md",
+      "sha256": "3f85b45b1a6b6edacf1bf06aef2ba6fe97a066d846a20a2845352d91fb116ad1",
+      "reason": "Superseded process narrative; current status is maintained in docs/design/README.md"
+    },
+    {
+      "originalPath": "docs/design/art-workflow/whale-little-deep-v3/README.md",
+      "snapshot": "snapshots/art-workflow/whale-little-deep-v3/README.md",
+      "sha256": "e8efcea2cf1e4aa96f067eae59386b1aafc21bbfe89c6bd3a852e0f9f6e33fc9",
+      "reason": "Superseded process narrative; current status is maintained in docs/design/README.md"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-mainline-v0.md",
+      "snapshot": "snapshots/storyboards/little-deep-mainline-v0.md",
+      "sha256": "3a87fbe482c9742cb80ea7910988318b81018534137fde6d564570bc1def03f6",
+      "reason": "Superseded process narrative; current status is maintained in docs/design/README.md"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-behavior-grammar-v0.md",
+      "snapshot": "snapshots/storyboards/little-deep-behavior-grammar-v0.md",
+      "sha256": "9b118e8a548024e9a092f271b07e3b64fd081a89dbff8d4d6b8d05866c423e87",
+      "reason": "Superseded process narrative; current status is maintained in docs/design/README.md"
+    }
+  ]
+}

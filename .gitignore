@@ -10,3 +10,6 @@ docs/design/art-workflow/space-v1/work-facts.generated.js
 
 # Durable local test VM disks and project-specific SSH identity.
 /.local/macos-vm/
+
+# Desktop-generated local environment configuration.
+/.codex/environments/

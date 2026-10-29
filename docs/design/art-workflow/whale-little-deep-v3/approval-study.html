@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小湛 · 等你决定</title><link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./request-study.css">
+</head>
+<body data-kind="approval"><main>
+  <header><div><p class="eyebrow">STORYBOARD / LITTLE DEEP / W02 · APPROVAL</p><h1>下一步，需要你决定</h1><p class="intro">停一下，把感叹号轻轻写出来，再安静等你。允许或拒绝之后，按最新状态继续。</p></div><nav><a href="./work-study.html">工作主线 ↗</a> · <a href="./request-study.html">提问交接 ↗</a> · <a href="./storyboard.html#preview">出场对照 ↗</a></nav></header>
+  <div class="toolbar" aria-label="样片设置">
+    <label>配色 <select id="palette"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label>
+    <label>决定后的状态 <select id="mood"><option value="working">处理后续步骤</option><option value="thinking">重新思考下一步</option><option value="idle">回到待机</option></select></label>
+    <label>关注会话 <select id="session"><option value="study-main">当前会话</option><option value="study-other">另一个会话</option></select></label>
+    <button id="pause" type="button" aria-pressed="false">暂停</button>
+    <span class="hint">本地模拟 · 不会授权工具或发送真实决定</span>
+  </div>
+  <div class="layout">
+    <section aria-label="审批样片">
+      <div class="stage"><canvas id="handoff" tabindex="0" role="img" aria-label="小湛审批样片，可轻触或拖动身体；键盘 Enter 轻触，Escape 松手"></canvas></div>
+      <div class="caption"><span id="phase">需要你决定</span><span>轻触或 Enter · 拉动身体后松手 · Escape 取消</span></div>
+      <p id="feedback" role="status">先看感叹号出场，再试允许或拒绝；也可以在出场中轻戳或拉动。</p>
+    </section>
+    <aside aria-label="请求模拟">
+      <h2 id="pending-count">等待决定</h2><ol id="requests" aria-label="当前待处理请求"></ol>
+      <div class="buttons"><button id="new-request" class="primary" type="button">新审批</button><button id="answer" type="button">模拟允许</button><button id="cancel" type="button">模拟拒绝</button></div>
+      <button id="open-prompt" type="button" aria-expanded="false" aria-controls="prompt">打开提示</button>
+      <p id="prompt" hidden>小湛正在等你决定。这块提示的打开或关闭不会结算审批。</p>
+      <div class="buttons"><button id="duplicate" type="button">重复同步</button><button id="accepted" type="button">模拟决定已发送</button><button id="continued" type="button">跨回合保留</button><button id="other-kind" type="button">插入提问</button><button id="background" type="button">后台会话审批</button><button id="touch" type="button">轻戳一下</button></div>
+      <p class="hint">多个审批分别结算。允许不等于执行成功，拒绝不等于任务失败；松手后按最新事实继续。</p>
+    </aside>
+  </div>
+  <section class="reference-section" aria-label="审批的三个关键姿态">
+    <h2>同一表演的关键姿态</h2>
+    <div class="reference-board">
+      <figure><div class="reference-image"><canvas data-reference="settle" role="img" aria-label="0.12 秒，工作余势收住，神态打开"></canvas></div><figcaption><strong>0.12 秒 · 稍停一下</strong>身体收势，漂浮继续。</figcaption></figure>
+      <figure><div class="reference-image"><canvas data-reference="ask" role="img" aria-label="0.70 秒，感叹号主笔成形，圆点随后落下"></canvas></div><figcaption><strong>0.70 秒 · 提示成形</strong>主笔先出，圆点最后落。</figcaption></figure>
+      <figure><div class="reference-image"><canvas data-reference="wait" role="img" aria-label="1.5 秒，身体放松，保留感叹号等待决定"></canvas></div><figcaption><strong>1.5 秒 · 安静等决定</strong>不反复提醒，不催促。</figcaption></figure>
+    </div>
+  </section>
+  <section class="review" aria-label="本轮观看重点">
+    <p><strong>是确认，还是警报</strong>沿用提问的身体动作，主笔约 0.8 秒内完成，轻颤更弱。感叹号是否像平和的确认提示？</p>
+    <p><strong>决定之后收得自然吗</strong>允许和拒绝都只收起对应标记；后续状态独立选择，不画成功勾，也不演失败。可在出场中提前决定。</p>
+    <p><strong>并存时交接清楚吗</strong>添加第二个审批或插入提问，再逐个结算。剩余请求继续等待；切换符号时，身体不重演出场。</p>
+  </section>
+  <footer>本页消费本地折叠状态，尚未接入 Harness、API 2 或原生窗口 · Powered by Livelings by MakerJackie</footer>
+</main><script type="module" src="./request-study.js"></script></body></html>

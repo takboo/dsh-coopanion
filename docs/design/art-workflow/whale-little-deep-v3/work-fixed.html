@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小湛 · 固定分镜对照</title><link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./request-study.css"><link rel="stylesheet" href="./work-study.css">
+</head>
+<body><main>
+  <header><div><p class="eyebrow">STORYBOARD / LITTLE DEEP / W01 · WORK</p><h1>接到工作，陪你走过这一轮</h1><p class="intro">想一想，认真做；需要你时停一下，得到回应后继续，最后把回复整理好。</p></div><nav><a href="./work-study.html">真实结构回放 ↗</a> · <a href="./request-study.html">提问 ↗</a> · <a href="./approval-study.html">审批 ↗</a></nav></header>
+<p class="hint">历史对照：本页为最早的固定 20 秒串联，保留用于回归。当前段落样片已取代此编排。 <a href="./work-life-study.html">查看当前工作／生活样片 ↗</a></p>
+  <div class="toolbar" aria-label="主线样片设置">
+    <label>配色 <select id="palette"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label>
+    <label>路线 <select id="route"><option value="guided">串入 ! 和 ?</option><option value="plain">无需介入</option></select></label>
+    <label>片尾 <select id="ending"><option value="reply">本轮回复告一段落</option><option value="continue">目标仍继续</option></select></label>
+    <button id="replay" type="button">↻ 重播</button><button id="play" type="button" aria-pressed="true">暂停</button>
+    <span class="hint">历史固定主线 · 本地分镜对照</span>
+  </div>
+  <div class="layout">
+    <section aria-label="连续主线样片">
+      <div class="stage"><canvas id="work-film" role="img" aria-label="小湛普通工作主线的连续动画"></canvas></div>
+      <div class="caption"><strong id="shot-title">安静陪着你</strong><span id="request-status">没有待处理请求</span></div>
+      <p id="shot-detail" class="hint">先安静漂浮，保留待机余势。</p>
+      <div class="scrubber"><input id="progress" aria-label="主线样片进度" type="range" min="0" max="20000" step="1" value="0"><output id="clock" for="progress">0.0 / 20.0 s</output></div>
+      <p id="playback-status" class="hint" role="status">连续播放同一个角色；可暂停、拖动进度或点选分镜。</p>
+    </section>
+    <aside aria-label="主线分镜导航"><h2>这一轮怎样走过来</h2><ol id="shots" aria-label="主线分镜节拍"></ol><p id="screenplay-note" class="hint screenplay">等待各示意 1 秒，样片按时序模拟允许与答复；真实请求需等待实际结算。普通收势不播放目标完成庆祝。</p></aside>
+  </div>
+  <section class="reference-section" aria-label="主线关键姿态"><h2>同一段连续表演的关键姿态</h2><div id="references" class="mainline-board"></div></section>
+  <section class="review" aria-label="本轮观看重点">
+    <p><strong>想、做、等、继续</strong>重点看完整鲸鱼与思考尾巴怎样承接；审批和提问从当前姿态进入，结算后接回工作或思考。</p>
+    <p><strong>组织回复与普通收势</strong>回复时身体更稳、划鳍更轻。收势应像这轮回复告一段落，保持柔和，不误读成目标完成庆祝。</p>
+    <p><strong>先看整段节奏</strong>对照“无需介入”和“目标仍继续”。本轮先评审分镜与连续样片，轻触和拖动可在已确认的提问／审批页体验。</p>
+  </section>
+  <footer>本地预演 · 不发送消息、审批决定或模型请求，尚未接入 Harness／API 2／原生窗口 · Powered by Livelings by MakerJackie</footer>
+</main><script type="module" src="./work-study.js"></script></body></html>

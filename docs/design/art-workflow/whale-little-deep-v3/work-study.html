@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小湛 · 真实会话结构回放</title><link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./request-study.css"><link rel="stylesheet" href="./work-study.css"><link rel="stylesheet" href="./session-study.css">
+</head><body><main>
+  <header><div><p class="eyebrow">STORYBOARD / LITTLE DEEP / W01 · SESSION REPLAY</p><h1>凝神、动手，再向你回应</h1><p class="intro">短事件保留完整鲸鱼，用神态、视线与划鳍区分过程。59 步、109 次工具调用与真实审批仍逐条推进。</p></div><nav><a href="./work-fixed.html">固定分镜对照 ↗</a> · <a href="./request-study.html">提问 ↗</a> · <a href="./approval-study.html">审批 ↗</a></nav></header>
+<p class="hint">机制对照：本页使用旧表面动作，核对事件结构与身份。当前集中工作／生活表演已另行确认。 <a href="./work-life-study.html">查看当前工作／生活样片 ↗</a></p>
+  <div class="toolbar" aria-label="结构回放设置">
+    <label>配色 <select id="palette"><option value="deep">Deep 蓝</option><option value="soft">初版小湛蓝</option><option value="milk">奶白</option><option value="night">夜游</option></select></label>
+    <label>速度 <select id="speed"><option value="8">8 倍</option><option value="1">原速</option><option value="16">16 倍</option><option value="32">32 倍</option></select></label>
+    <label>查看阶段 <select id="stage"><option value="continuity">先看连续承接</option><option value="completion">加入目标完成候选</option></select></label>
+    <button id="replay" type="button" disabled>↻ 重播</button><button id="play" type="button" aria-pressed="false" disabled>播放</button>
+    <span class="hint">离线事件结构 · 不执行任何工具或决定</span>
+  </div>
+  <div class="layout">
+    <section aria-label="会话连续承接">
+      <div class="stage"><canvas id="work-film" role="img" aria-label="同一只小湛沿真实会话结构连续承接"></canvas></div>
+      <div class="caption"><strong id="shot-title">正在加载脱敏结构…</strong><span id="request-status">原会话未观察到正式提问</span></div>
+      <p id="shot-detail" class="hint">只读取已有事件，不读取会话正文或工具参数。</p>
+      <div class="fact-grid" aria-label="当前事实与身体动作"><p>步骤 <strong id="step-count">—</strong></p><p>未返回工具 <strong id="tool-count">—</strong></p><p>事实 <strong id="fact-mood">—</strong></p><p>身体 <strong id="body-motion">—</strong></p></div>
+      <div class="scrubber"><input id="progress" aria-label="会话结构回放进度" type="range" min="0" max="1000" step="1" value="0" disabled><output id="clock">—</output></div>
+      <p id="source-clock" class="hint">原始会话约 9 分 58 秒</p><p id="playback-status" class="hint" role="status">正在加载…</p>
+    </section>
+    <aside aria-label="真实结构与条件支路"><h2>沿这些事件核对承接</h2><ol id="shots" aria-label="会话结构定位"></ol>
+      <div class="simulation"><strong>附加模拟 · 不改原始结构</strong><p class="hint">原会话没有 ?。可在任意工作循环中插入模拟请求，检查按需进入与退出。</p><div class="buttons"><button id="inject-question" disabled>插入模拟 ?</button><button id="inject-approval" disabled>插入模拟 !</button><button id="settle-simulation" disabled>结算一个模拟请求</button></div><p id="simulation-status" class="hint">没有附加模拟请求</p></div>
+    </aside>
+  </div>
+  <section class="reference-section" aria-label="连续承接抽样"><h2>同一回放中的承接抽样</h2><div id="references" class="mainline-board"></div></section>
+  <section class="review" aria-label="本轮观看重点"><p><strong>先看三种工作意图</strong>凝神时收鳍、视线斜上；做事时低头划鳍；输出时抬起、展开回应。短事件不触发潜入浮出。</p><p><strong>潜水按工作段重新编排</strong>4 秒自动判断已撤掉，事实与动画分开计时。当前工作／生活段已另制作并获整体确认；本页保留旧映射供结构比较。</p><p><strong>请求与完成分别接管</strong>?／! 沿用已确认表演。目标完成仍可单独选择体验，在回合末确认之后，轻收势、喷水一次、回到陪伴。</p></section>
+  <footer id="provenance">session-d1e0a596-a85e-47d6-a5a0-c3926016430f · 仅含事件结构，不含正文、工具参数／输出或推理文本 · Powered by Livelings by MakerJackie</footer>
+</main><script type="module" src="./session-study.js"></script></body></html>

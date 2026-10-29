@@ -1,16 +1,18 @@
-# 小湛浏览器互动原型
+# 小湛原型模块与检查
 
-当前分支、已选方案、最新用户反馈与下一步统一见[设计入口](../../README.md)。本目录是独立的纯代码角色体验，未接入 Harness、API 2、NPC 或原生窗口。
+当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为独立纯代码浏览器原型。
 
-当前工作行为按 [STORYBOARD 分镜](../../storyboards/little-deep-work-v0.md)续做。[视觉样片](storyboard.html#preview)是约 1.5 秒的“疑问浮现”：收势、神态和侧倾交叠，左侧头前逐笔描画符号，随后放松等待；不强求对视。支持重播、暂停、进度定位及配色／符号对照，三张关键姿态从同一表演采样。减少动态时关闭颤动，页面隐藏时暂停推进。时序控制在 `storyboard-performance.js`，页面与笔画绘制在 `storyboard.js`。真实结算退场、交互接管和宿主事件接入仍待实现。
+## 模块与页面
 
-## 运行与观察
+| 范围 | 文件与入口 |
+| --- | --- |
+| 当前工作／生活段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为连续对照 |
+| 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |
+| 请求局部复查 | [出场](storyboard.html#preview)、[提问交接](request-study.html)、[审批交接](approval-study.html)，后两页共用手势脚本与样式 |
+| 会话机制对照 | [会话观察说明](../../session-observation.md) 说明固定结构回放、进行中只读观察及旧固定分镜；这些页未采用当前段落策略 |
+| 造型与动作素材 | [character.js](character.js)、[harness-tail.js](harness-tail.js)；[原动作页](index.html) 与 [app.js](app.js) 供能力查阅；[小尺寸对照](size-sheet.html) 供轮廓比较 |
 
-启动命令见[本地预览](../../README.md#本地预览)。主体验为本目录的 `index.html`；[小尺寸对照](size-sheet.html)展示 32／64／128 像素附近的日光、夜色轮廓。页面内可打开作者动作工作台，两者共用 `character.js`。
-
-默认使用已选 B 大小眼，配 Deep 蓝、初版小湛蓝、奶白和夜游四套配色。修改配色、背景和尺寸不重建 Actor。声音默认关闭，可手动开启低音量合成音；系统减少动态偏好交给引擎 `calm`。
-
-“走一遍完整体验”依次演示七种持续状态、完成／出错、六种招牌动作、抚摸和眨眼，最后回到待机。任意手动动作或角色按下会停止演示；页面隐藏时停止演示并暂停推进，不后台补播。
+运行命令集中在[本地预览](../../README.md#本地预览)。切换配色和尺寸保留 Actor；原动作页的“完整体验”仅遍历素材库，不等于完整工作流程。声音默认关闭，手动开启后使用低音量合成音。系统减少动态偏好交给引擎 calm。
 
 ## 状态与动作
 
@@ -37,7 +39,7 @@
 
 藏着时轻戳或点“出来看看”，触发约 4.2 秒的回应：先停尾，再缩身探出来。原来在思考时会缩回去继续想，其他持续状态则舒展开并返回原状态。连续触碰不会重播开场，准备阶段也不会因每次轻戳而重置。眼睛在身体与五官位置稳定后再显现。切状态立即打断，不使用延迟回调补播旧动作。
 
-这是等待用户反馈的表演实现，持续抚摸和松手余韵尚未改动。
+这是旧动作素材，未被当前工作／生活样片的整体确认覆盖；生活交互与藏身需按新分镜验证。
 
 ## 直接互动与交接
 
@@ -48,7 +50,7 @@
 
 主体验的 `interactive:false` 关闭引擎默认手势，由 `app.js` 适配鲸鱼手势。直接嵌入原生组件时，其默认手势包含抛掷与按住毛绒效果，不能推断与主体验相同。
 
-## 轮廓、来源与检查
+## 轮廓与来源
 
 `whaleBody()` 的身体与 `harness-tail.js` 共用 48 个尾巴轮廓点，身体另分配采样点，避免重采样磨圆尾鳍。完整鲸鱼只弯尾柄，尾鳍整体旋转；思考时的侧转收窄属于有意动作。静止轮廓或测试对齐不代表用户已认可比例与连接。
 
@@ -56,15 +58,20 @@
 
 引擎与工作台保留 [Livelings 原始字节与许可](../vendor/livelings/README.md)，页面署名 Livelings by MakerJackie；不修改第三方源码。默认眨眼与偶发双眨沿用原生机制。
 
+## 检查
+
+在仓库根目录执行：
+
 ```bash
-node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs
+node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs tests/little-deep-mainline.mjs tests/little-deep-replay.mjs tests/little-deep-completion.mjs tests/little-deep-work-rhythm.mjs tests/little-deep-work-life.mjs
+node --experimental-transform-types --test tests/little-deep-live.mjs
 ```
 
-测试检查真实引擎的轮廓平滑、刚性尾鳍、分段准备、五官显现、重复触碰、上下文恢复、多阶段打断和减少动态模拟。另用浏览器观察主体验与动作工作台；这些检查不代表用户认可、宿主安装、跨平台原生或长期资源验收。
+检查覆盖真实引擎轮廓、请求身份与手势、旧机制回放、双时钟、当前段落续点／相位、最新意图和生活退让。浏览器画面、用户体验、系统偏好实机及产品宿主各自验证；用户确认范围统一从设计入口读取。
 
-各次固定验证及其源码摘要见[证据索引](../../../evidence/2026-10-28-little-deep/README.md)。旧眼型对照与迭代过程见[历史归档](../../../archive/2026-10-28-little-deep/README.md)，不作为待选任务。
+旧版固定证据见[证据索引](../../../evidence/2026-10-28-little-deep/README.md)；工作主线过程稿与当前本机验证位置见[本轮归档](../../../archive/2026-10-29-work-mainline/README.md)；眼型及早期造型见[历史索引](../../../archive/README.md)。原始证据和许可按来源保留字节。
 
-## 原生网页嵌入
+## 网页嵌入
 
 ```html
 <script type="module">
