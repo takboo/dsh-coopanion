@@ -293,7 +293,8 @@ test('native NPC waits for acknowledged workArea before establishing home', asyn
 });
 
 test('manual interaction survives a frame timestamp preceding the click event clock', async t => {
-  const { page, read, configure } = await fixture(t, 'quiet', undefined, false, { frameLag: 100 });
+  // Isolate clock ordering from the longer dance physics at low frame rates.
+  const { page, read, configure } = await fixture(t, 'quiet', ['happy', 'nod', 'neutral'], false, { frameLag: 100 });
   await configure({ roam: false });
   await menu(page); await page.locator('#companion-play').click(); await page.mouse.move(0, 0);
   await page.waitForTimeout(200);
