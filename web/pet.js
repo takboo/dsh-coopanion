@@ -55,6 +55,7 @@ const sessionAttention = new SessionAttention();
 let attentionSnapshot = snapshot;
 const chatTimers = new Map();
 let draftSessionId;
+let pendingSessionId;
 let activityWords = [], actionRestorePending = false, localHour, hourCheckedAt = -Infinity;
 let companion = initialCompanionship(), companionAction, companionManualId, companionFeedbackUntil = 0, companionReadAt = 0;
 const companionStroke = createCompanionStroke();
@@ -555,6 +556,7 @@ function receive(message) {
   switch (message.type) {
     case 'init':
       applyOptions(message.options);
+      pendingSessionId = undefined;
       if (message.snapshot) snapshot = message.snapshot;
       // Recovery restores unread results as an inbox baseline, without speaking them again.
       if (message.baseline) for (const result of snapshot.results ?? []) shownResults.add(result.id);
@@ -593,9 +595,16 @@ function receive(message) {
       else if (message.command === 'sound') $('toggle-sound').click();
       break;
     case 'characters': $('open-characters').click(); break;
-    case 'snapshot':
+    case 'snapshot': {
       if (JSON.stringify((message.snapshot.sessions ?? []).map(s => [s.id, s.revision, s.mood])) !== JSON.stringify((snapshot.sessions ?? []).map(s => [s.id, s.revision, s.mood]))) attentionToWork();
-      snapshot = { ...message.snapshot, results: message.snapshot.results ?? snapshot.results ?? [] }; render(); break;
+      const next = { ...message.snapshot, results: message.snapshot.results ?? snapshot.results ?? [] };
+      // Read/status responses queued before a local selection still carry the
+      // previous target. Hold the user's choice until Host confirms it or the
+      // target is no longer available.
+      if (pendingSessionId && next.sessionId !== pendingSessionId && next.sessions.some(session => session.id === pendingSessionId)) next.sessionId = pendingSessionId;
+      else pendingSessionId = undefined;
+      snapshot = next; render(); break;
+    }
     case 'chat-result':
       if (composer.receive(message)) {
         clearTimeout(chatTimers.get(message.requestId)); chatTimers.delete(message.requestId); render();
@@ -756,13 +765,18 @@ $('conversation-list').onclick = event => {
   const session = card && snapshot.sessions.find(item => item.id === card.dataset.sessionId);
   if (!session) return;
   conversations.hidden = true;
-  if (session.id !== snapshot.sessionId) send({ type: 'select', sessionId: session.id });
+  if (session.id !== snapshot.sessionId) selectSession(session.id);
   const result = unreadReplies(snapshot, acknowledgedResults).find(r => r.sessionId === session.id);
   if (result) openReader(result); else render();
 };
+function selectSession(id) {
+  if (!id || !snapshot.sessions.some(session => session.id === id)) return false;
+  pendingSessionId = id; snapshot = { ...snapshot, sessionId: id };
+  send({ type: 'select', sessionId: id }); render();
+  return true;
+}
 function continueSession(id) {
-  if (!id || !snapshot.sessions.some(session => session.id === id)) return;
-  send({ type: 'select', sessionId: id }); snapshot = { ...snapshot, sessionId: id }; render(); openChat();
+  if (selectSession(id)) openChat();
 }
 function openSession(id) {
   if (!id) return;
