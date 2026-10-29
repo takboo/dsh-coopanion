@@ -25,6 +25,9 @@ try {
   app = await _electron.launch({ executablePath: require('electron'), args: ['--no-sandbox', resolve('desktop/main.cjs')], env: { ...process.env, DSH_PET_TEST_DATA_DIR: root, DSH_PET_TEST_NO_SANDBOX: '1', DSH_PET_TEST_DEBUG_PORT: '0' } });
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
+  // firstWindow observes window creation, before main's loadURL can finish.
+  // Reloading that initial navigation makes native startup abort instead.
+  await page.waitForURL(/^http:\/\/127\.0\.0\.1:/, { waitUntil: 'load' });
   await controlNpc(page);
   await page.addInitScript(() => { window.npcPointer = null; });
   const options = { size: 180, roam: true, companionship: 'quiet', notifications: false, bubbleDurationMs: 12000 };

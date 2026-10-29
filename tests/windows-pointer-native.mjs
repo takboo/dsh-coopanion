@@ -18,6 +18,7 @@ try {
   });
   const page = await app.firstWindow();
   page.setDefaultTimeout(10000);
+  await page.waitForURL(/^http:\/\/127\.0\.0\.1:/, { waitUntil: 'load' });
   await app.evaluate((_, options) => process.emit('message', {
     type: 'init', baseline: true, options,
     snapshot: { mood: 'idle', active: false, sessions: [], results: [] },

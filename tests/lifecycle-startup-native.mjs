@@ -83,6 +83,7 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
       if (child.connected) child.send({ type: 'quit' }); else child.kill('SIGTERM');
       const [code, signal] = await exited;
       assert.equal(signal, null, stderr); assert.equal(code, 0, stderr);
+      assert.ok(!stderr.includes('Lifecycle exception: '), stderr);
     } catch (error) { shutdownError = error;
     } finally {
       clearTimeout(deadline); clearTimeout(sampling); await sample;
