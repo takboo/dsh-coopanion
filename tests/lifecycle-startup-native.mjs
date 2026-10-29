@@ -12,6 +12,7 @@ const expectedRealState = process.env.DSH_LIFECYCLE_EXPECT_STATE ?? 'locked';
 assert.ok(['locked', 'unlocked'].includes(expectedRealState));
 const records = [];
 for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-locked', 'system']) {
+  console.log(`Lifecycle startup case: ${initialState}`);
   const root = await mkdtemp(join(tmpdir(), 'dsh-initial-lock-'));
   const env = { ...process.env, DSH_PET_TEST_DATA_DIR: join(root, 'pet'), DSH_PET_TEST_DIAGNOSTICS_DIR: join(root, 'registry'), DSH_PET_SCREEN_LOCKED: initialState === 'restore-locked' ? '1' : '0', DSH_PET_SYSTEM_ASLEEP: '0' };
   delete env.ELECTRON_RUN_AS_NODE;
@@ -60,6 +61,7 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
     try {
       // Windows SIGTERM forcibly terminates the main process before Chromium
       // releases its profile. Use the desktop's normal IPC quit path instead.
+      console.log(`Lifecycle shutdown case: ${initialState}, ready=${nativeReady}`);
       if (child.connected) child.send({ type: 'quit' }); else child.kill('SIGTERM');
       const [code, signal] = await exited;
       assert.equal(signal, null, stderr); assert.equal(code, 0, stderr);
