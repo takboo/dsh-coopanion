@@ -148,7 +148,8 @@ test('real strokes count once, forged sandbox touches do not, missing words rema
   await body.evaluate(() => parent.postMessage({ t: 'frame', layout: null, events: [{ kind: 'touch', detail: { kind: 'pet' } }] }, '*'));
   await page.waitForTimeout(100); assert.equal((await read()).relation.total, 0);
   const b = await page.locator('#pet').boundingBox();
-  for (let i = 0; i < 18; i++) await page.mouse.move(b.x + b.width * (i % 2 ? .35 : .65), b.y + b.height * .45, { steps: 1 });
+  // Cross the real hit region broadly enough to remain a stroke under input jitter.
+  for (let i = 0; i < 18; i++) await page.mouse.move(b.x + b.width * (i % 2 ? .2 : .8), b.y + b.height * .45, { steps: 1 });
   await page.waitForFunction(() => document.querySelector('#companion-status').textContent.includes('1'));
   assert.equal((await read()).relation.total, 1);
   const missing = await fixture(t, 'quiet', ['neutral', 'stand']);
@@ -183,7 +184,7 @@ test('twenty real strokes keep visible feedback while hovering and share the gro
     await page.mouse.move(0, 0);
     if (trial) await page.waitForTimeout(2550);
     const b = await page.locator('#pet').boundingBox();
-    for (let i = 0; i < 18; i++) await page.mouse.move(b.x + b.width * (i % 2 ? .35 : .65), b.y + b.height * .45, { steps: 1 });
+    for (let i = 0; i < 18; i++) await page.mouse.move(b.x + b.width * (i % 2 ? .2 : .8), b.y + b.height * .45, { steps: 1 });
     await page.waitForFunction(n => window.strokeLatencies.length > n, trial);
     await page.waitForTimeout(300);
     assert.equal(await page.locator('#companion-feedback').isVisible(), true);
