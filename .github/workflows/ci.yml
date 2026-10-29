@@ -65,6 +65,13 @@ jobs:
       - uses: ./.github/actions/setup-linux-display
         if: runner.os == 'Linux'
       - run: npm run character:pack -- examples/star paper-star.zip
+      - run: npm run test:ui
+      - run: npm run test:notification-ui
+      - run: npm run test:inbox-ui
+      - name: Verify native keyboard backend (synthetic X11 input only in managed display)
+        env:
+          DSH_KEYBOARD_TEST_X11_INPUT: ${{ runner.os == 'Linux' && '1' || '' }}
+        run: npm run test:keyboard-native
       - name: Verify native desktop with process logs
         timeout-minutes: 6
         env:
@@ -75,13 +82,6 @@ jobs:
           node -e "require('node:fs').copyFileSync('artifacts/lifecycle-startup-native.json', 'artifacts/lifecycle-startup-traced.json')"
           node -e "const {spawnSync}=require('node:child_process'); const result=spawnSync(process.execPath,['tests/lifecycle-startup-native.mjs'],{stdio:'inherit',env:{...process.env,DSH_LIFECYCLE_TRACE:'0'}}); if(result.error) throw result.error; process.exit(result.status ?? 1)"
           node -e "const {spawnSync}=require('node:child_process'); const result=spawnSync(process.execPath,['tests/lifecycle-startup-native.mjs'],{stdio:'inherit',env:{...process.env,DSH_LIFECYCLE_TRACE:'1',DSH_LIFECYCLE_LATE_DISPLAY:'1'}}); if(result.error) throw result.error; process.exit(result.status ?? 1)"
-      - run: npm run test:ui
-      - run: npm run test:notification-ui
-      - run: npm run test:inbox-ui
-      - name: Verify native keyboard backend (synthetic X11 input only in managed display)
-        env:
-          DSH_KEYBOARD_TEST_X11_INPUT: ${{ runner.os == 'Linux' && '1' || '' }}
-        run: npm run test:keyboard-native
       - name: Check distributable and create canonical Linux package
         if: runner.os == 'Linux'
         run: |
