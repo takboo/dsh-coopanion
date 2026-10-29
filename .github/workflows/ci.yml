@@ -76,7 +76,10 @@ jobs:
         env:
           DEBUG: pw:browser
           DSH_LIFECYCLE_TRACE: '1'
-        run: npm run test:desktop
+        run: |
+          npm run test:desktop
+          node -e "require('node:fs').copyFileSync('artifacts/lifecycle-startup-native.json', 'artifacts/lifecycle-startup-traced.json')"
+          node -e "const {spawnSync}=require('node:child_process'); const result=spawnSync(process.execPath,['tests/lifecycle-startup-native.mjs'],{stdio:'inherit',env:{...process.env,DSH_LIFECYCLE_TRACE:'0'}}); if(result.error) throw result.error; process.exit(result.status ?? 1)"
       - name: Check distributable and create canonical Linux package
         if: runner.os == 'Linux'
         run: |

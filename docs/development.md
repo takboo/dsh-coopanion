@@ -70,7 +70,7 @@ node tests/lifecycle-startup-native.mjs
 
 它要求真实初态已知、未挂起且键盘适配器 available。锁屏场景使用 `DSH_LIFECYCLE_EXPECT_STATE=locked`，在实际锁屏环境单独执行；探针不改变锁屏状态。物理键盘、跨应用、锁屏／休眠、远程会话与平台资源分别验证。
 
-CI 的受控冷启动检查启用 `DSH_LIFECYCLE_TRACE=1`，在退出消息、窗口关闭与进程退出边界记录阶段和资源类型，不记录路径、URL 或正文。失败也写出 `lifecycle-startup-native.json`；原始断言与清理错误分别保留。普通沙箱实测不加载该诊断入口。
+CI 的受控冷启动检查先启用 `DSH_LIFECYCLE_TRACE=1`，在退出消息、窗口关闭与进程退出边界记录阶段和资源类型，不记录路径、URL 或正文；随后关闭诊断入口再次检查，避免诊断代码的时序变化掩盖退出问题。两次均保留原有断言和退出期限，报告分别写入 `lifecycle-startup-traced.json` 和 `lifecycle-startup-native.json`。失败也写报告；原始断言与清理错误分别保留。普通沙箱实测不加载该诊断入口。
 
 ## 资源与诊断
 
