@@ -38,6 +38,14 @@ npm run character:pack -- examples/star paper-star.zip
 
 `sounds` 将音效名映射到 `{ file, kind, volume }`，文件为 OGG / MP3 / WAV，kind 为 move / touch / face / snore。宿主加载并播放，遵循统一音效开关。`can.walk` 声明是否支持移动。
 
+所有角色共用 pointer down／move／up：正常拖动松手发送 up，身体根据真实指针速度投掷；pointercancel、切屏安全放置使用 drop，清除抛掷速度。共享 kit 已有此物理能力；自定义 body 应实现相同语义，不需要角色专属投掷开关。
+
+### 可选的角色界面皮肤
+
+API 2 包可在 `extensions.dsh-coopanion.ui` 声明 `{version:1,surface,ink,muted,border,accent,accent2,tint,radius,stroke,shadow}`。颜色仅接受六位十六进制；圆角限制 8–28 px，描边 1–3 px，阴影仅为 none／soft。未声明或未知版本保持原界面；换角色清除上一包的皮肤。
+
+该声明应用于气泡、面板、选项和按钮的共享颜色与边角。宿主渲染正文、请求、选项及操作，继续控制字号、焦点、滚动和可访问性；包不能提供 HTML、CSS、脚本、正文读取接口或替换答复／审批逻辑。初版支持外观 token，不支持每包任意重排布局。小湛示例见 `examples/little-deep/figure.json`。
+
 ## 工厂接口
 
 ```js

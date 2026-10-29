@@ -1,4 +1,5 @@
 import { supportsCharacterState, projectCharacterState } from './character-state.js';
+import { resetCharacterUi, applyCharacterUi } from './character-ui.js';
 import { advanceRenderCadence } from './render-cadence.js';
 import { createDiagnosticCounters } from './diagnostics.js';
 import { createCompanionStroke } from './companion-touch.js';
@@ -704,9 +705,8 @@ pet.addEventListener('pointerdown', event => {
 function release(event) {
   if (!pressing) return;
   const moved = dragging;
-  // A desktop drag places the pet. Forwarding up would turn pointer speed into
-  // a throw, including a rebound when the body reaches the screen edge.
-  if (moved) body?.drop(event.type === 'pointercancel' ? dragPoint : { x: event.clientX, y: event.clientY });
+  // Every API 2 body receives the same release semantics: up may throw; cancellation only drops.
+  if (moved && event.type === 'pointercancel') body?.drop(dragPoint);
   else body?.pointer(event.type === 'pointercancel' ? 'cancel' : 'up', { x: event.clientX, y: event.clientY, t: event.timeStamp });
   pressing = false; dragging = false; pressedPointerId = undefined;
   if (event.type === 'pointerup' && native && moved) send({ type: 'move-display' });
@@ -959,11 +959,13 @@ async function setCharacter(view, scheme = '') {
   render();
 }
 function applyAppearance() {
+  resetCharacterUi(document.documentElement);
   const preset = activeView.presets.find(p => p.id === activeScheme);
   const accent = preset?.accent ?? activeView.axes[0]?.options.find(o => o.id === activeScheme)?.accent ?? '#4d6bfe';
   document.documentElement.style.setProperty('--skin-eye', accent);
   document.documentElement.style.setProperty('--accent', preset?.console?.light.a ?? accent);
   document.documentElement.style.setProperty('--accent2', preset?.console?.light.a2 ?? accent);
+  applyCharacterUi(document.documentElement, activeView.extensions?.['dsh-coopanion']?.ui);
   $('chat-character').textContent = activeName; $('menu-name').textContent = activeName;
   const thumb = preset?.thumb ?? activeView.thumb;
   $('menu-portrait').hidden = !thumb; $('menu-emblem').hidden = !!thumb;

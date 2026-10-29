@@ -46,8 +46,8 @@ try{
   await canvas().waitFor();
   const sandbox=await frame().locator('body').evaluate(()=>({node:typeof process,bridge:typeof window.dshPetBridge}));assert.deepEqual(sandbox,{node:'undefined',bridge:'undefined'});report.cases.normalSandbox=true;
   host.send({type:'probe-run'});await waitMessage('probe-started');
-  const settledWork=()=>frame().locator('canvas[data-shape="tail"][data-symbol=""][data-phase="focus"],canvas[data-shape="tail"][data-symbol=""][data-phase="execute"]');
-  await settledWork().waitFor({timeout:45000});report.cases.realWorkDive=true;
+  const settledWork=()=>frame().locator('canvas[data-shape="tail"][data-symbol=""][data-phase="focus"],canvas[data-shape="rest"][data-symbol=""][data-phase="execute"],canvas[data-shape="rest"][data-symbol=""][data-phase="review"]');
+  await settledWork().waitFor({timeout:45000});report.cases.realWorkSegment=true;
   assert.equal(await canvas().getAttribute('data-work-entries'),'1');
   await page.screenshot({path:join(output,'real-work.png')});
   for(let i=0;i<2;i++){
@@ -56,9 +56,9 @@ try{
     assert.equal(trace.at(-1).workEntries,'1');assert(question.requestId);if(i===1)assert.notEqual(question.requestId,trace[0].requestId);
     await page.screenshot({path:join(output,`real-question-${i+1}.png`)});host.send({type:'probe-answer',id:question.id});
     if(i===0){
-      await settledWork().waitFor();await page.screenshot({path:join(output,'real-resume-after-question.png')});report.cases.questionExitResumesDive=true;
+      await settledWork().waitFor();await page.screenshot({path:join(output,'real-resume-after-question.png')});report.cases.questionExitResumesWork=true;
       const approval=await waitMessage('probe-approval',180000);await frame().locator('canvas[data-symbol="approval"][data-symbol-progress="1"]').waitFor();await page.screenshot({path:join(output,'real-approval.png')});trace.push({kind:'approval',pending:await canvas().getAttribute('data-pending')});host.send({type:'probe-reject',id:approval.id});
-      await settledWork().waitFor();await page.screenshot({path:join(output,'real-resume-after-approval.png')});report.cases.approvalExitResumesDive=true;
+      await settledWork().waitFor();await page.screenshot({path:join(output,'real-resume-after-approval.png')});report.cases.approvalExitResumesWork=true;
     }
   }
   const ended=await waitMessage('probe-ended',180000);await frame().locator('canvas[data-phase="idle"][data-shape="rest"][data-pending="0"][data-symbol=""]').waitFor();

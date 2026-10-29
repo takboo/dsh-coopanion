@@ -13,7 +13,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 #body-layer { position: absolute; inset: 0; pointer-events: none; }
 .figure-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
 /* Outlined paper bubbles and tails adapted from Coopanion (AGPL-3.0-or-later). */
-.bubble, .panel, .menu { position: absolute; z-index: 4; border: 2.5px solid var(--skin-ink); border-radius: 22px; background: var(--surface); box-shadow: 0 8px 24px var(--shadow); color: var(--text); }
+.bubble, .panel, .menu { position: absolute; z-index: 4; border: var(--panel-stroke, 2.5px) solid var(--skin-ink); border-radius: var(--panel-radius, 22px); background: var(--surface); box-shadow: 0 8px 24px var(--shadow); color: var(--text); }
+[data-character-ui="1"] :is(.panel,.menu) :is(button,select,textarea,input) { border-radius: max(6px, calc(var(--panel-radius, 22px) * .5)); }
 .bubble::before, .bubble::after, .panel::before, .panel::after, .menu::before, .menu::after { content: ''; position: absolute; left: calc(var(--tail, 50%) - 12px); bottom: -11px; width: 22px; height: 11.5px; pointer-events: none; }
 .bubble::before, .panel::before, .menu::before { background: var(--skin-ink); clip-path: path('M0 0.5 L8.9 9.4 Q11 11.5 13.1 9.4 L22 0.5 Z'); }
 .bubble::after, .panel::after, .menu::after { background: var(--surface); clip-path: path('M3.04 0 L9.6 6.56 Q11 7.96 12.4 6.56 L18.96 0 Z'); }

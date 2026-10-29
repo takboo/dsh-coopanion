@@ -8,7 +8,7 @@
 
 用户已确认 `?`、`!` 的出场、结算退场与基本交互，并于 2026-10-29 对工作／生活样片反馈“整体观感可以”。这些作为当前表演基线；连续观看能区分工作与生活，汇报与安静生活的个别静态姿态仍接近。
 
-**当前成果：宿主到角色的[可选状态传递](../character-state-contract.md)及[实验性角色包](../../examples/little-deep/README.md)已实现，已在隔离 macOS VM 用真实 provider 验证工作主线与 ?／!。** 安装、受控场景、真实模型及产物摘要见[接入记录](little-deep-api2-validation.md)。下一步为用户实装观感反馈；NPC 自主活动及完成庆祝候选不进入首轮。
+**当前成果：已修复所有角色的统一投掷入口，以及小湛的掉落、工作触摸和朝向，并提供工具执行及角色 UI 皮肤候选。** [0.0.2 分镜](storyboards/little-deep-api2-feedback-v1.md)与[本轮验证](little-deep-feedback-validation.md)为当前入口，新观感待用户确认。首轮[API 2 记录](little-deep-api2-validation.md)保留原事件链范围，不能用来结算本轮体验。
 
 **生活续做候选：[生活交互分镜](storyboards/little-deep-life-touch-v0.md)与[16 秒连续样片](art-workflow/whale-little-deep-v3/life-touch-study.html)。** 已制作靠近、轻触、持续抚摸与松手余韵，支持手动体验及请求／工作接管，尚待观看反馈。生活交互反馈及藏身／隐身分镜安排在本轮接入之后，其触发和表现待后续确认。已通过的工作／请求基线保留；异常／停止、目标完成和产品接入分别推进。
 
@@ -20,7 +20,7 @@
 | 真实会话结构、双时钟、请求身份 | [会话观察说明](session-observation.md)，机制参照，使用旧表面动作 |
 | 生活交互 | [新候选](storyboards/little-deep-life-touch-v0.md)，分镜与连续样片已制作，尚待观看 |
 | 藏身／隐身、异常与停止 | 待分镜；原动作库中的实现不等于新场景已确认 |
-| 宿主状态扩展、API 2、原生窗口 | 已实现；VM 浏览器与原生各 11 个受控场景、真实模型实装通过，见[验证范围](little-deep-api2-validation.md)；待用户实装观感反馈 |
+| 宿主状态扩展、API 2、原生窗口 | 0.0.2 候选的浏览器／原生各 12 场景、实际安装及完整 UI 回归通过；见[验证范围](little-deep-feedback-validation.md)，待用户体验 |
 | NPC 自主策略 | 首轮未接入；生活表演不自动启用日常调度 |
 
 ## 固定造型

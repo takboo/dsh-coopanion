@@ -54,16 +54,18 @@ test('selection, typing and dragging always retain the configured size', async t
   assert.equal(await frame.evaluate(() => window.orders.filter(o => o.t === 'set' && o.state.bounds).at(-1).state.bounds.S), 180 / 256);
 });
 
-for (const mode of ['off', 'quiet']) for (const target of [10, 990]) test(`a fast placement at the edge drops without an automatic reverse throw (${mode}, ${target})`, async t => {
+for (const mode of ['off', 'quiet']) for (const target of [10, 990]) test(`a fast drag uses shared throw release and stays inside the stage (${mode}, ${target})`, async t => {
   const { page, frame } = await fixture(t, mode);
   await drag(page, target);
-  await page.waitForFunction(target => target < 500 ? window.npcInput.layout.x < 100 : window.npcInput.layout.x > 900, target);
   const samples = [];
   for (let i = 0; i < 12; i++) { samples.push((await layout(page)).x); await page.waitForTimeout(40); }
   await record('npc-drag-edge-' + mode + '-' + target, page, frame);
-  assert.ok(Math.max(...samples) - Math.min(...samples) < 12, 'placing at the edge must not recoil across the screen: ' + JSON.stringify(samples));
+  assert.ok(samples.every(x=>x>=0&&x<=1000),'throw must remain inside the stage');
+  assert.equal(await frame.evaluate(()=>window.orders.some(o=>o.t==='pointer'&&o.type==='up')),true,'all roles receive pointer up, including drag momentum');
+  assert.equal(await frame.evaluate(()=>window.orders.some(o=>o.t==='drop')),false,'normal release must not be replaced with cancellation drop');
+  await page.waitForFunction(()=>!['air','drag','land'].includes(document.querySelector('#pet').dataset.mode));
   for (let i = 0; i < 20; i++) await npcTick(page);
-  assert.equal(await frame.evaluate(() => window.orders.some(o => ['walk', 'place'].includes(o.t))), false, 'outside-area drop must remain user-owned');
+  assert.equal(await frame.evaluate(() => window.orders.some(o => o.t==='place')), false, 'throw must not restore an old home placement');
 });
 
 test('manual relocation before the first NPC departure cannot be overwritten by home placement', async t => {

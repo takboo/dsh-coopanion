@@ -74,6 +74,22 @@ export interface PackSound {
   volume: number;
 }
 
+export interface CharacterUi {
+  version: 1;
+  surface?: string; ink?: string; muted?: string; border?: string; accent?: string; accent2?: string; tint?: string;
+  radius?: number; stroke?: number; shadow?: 'none' | 'soft';
+}
+export function readCharacterUi(value: unknown): CharacterUi | undefined {
+  if (!value || typeof value !== 'object' || (value as { version?: unknown }).version !== 1) return;
+  const raw = value as Record<string, unknown>, ui: CharacterUi = { version: 1 };
+  for (const key of ['surface', 'ink', 'muted', 'border', 'accent', 'accent2', 'tint'] as const) {
+    if (typeof raw[key] === 'string' && /^#[0-9a-f]{6}$/i.test(raw[key])) ui[key] = raw[key];
+  }
+  if (typeof raw.radius === 'number' && Number.isFinite(raw.radius)) ui.radius = Math.max(8, Math.min(28, raw.radius));
+  if (typeof raw.stroke === 'number' && Number.isFinite(raw.stroke)) ui.stroke = Math.max(1, Math.min(3, raw.stroke));
+  if (raw.shadow === 'none' || raw.shadow === 'soft') ui.shadow = raw.shadow;
+  return ui;
+}
 export interface FigureManifest {
   manifest: number;
   api: number;
@@ -100,7 +116,7 @@ export interface FigureManifest {
   /** `walk`: whether it goes where it is told (`pet_walk_to`). */
   can: { walk: boolean };
   /** Optional Harness metadata extension; absent on existing API 2 packs. */
-  extensions?: { 'dsh-coopanion': { state: 1 } };
+  extensions?: { 'dsh-coopanion': { state?: 1; ui?: CharacterUi } };
 }
 
 export interface FigurePack {
@@ -229,6 +245,8 @@ export function readManifest(dir: string, builtin = false, skipped: string[] = [
   const sounds = readSounds(raw.sounds, dir, skipped);
   if (typeof sounds === 'string') return sounds;
   const can = (raw.can ?? {}) as Record<string, unknown>;
+  const extension = (raw.extensions as Record<string, { state?: unknown; ui?: unknown }> | undefined)?.['dsh-coopanion'];
+  const ui = readCharacterUi(extension?.ui);
   if (can.walk !== undefined && typeof can.walk !== 'boolean') skipped.push(`can.walk 是 ${JSON.stringify(can.walk)},这一版不认识,按会走处理`);
   return {
     manifest: MANIFEST_VERSION, api: raw.api as number, id: raw.id, version: typeof raw.version === 'string' ? raw.version : '0.0.0',
@@ -236,7 +254,7 @@ export function readManifest(dir: string, builtin = false, skipped: string[] = [
     ...(typeof raw.author === 'string' ? { author: raw.author } : {}),
     ...(typeof raw.license === 'string' ? { license: raw.license } : {}),
     ...(Array.isArray(raw.credits) ? { credits: raw.credits as FigureManifest['credits'] } : {}),
-    ...((raw.extensions as Record<string, { state?: unknown }> | undefined)?.['dsh-coopanion']?.state === 1 ? { extensions: { 'dsh-coopanion': { state: 1 as const } } } : {}),
+    ...(extension?.state === 1 || ui ? { extensions: { 'dsh-coopanion': { ...(extension?.state === 1 ? { state: 1 as const } : {}), ...(ui ? { ui } : {}) } } } : {}),
     ...(raw.model ? { model: raw.model as string } : {}),
     ...(raw.thumb ? { thumb: raw.thumb as string } : {}),
   };

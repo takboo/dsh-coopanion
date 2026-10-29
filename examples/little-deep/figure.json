@@ -2,7 +2,7 @@
   "manifest": 2,
   "api": 2,
   "id": "little-deep-experimental",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": {
     "zh": "小湛 · 实验版",
     "en": "Little Deep · Experimental"
@@ -213,7 +213,8 @@
   },
   "extensions": {
     "dsh-coopanion": {
-      "state": 1
+      "state": 1,
+      "ui": {"version":1,"surface":"#f4f7ff","ink":"#253556","muted":"#596a88","border":"#819de3","accent":"#3651ce","accent2":"#5273dc","tint":"#e8eeff","radius":18,"stroke":1.5,"shadow":"none"}
     }
   }
 }

@@ -1,7 +1,8 @@
 import {describe,it,expect} from 'vitest';
 import {PetModel} from '../src/model.ts';
 import {projectCharacterState,readCharacterState,supportsCharacterState} from '../web/character-state.js';
-import {readManifest} from '../src/upstream/packs.ts';
+import {readManifest,readCharacterUi} from '../src/upstream/packs.ts';
+import {resetCharacterUi,applyCharacterUi} from '../web/character-ui.js';
 const session=id=>({id,header:{version:4,id,createdAt:0,isSeeded:false,cwd:'/isolated'}});
 const feed=(model,s)=>{let seq=0;return (type,data)=>model.consume(s,{type,data,seq:seq++,time:1000+seq});};
 const interaction=(kind,id=kind,sessionId='focus')=>({id,sessionId,kind,state:'open',preview:'PRIVATE QUESTION',nativeId:'native-'+id});
@@ -9,6 +10,14 @@ const notifications=(interactions=[])=>({protocol:1,runtime:{phase:'running',vis
 const project=(m,p=[])=>projectCharacterState(m.snapshot(),notifications(p));
 
 describe('optional character state metadata',()=>{
+  it('accepts only declarative UI tokens and restores default chrome when switching roles',()=>{
+    const ui=readCharacterUi({version:1,surface:'#f4f7ff',ink:'#253556',border:'#819de3',radius:200,stroke:-5,shadow:'none',accent:'url(https://example.com)',html:'<script>',fontSize:1});
+    expect(ui).toEqual({version:1,surface:'#f4f7ff',ink:'#253556',border:'#819de3',radius:28,stroke:1,shadow:'none'});
+    expect(readCharacterUi({version:2})).toBeUndefined();
+    const styles=new Map(),root={dataset:{},style:{setProperty:(k,v)=>styles.set(k,v),removeProperty:k=>styles.delete(k)}};
+    applyCharacterUi(root,ui);expect(styles.get('--surface')).toBe('#f4f7ff');expect(root.dataset.characterUi).toBe('1');
+    resetCharacterUi(root);expect(styles.size).toBe(0);expect(root.dataset.characterUi).toBeUndefined();
+  });
   it('does not invent a work identity when running status precedes the actual turn',()=>{
     const m=new PetModel(),s=session('focus'),consume=feed(m,s);
     m.running(s);expect(m.snapshot().active).toBe(true);expect(project(m).work).toBe(null);

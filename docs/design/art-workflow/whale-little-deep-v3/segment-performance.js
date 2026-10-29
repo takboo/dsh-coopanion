@@ -11,14 +11,16 @@ export function lifePhase(time) {
   return t<3?'stretch':t<7?'observe':t<12?'belly':t<16?'bubble':t<20?'rest':'return';
 }
 
-export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1',lifePerformance=null}={}) {
+export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1',lifePerformance=null,interactionPerformance=null,workStyle='concentrated'}={}) {
   if(lifePerformance&&(!['apply','advance'].every(key=>typeof lifePerformance[key]==='function')))
     throw new Error('Expected a local life performance with apply and advance');
+  if(interactionPerformance&&!['apply','advance','active'].every(key=>typeof interactionPerformance[key]==='function'))throw new Error('Expected a local interaction performance');
   const context={mode:null,pending:[],eventTimeMs:0,lastFactMs:0,animationTime:0,visible:true,
     work:{id:workId,stage:'focus',group:'deep',clock:0,groupClock:0,tailPhase:0,tailSpeed:1,entries:0,
       initial:true,fromDepth:0,resumeClock:RESUME_DURATION,resumeFrom:0},
     life:{clock:0,entries:0,bubbleCycle:-1}};
   function workPose(a) {
+    if(interactionPerformance?.apply(a))return;
     const w=context.work,amp=a.calm?.28:1,deep=w.group==='deep',lead=w.initial?.65:.12;
     let depth=deep?smooth((w.groupClock-lead)/.8):w.fromDepth*(1-smooth(w.groupClock/.85));
     if(w.resumeClock<RESUME_DURATION)depth=mix(w.resumeFrom,depth,smooth(w.resumeClock/RESUME_DURATION));
@@ -33,13 +35,27 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       a.rootX.target=Math.sin(w.clock*.8)*.02*amp;
       a.lean.target=(-.085*(1-depth)+Math.sin(w.clock*1.1)*.012)*amp;
       a.fx('fin').target=.65*(1-depth)*amp;a.fx('tail').target=Math.sin(w.clock*1.7)*.045*amp;
+    } else if(w.group==='execute') {
+      // Execution is a sustained, intent-driven phrase, not one surfacing per tool result.
+      const review=w.stage==='focus';
+      a.express({w:1,h:review?.66:.84,topLid:review?.22:.10});a.lookAt(review?-.25:-.8,review?-.2:.26);
+      a.scale.target=.90;a.lean.target=(review?.055:-.17)*amp;a.rootX.target=-.065*amp;
+      a.fx('fin').target=(review?.10:.42+Math.sin(w.clock*4)*.14)*amp;
+      a.fx('tail').target=Math.sin(w.clock*(review?1.4:3.6))*(review?.025:.075)*amp;
     } else {
       a.express({w:1,h:1.03,topLid:.02});a.lookAt(-.75,-.10);
       a.rootX.target=-.025*amp;a.lean.target=.055*amp;
       a.fx('fin').target=(.28+Math.sin(w.clock*1.4)*.025)*amp;
       a.fx('tail').target=Math.sin(w.clock*1.5)*.035*amp;
     }
-    a.fx('belly').target=0;
+    a.fx('belly').target=0;a.fx('ripple').target=workStyle==='readable'?(deep?.18:.45):0;
+  }
+  function restPose(a) {
+    if(interactionPerformance?.apply(a))return;
+    a.morph('rest',{squash:0,blink:false});a.fx('hidden').target=0;a.fx('eyesOpacity').target=1;
+    a.scale.target=1;a.hover.target=.13;a.rootX.target=0;a.lean.target=0;
+    a.fx('fin').target=.06;a.fx('belly').target=0;a.fx('ripple').target=0;
+    a.fx('tail').target=Math.sin(a.time*1.2)*.025;a.express('neutral');
   }
   function lifePose(a) {
     if(lifePerformance?.apply(a))return;
@@ -82,6 +98,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
   const engine=createRequestPerformance({sessionId,palette,calm,initialState:'idle',activityActions:{
     'focus-segment':{kind:'loop',enter:workPose,tick:workPose},
     'life-segment':{kind:'loop',enter:lifePose,tick:lifePose},
+    'rest-segment':{kind:'loop',enter:restPose,tick:restPose},
   }});
   function phase() {
     if(context.pending.length)return 'request';
@@ -90,6 +107,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
     const w=context.work;
     if(w.resumeClock<RESUME_DURATION)return 'resume';
     if(w.group==='report')return w.groupClock<.85?'surface':'report';
+    if(w.group==='execute')return w.groupClock<.85?'surface':w.stage==='focus'?'review':'execute';
     const lead=w.initial?.65:.12;
     return w.groupClock<lead?'gather':w.groupClock<lead+.8?'dive':w.stage==='tools'?'execute':'focus';
   }
@@ -112,9 +130,9 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       if(value.atMs!==undefined){if(!Number.isFinite(value.atMs)||value.atMs<0)throw new Error('Invalid source timestamp');context.lastFactMs=value.atMs;context.eventTimeMs=Math.max(context.eventTimeMs,value.atMs);}
       const wasPending=context.pending.length>0,wasMode=context.mode,newWork=nextMode==='work'&&(switchedSession||wasMode!=='work'||nextId!==context.work.id);
       if(newWork)Object.assign(context.work,{id:nextId,clock:0,groupClock:0,tailPhase:0,tailSpeed:1,entries:context.work.entries+1,
-        group:nextStage==='report'?'report':'deep',initial:true,fromDepth:0,resumeClock:RESUME_DURATION});
+        group:nextStage==='report'?'report':workStyle==='readable'&&nextStage==='tools'?'execute':'deep',initial:true,fromDepth:0,resumeClock:RESUME_DURATION});
       else if(nextMode==='work') {
-        const group=nextStage==='report'?'report':'deep';
+        const group=nextStage==='report'?'report':workStyle==='readable'&&(nextStage==='tools'||context.work.group==='execute')?'execute':'deep';
         if(group!==context.work.group)Object.assign(context.work,{group,groupClock:0,initial:false,
           fromDepth:next.length?0:engine.actor.fxValue('hidden')});
       }
@@ -122,7 +140,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       context.mode=nextMode;context.work.stage=nextStage;context.pending=next;
       if(wasPending&&!next.length&&nextMode==='work'&&!newWork)Object.assign(context.work,
         {resumeClock:0,resumeFrom:engine.actor.fxValue('hidden')});
-      engine.sync({sessionId,mood:nextMode==='work'?'focus-segment':nextMode==='life'?'life-segment':'idle',interactions:next});
+      engine.sync({sessionId,mood:nextMode==='work'?'focus-segment':nextMode==='life'?'life-segment':'rest-segment',interactions:next});
     },
     advanceAnimation(seconds) {
       if(!Number.isFinite(seconds)||seconds<0)throw new Error('Expected a finite non-negative animation interval');
@@ -130,7 +148,8 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       const target=context.animationTime+seconds;
       for(let left=seconds;left>1e-9;) {
         const dt=Math.min(left,1/120);left-=dt;context.animationTime+=dt;
-        if(!context.pending.length) {
+        interactionPerformance?.advance(dt);
+        if(!context.pending.length&&!interactionPerformance?.active()) {
           if(context.mode==='work') {
             const w=context.work;w.clock+=dt;w.groupClock+=dt;w.resumeClock=Math.min(RESUME_DURATION,w.resumeClock+dt);
             if(w.group==='deep'){w.tailSpeed+=((w.stage==='tools'?1.2:.8)-w.tailSpeed)*(1-Math.exp(-dt/.45));w.tailPhase+=dt*w.tailSpeed;}

@@ -126,6 +126,8 @@ VM 需图形依赖、Xvfb、Openbox、Python 3、procps 及固定工具链。观
 
 原生角色接入使用[macOS 隔离测试机](macos-vm-testing.md)，源码与产物身份按该页记录。
 
+小湛 API 2 身体交互使用 `node --test tests/little-deep-body.mjs`，直接验证真实工厂与 Canvas 的抚摸、工作点击、连续掉落、水平／空中投掷、接住后再落地、朝向及工具段收势。包导入／换角色及皮肤分别运行 `tests/little-deep-api2-ui.mjs`、`tests/little-deep-api2-native.mjs`，需要 DSH_CHARACTER_ZIP、DSH_TEST_ARTIFACTS 和已准备的浏览器。原生驱动仅用于隔离 profile，会主动聚焦测试窗口，并用现有 native-pointer 工具同步 OS／CDP 指针；不在用户日常桌面执行。
+
 ## 运行时与隔离
 
 高频事件只发送动画元数据，完整结果在结果或已读状态变化时传输。角色脚本运行于 `sandbox="allow-scripts"` 的 opaque-origin iframe，仅通过有限协议交互；没有 Node、Electron 桥、外部网络或顶层导航权限。本地资源服务只监听 `127.0.0.1`，原生实例使用随机路径，写入校验可信页面来源。
