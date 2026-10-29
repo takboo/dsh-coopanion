@@ -6,6 +6,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { chromium } from 'playwright-core';
 import { ElectronBridge } from '../../dist/bridge.js';
 
@@ -15,13 +16,20 @@ const port = portServer.address().port; await new Promise(resolve => portServer.
 Object.assign(process.env, { DSH_PET_TEST_DATA_DIR: directory, DSH_PET_TEST_NO_SANDBOX: '1', DSH_PET_TEST_DEBUG_PORT: String(port) });
 const bridge = new ElectronBridge();
 let browser;
+let electronPath;
+if (process.env.DSH_STARTUP_DEBUG_SOFTWARE_GL === '1') {
+  electronPath = join(directory, 'software-electron');
+  const executable = createRequire(import.meta.url)('electron');
+  const quote = value => "'" + value.replaceAll("'", "'\"'\"'") + "'";
+  await writeFile(electronPath, '#!/bin/sh\nexec ' + quote(executable) + ' --use-gl=angle --use-angle=swiftshader-webgl "$@"\n', { mode: 0o700 });
+}
 const safe = value => String(value).replace(/https?:\/\/[^\s"'<>]+/g, '[url]').slice(0, 500);
 const report = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch, lifecycle: [], errors: [], console: [], samples: [] };
 bridge.onLifecycle(({ running, visible, generation, visibilityRevision, suspended, desiredVisible }) => report.lifecycle.push({ running, visible, generation, visibilityRevision, suspended, desiredVisible }));
 bridge.on('failure', error => report.errors.push({ source: 'bridge', name: error.name, message: safe(error.message) }));
 try {
   bridge.update({ mood: 'thinking', active: true, sessionId: null, sessions: [], results: [] });
-  await bridge.start({ locale: 'en', size: 150, roam: false, notifications: false });
+  await bridge.start({ locale: 'en', size: 150, roam: false, notifications: false, ...(electronPath ? { electronPath } : {}) });
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const page = browser.contexts()[0].pages()[0];
   page.on('pageerror', error => report.errors.push({ source: 'page', name: error.name, message: safe(error.message) }));
@@ -53,6 +61,7 @@ try {
   report.frontReady = await visible(10000);
   await observe('front');
   console.log('Native startup diagnostic: ' + JSON.stringify({ inactiveReady: report.inactiveReady, frontReady: report.frontReady, samples: report.samples, errors: report.errors, console: report.console }));
+  if (!report.inactiveReady) process.exitCode = 1;
 } finally {
   await mkdir('artifacts', { recursive: true });
   await writeFile('artifacts/native-startup-debug.json', JSON.stringify(report, null, 2) + '\n');

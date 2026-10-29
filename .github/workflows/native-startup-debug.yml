@@ -6,6 +6,10 @@ jobs:
   probe:
     runs-on: macos-26-intel
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [default, swiftshader]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -15,9 +19,11 @@ jobs:
       - run: npm run setup:electron
       - run: npm run build
       - run: mkdir -p artifacts && node tests/fixtures/native-startup-debug.mjs
+        env:
+          DSH_STARTUP_DEBUG_SOFTWARE_GL: ${{ matrix.backend == 'swiftshader' && '1' || '' }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
-          name: native-startup-debug
+          name: native-startup-debug-${{ matrix.backend }}
           path: artifacts/native-startup-debug*
           retention-days: 7
