@@ -67,6 +67,8 @@ describe('upstream API 2 packs', () => {
   }));
 });
 
+// This checks the complete source archive's contents, including original assets.
+// Disk and ZIP work can exceed Vitest's default 5 s on the Windows test VM.
 it('serves the frame with an opaque-origin CSP, rejects cross-origin mutations and offers matching source', async () => withStore(async store => {
   await store.import(archive());
   const server = createPetServer({ webRoot: resolve('web'), store, prefix: '/test-token/' });
@@ -92,7 +94,7 @@ it('serves the frame with an opaque-origin CSP, rejects cross-origin mutations a
     expect(source['scripts/build.mjs']).toBeDefined(); expect(source['npm-shrinkwrap.json']).toBeDefined();
     expect(Object.keys(source).some(p => /node_modules|figures-v2|\.aws/.test(p))).toBe(false);
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
-}));
+}), 30_000);
 
 it('bounds untrusted hit areas and only accepts touch events following real input', async () => {
   // @ts-expect-error The upstream browser module is JavaScript.
