@@ -29,7 +29,7 @@ npm run test:install
 
 浏览器检查真实 API 2 动画、聊天、完整阅读、角色导入及脚本隔离；桌面检查真实 Electron 窗口、IPC、托盘和恢复；安装检查使用官方 DSH loader 安装实际 `.tgz`。用 `DSH_TEST_VERSION=<支持版本>` 选择宿主，用 `DSH_TEST_PACKAGE_DIR=<规范包目录>` 消费已有规范包及校验文件。完整平台／宿主列表以 CI 矩阵为准。
 
-macOS CI 使用 `macos-26-intel` 标准 runner，避免 ARM 托管池容量不足导致任务未执行即取消；三平台测试和十五组宿主安装的断言、期限保持一致。Apple Silicon VM 的本地验证单独记录实际提交与包摘要，不从 Intel CI 结果推断 ARM 已验收。
+macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner，原生图形检查先于完整浏览器回归执行，尽早识别图形环境不可用。三平台测试和十五组宿主安装保留全部断言与期限；本地 VM 验证仍单独记录实际系统、提交与包摘要。
 
 原生测试和安装使用隔离数据目录，系统桌面操作串行执行。CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox 与 contextIsolation，关闭 Node integration。测试通知适配器和模型答复器属于受控边界，不能代替通知中心实机送达或真实模型会话验收。
 
