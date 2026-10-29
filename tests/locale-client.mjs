@@ -23,3 +23,26 @@ test('the real Client factory synchronizes resolved Harness locale without works
   const disposedCalls=calls.length; focusEvents.dispatchEvent(new Event('focus')); await new Promise(resolve=>setTimeout(resolve,20));
   assert.equal(calls.length,disposedCalls,'focus subscriptions are removed on disposal');
 });
+
+test('the real Client accepts automatic recovery from status and control replies', async () => {
+  let factory, face; const cleanup=[];
+  const events=new EventTarget();
+  const document={createElement:()=>({dataset:{},remove(){}}),head:{append(){}},visibilityState:'visible',addEventListener:events.addEventListener.bind(events),removeEventListener:events.removeEventListener.bind(events)};
+  runInNewContext(readFileSync(new URL('../dist/client.js',import.meta.url),'utf8'),{window:{__ModuleLoader__:{load(value){factory=value.factory;}},addEventListener:events.addEventListener.bind(events),removeEventListener:events.removeEventListener.bind(events)},document,URL,TextEncoder,TextDecoder,AbortController,setTimeout,clearTimeout});
+  const client=factory(()=>({}));
+  let status={phase:'recovering',generation:2,visibilityRevision:1,visible:false,desiredVisible:true,suspended:false,recoveryAttempt:1,retryAt:Date.now()+1000};
+  const methods=[];
+  const ctx={effect(fn){const stop=fn();if(stop)cleanup.push(stop);},inject(){},locale:{register:()=>()=>{},resolveText:()=> 'en',subscribe:()=>()=>{}},configForms:{get:()=>({})},slots:{inject(_name,register){register();},register(spec){face=spec.inject();return()=>{};}},connection:{isLoopback:true,rpc:{async call(_path,method){if(method==='coopanion/locale')return{ok:true,value:{}};methods.push(method);return{ok:true,value:status};}}}};
+  try {
+    client.apply(ctx);
+    for(const command of [undefined,'restart']) {
+      const reply=await face.call(command);
+      assert.equal(reply.phase,'recovering'); assert.equal(reply.recoveryAttempt,1); assert.equal(reply.retryAt,status.retryAt);
+    }
+    assert.deepEqual(methods,['coopanion/status','coopanion/control']);
+    status={...status,phase:'unknown'};
+    await assert.rejects(()=>face.call(),/Invalid desktop pet status/);
+    status={...status,phase:'recovering',visible:undefined};
+    await assert.rejects(()=>face.call(),/Invalid desktop pet status/);
+  } finally { for(const stop of cleanup.reverse())stop(); }
+});

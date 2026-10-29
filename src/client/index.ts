@@ -49,7 +49,7 @@ export function apply(ctx: Context): void {
       const reply = await ctx.connection.rpc.call('/api', command ? 'coopanion/control' : 'coopanion/status', command ? { command } : {}, signal);
       if (!reply.ok) throw new Error(reply.error.message);
       const value = reply.value as PetStatus;
-      if (!value || !['stopped', 'starting', 'running', 'stopping', 'error'].includes(value.phase) || typeof value.visible !== 'boolean') throw new Error('Invalid desktop pet status');
+      if (!value || !['stopped', 'starting', 'running', 'stopping', 'recovering', 'error'].includes(value.phase) || typeof value.visible !== 'boolean') throw new Error('Invalid desktop pet status');
       return value;
     },
   };
