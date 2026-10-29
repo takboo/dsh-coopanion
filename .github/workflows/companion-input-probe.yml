@@ -1,0 +1,32 @@
+name: Companion input diagnostic
+on: pull_request
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-toolchain
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npx playwright-core install chromium
+      - run: npm run character:pack -- examples/star paper-star.zip
+      - run: npm run test:ui
+      - run: npm run test:notification-ui
+      - name: Observe unchanged complete inbox and companionship tests
+        run: |
+          mkdir -p artifacts
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/tests/fixtures/companion-input-probe.mjs" npm run test:inbox-ui 2>&1 | tee artifacts/companion-input.log
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: companion-input
+          path: artifacts/companion-input*
+          retention-days: 7
