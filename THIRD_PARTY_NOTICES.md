@@ -12,11 +12,11 @@ The textures and thumbnails in `web/upstream/whale/`, and the generated tray ico
 
 This integration follows the project user's existing statement that the community character is reusable. AGPL does not relicense these textures. The complete original upstream rights notice is preserved verbatim in [web/upstream/THIRD_PARTY_NOTICES.md](web/upstream/THIRD_PARTY_NOTICES.md). Its sections on speech-recognition libraries/models describe the upstream package; this plugin does not bundle those components.
 
-## Livelings development prototype
+## Livelings prototype and experimental character pack
 
 The independent Little Deep design prototype uses the author-distributed Livelings workspace by MakerJackie, preserved under [docs/design/art-workflow/vendor/livelings](docs/design/art-workflow/vendor/livelings/README.md). The engine is MIT; its bundled original characters and example have separate CC BY 4.0 terms. The complete [code license](docs/design/art-workflow/vendor/livelings/upstream/LICENSE), [character terms](docs/design/art-workflow/vendor/livelings/upstream/LICENSE-CHARACTERS.md), and [source hashes](docs/design/art-workflow/vendor/livelings/upstream/source.json) are retained byte-for-byte. Credit: **Livelings by MakerJackie**.
 
-These development files are outside the package's published file set. The prototype has not replaced the installed Coopanion runtime or been integrated as an API 2 character. The user-supplied DeepSeek reference and its provenance remain beside the prototype; vendor marks do not imply endorsement.
+These design files remain outside the plugin package's published file set. The separately built experimental Little Deep API 2 ZIP bundles the MIT engine and local character/performance code, with the complete Livelings and Harness license texts. It does not replace the installed Coopanion runtime. The user-supplied DeepSeek reference and its provenance remain beside the prototype; vendor marks do not imply endorsement.
 
 The Little Deep prototype also adapts the curled tail flukes and the historical curled-white-mark study from DeepSeek Harness, commit `f3803c96974ad4a94195fb97e5c637e9c2a3afe3`, `packages/client/ui-primitives/src/FishLogo.tsx`, with a locally shaped stem. The earlier `packages/client/ui-chat/src/client/chat/RunningWhaleTail.tsx` and APNG are retained as motion references. Copyright (c) 2026 DeepSeek, MIT. The original sources, complete [MIT notice](docs/design/art-workflow/whale-little-deep-v3/reference/harness/LICENSE) and [provenance](docs/design/art-workflow/whale-little-deep-v3/reference/harness/source.json) are preserved with the prototype. Its vector movement is a local adaptation, not a frame-exact port of the APNG or supplied GIF. Vendor marks do not imply endorsement.
 

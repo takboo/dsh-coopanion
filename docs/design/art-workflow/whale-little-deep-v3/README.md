@@ -1,6 +1,6 @@
 # 小湛原型模块与检查
 
-当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为独立纯代码浏览器原型。
+当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
 
 ## 模块与页面
 

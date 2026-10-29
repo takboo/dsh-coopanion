@@ -99,6 +99,8 @@ export interface FigureManifest {
   sounds: Record<string, PackSound>;
   /** `walk`: whether it goes where it is told (`pet_walk_to`). */
   can: { walk: boolean };
+  /** Optional Harness metadata extension; absent on existing API 2 packs. */
+  extensions?: { 'dsh-coopanion': { state: 1 } };
 }
 
 export interface FigurePack {
@@ -234,6 +236,7 @@ export function readManifest(dir: string, builtin = false, skipped: string[] = [
     ...(typeof raw.author === 'string' ? { author: raw.author } : {}),
     ...(typeof raw.license === 'string' ? { license: raw.license } : {}),
     ...(Array.isArray(raw.credits) ? { credits: raw.credits as FigureManifest['credits'] } : {}),
+    ...((raw.extensions as Record<string, { state?: unknown }> | undefined)?.['dsh-coopanion']?.state === 1 ? { extensions: { 'dsh-coopanion': { state: 1 as const } } } : {}),
     ...(raw.model ? { model: raw.model as string } : {}),
     ...(raw.thumb ? { thumb: raw.thumb as string } : {}),
   };

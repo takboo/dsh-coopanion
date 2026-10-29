@@ -2,7 +2,7 @@
 
 插件直接使用 [Coopanion 固定版本](../web/upstream/UPSTREAM.md) 的角色运行时和沙箱协议。新角色通过 `figure.json` API 2 对接，不使用旧 `.dshpet` 或关键帧 schema。
 
-小湛当前是独立的 Livelings 网页原型，设计与续做从[当前设计入口](design/README.md)开始；其 JavaScript 定义还不是本页所述的 API 2 角色包。
+小湛的表演原型与[实验性 API 2 包](../examples/little-deep/README.md)从[当前设计入口](design/README.md)接手。实验包声明[可选状态扩展](character-state-contract.md)，既有角色继续使用本页的原接口。实验包的安装与真实会话验证单独记录。
 
 ## 包结构与导入
 

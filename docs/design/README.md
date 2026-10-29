@@ -1,6 +1,6 @@
 # 小湛当前设计与接手
 
-更新于 2026-10-29。本分支 `codex/little-deep-livelings` 制作独立浏览器角色原型。Harness、API 2、NPC 和原生窗口尚未接入；产品文档描述现有大肥鱼插件。`codex/aliveness-foundation` 是另一条未合并路线。
+更新于 2026-10-29。本分支 `codex/little-deep-api2` 在已确认的 `codex/little-deep-livelings` 表演基线上制作实验性 API 2 接入；状态传递、角色包及虚拟机验证按下文记录。现有大肥鱼及旧角色继续兼容。`codex/aliveness-foundation` 是另一条未合并路线。
 
 ## 当前基线与下一步
 
@@ -8,7 +8,9 @@
 
 用户已确认 `?`、`!` 的出场、结算退场与基本交互，并于 2026-10-29 对工作／生活样片反馈“整体观感可以”。这些作为当前表演基线；连续观看能区分工作与生活，汇报与安静生活的个别静态姿态仍接近。
 
-**续做候选：[生活交互分镜](storyboards/little-deep-life-touch-v0.md)与[16 秒连续样片](art-workflow/whale-little-deep-v3/life-touch-study.html)。** 已制作靠近、轻触、持续抚摸与松手余韵，支持手动体验及请求／工作接管，尚待观看反馈。下一段为藏身／隐身及恢复，其触发和具体表现待分镜。已通过的工作／请求基线保留；异常／停止、目标完成和产品接入分别推进。
+**当前成果：宿主到角色的[可选状态传递](../character-state-contract.md)及[实验性角色包](../../examples/little-deep/README.md)已实现，已在隔离 macOS VM 用真实 provider 验证工作主线与 ?／!。** 安装、受控场景、真实模型及产物摘要见[接入记录](little-deep-api2-validation.md)。下一步为用户实装观感反馈；NPC 自主活动及完成庆祝候选不进入首轮。
+
+**生活续做候选：[生活交互分镜](storyboards/little-deep-life-touch-v0.md)与[16 秒连续样片](art-workflow/whale-little-deep-v3/life-touch-study.html)。** 已制作靠近、轻触、持续抚摸与松手余韵，支持手动体验及请求／工作接管，尚待观看反馈。生活交互反馈及藏身／隐身分镜安排在本轮接入之后，其触发和表现待后续确认。已通过的工作／请求基线保留；异常／停止、目标完成和产品接入分别推进。
 
 | 范围 | 状态与权威说明 |
 | --- | --- |
@@ -18,7 +20,8 @@
 | 真实会话结构、双时钟、请求身份 | [会话观察说明](session-observation.md)，机制参照，使用旧表面动作 |
 | 生活交互 | [新候选](storyboards/little-deep-life-touch-v0.md)，分镜与连续样片已制作，尚待观看 |
 | 藏身／隐身、异常与停止 | 待分镜；原动作库中的实现不等于新场景已确认 |
-| Harness、API 2、NPC、原生窗口 | 尚未接入，不由浏览器样片或日志回放结算 |
+| 宿主状态扩展、API 2、原生窗口 | 已实现；VM 浏览器与原生各 11 个受控场景、真实模型实装通过，见[验证范围](little-deep-api2-validation.md)；待用户实装观感反馈 |
+| NPC 自主策略 | 首轮未接入；生活表演不自动启用日常调度 |
 
 ## 固定造型
 
@@ -53,6 +56,6 @@ python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflo
 
 ## 资料边界
 
-产品事实来源为 [PetModel](../../src/model.ts)、[请求 Broker](../../src/notification-broker.ts)和[完成判断](../../src/completion.ts)。浏览器样片不发答复或审批。自动化、浏览器画面、用户体验和产品宿主结果分别记录；检查入口集中在[原型说明](art-workflow/whale-little-deep-v3/README.md#检查)。
+产品事实来源为 [PetModel](../../src/model.ts)、[请求 Broker](../../src/notification-broker.ts)和[完成判断](../../src/completion.ts)。浏览器样片不发答复或审批；实验包只消费最小状态，正式请求与决定由 Harness 拥有。自动化、浏览器画面、用户体验和产品宿主结果分别记录；检查入口集中在[原型说明](art-workflow/whale-little-deep-v3/README.md#检查)。
 
 被取代的过程稿、旧潜水映射和分镜沿革从[历史索引](../archive/README.md)按需读取；其中的“当前”和“下一步”仅属于快照时间。固定证据、第三方许可和原始素材保留原字节。当前执行范围以用户最新要求为准。

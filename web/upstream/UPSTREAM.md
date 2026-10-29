@@ -34,3 +34,7 @@ Harness refinements, 2026-10-10:
 
 - `kit/body.js` adds optional persistent `set({ expression })` for Harness task faces, without repeating expression sounds or bounces. All other original body behavior is retained.
 - Final replies retain complete text and per-result read identity. Bounded previews use the original typewriter, punctuation and mouth pulses; a stable full-text reader and explicit session focus prevent concurrent tasks from interrupting reading or redirecting chat.
+
+Harness experimental character extension, 2026-10-29:
+
+- The local manifest reader accepts an opt-in `extensions.dsh-coopanion.state=1` metadata contract. Existing API 2 packs retain their original calls; the pinned sandbox frame and body kit are unchanged. See `docs/character-state-contract.md`.

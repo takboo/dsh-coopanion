@@ -6,11 +6,12 @@ import type {} from '@deepseek-ai/dsh-user-approval';
 import { type PendingInteraction, type TaskNotice } from './notification-contract.ts';
 
 export type Mood = 'idle' | 'thinking' | 'talking' | 'working' | 'waiting' | 'happy' | 'error' | 'sleeping';
+export interface PetActivity { id: string; stage: 'focus' | 'tools' | 'report'; tools: number; seq: number; atMs: number; outcome?: { category: TaskNotice['category']; goal?: TaskNotice['goal'] } }
 export interface PetResult { id: string; sessionId: string; text: string; time: number; read: boolean; }
-export interface PetSession { id: string; label: string; project: string; cwd: string; prompt: string; createdAt: number; updatedAt: number; mood: Mood; text: string; reply: string; replyId: string; unread: number; revision: number; active: boolean; streaming: boolean; speechId: string; chatAvailable?: boolean; completion?: TaskNotice['category']; }
-export interface PetSnapshot { mood: Mood; text: string; sessionId: string | null; revision: number; active: boolean; streaming: boolean; speechId: string; results: PetResult[]; sessions: PetSession[]; }
+export interface PetSession { id: string; label: string; project: string; cwd: string; prompt: string; createdAt: number; updatedAt: number; mood: Mood; text: string; reply: string; replyId: string; unread: number; revision: number; active: boolean; streaming: boolean; speechId: string; chatAvailable?: boolean; activity?: PetActivity; completion?: TaskNotice['category']; }
+export interface PetSnapshot { mood: Mood; text: string; sessionId: string | null; revision: number; active: boolean; streaming: boolean; speechId: string; activity?: PetActivity; results: PetResult[]; sessions: PetSession[]; }
 export interface PetNotice extends Partial<Omit<TaskNotice, 'title' | 'body' | 'sessionId'>> { title: string; body: string; sessionId: string; kind?: 'task' | 'message'; }
-interface TaskState { completion: CompletionTracker; ended: number; seq: number; turn: number; active: boolean; finalText?: string; tools: Map<string, string>; approvals: Set<symbol | string>; questions: Set<string>; requests: Set<string>; celebrateUntil: number; stream?: { id: string; revision: number; index: number; text: string; blocks: Map<number, string> }; }
+interface TaskState { hasTurn: boolean; stage: PetActivity['stage']; atMs: number; outcome?: PetActivity['outcome']; completion: CompletionTracker; ended: number; seq: number; turn: number; active: boolean; finalText?: string; tools: Map<string, string>; approvals: Set<symbol | string>; questions: Set<string>; requests: Set<string>; celebrateUntil: number; stream?: { id: string; revision: number; index: number; text: string; blocks: Map<number, string> }; }
 type ObservedSession = Pick<Session, 'id' | 'header'> & Partial<Pick<Session, 'snapshotEvents'>>;
 const ready = '准备好了，随时叫我。';
 
@@ -34,7 +35,7 @@ export class PetModel {
       const project = session.header.cwd ? basename(session.header.cwd) : '未指定项目';
       item = { id: session.id, label: project, project, cwd: session.header.cwd ?? '', prompt: '', createdAt: session.header.createdAt, updatedAt: session.header.createdAt, mood: 'idle', text: ready, reply: '', replyId: '', unread: 0, revision: 0, active: false, streaming: false, speechId: '' };
       this.sessions.set(session.id, item);
-      this.tasks.set(session.id, { completion: new CompletionTracker(), ended: -1, seq: -1, turn: 0, active: false, tools: new Map(), approvals: new Set(), questions: new Set(), requests: new Set(), celebrateUntil: 0 });
+      this.tasks.set(session.id, { hasTurn: false, stage: 'focus', atMs: 0, completion: new CompletionTracker(), ended: -1, seq: -1, turn: 0, active: false, tools: new Map(), approvals: new Set(), questions: new Set(), requests: new Set(), celebrateUntil: 0 });
       this.selected ??= session.id;
       // Restore identity from public history, without replaying stale task states or notices.
       for (const event of session.snapshotEvents?.() ?? []) this.describe(item, event);
@@ -63,7 +64,8 @@ export class PetModel {
     const task = this.tasks.get(item.id)!;
     if (frame.type === 'start') {
       if (frame.turn < task.turn || (frame.turn === task.turn && !task.active && task.seq >= 0) || (task.stream && frame.revision <= task.stream.revision)) return false;
-      task.turn = frame.turn; task.active = true;
+      task.turn = frame.turn; task.hasTurn = true; task.active = true; task.outcome = undefined;
+      if (!task.tools.size) task.stage = 'focus';
       task.finalText = undefined;
       task.stream = { id: frame.attemptId, revision: frame.revision, index: -1, text: '', blocks: new Map() };
       item.streaming = true; item.speechId = frame.attemptId;
@@ -73,6 +75,7 @@ export class PetModel {
     const stream = task.stream;
     if (!task.active || !stream || stream.id !== frame.attemptId || stream.revision !== frame.revision || frame.index <= stream.index) return false;
     stream.index = frame.index;
+    if ('time' in frame && Number.isFinite(frame.time)) task.atMs = Math.max(task.atMs, frame.time);
     if (frame.type === 'end') {
       item.streaming = false;
       if (frame.outcome.kind === 'abandoned' && !task.tools.size && !task.approvals.size) this.present(item, 'thinking', '正在重新准备回复…');
@@ -84,10 +87,12 @@ export class PetModel {
       else if (chunk.block.type === 'text') stream.blocks.set(chunk.index, chunk.block.text.slice(0, 1200));
       stream.text = [...stream.blocks.entries()].sort(([a], [b]) => a - b).map(([, text]) => text).join('\n').slice(0, 1200);
       if (stream.text.trim()) {
+        if (!task.tools.size) task.stage = 'report';
         // Live text changes the expression, never the reader's confirmed result.
         if (!task.tools.size && !task.approvals.size) this.present(item, 'talking', '正在组织回复…');
       }
     } else if (chunk.type === 'reasoning-delta' && !stream.text && !task.tools.size && !task.approvals.size) {
+      task.stage = 'focus';
       // The pet signals reasoning without exposing private reasoning content.
       this.present(item, 'thinking', '正在思考…');
     }
@@ -146,10 +151,11 @@ export class PetModel {
     if (!item) return;
     const task = this.tasks.get(item.id)!;
     if (event.seq <= task.seq) return;
-    task.seq = event.seq;
+    task.seq = event.seq; task.atMs = Math.max(task.atMs, event.time);
     this.describe(item, event);
     const completion = task.completion.consume(event);
     if (event.type === 'goal/change' && completion && live) {
+      task.outcome = completion.clear ? undefined : { category: completion.category, ...(completion.goal ? { goal: completion.goal } : {}) };
       if (!completion.silent || !task.active) this.present(item, completion.mood, completion.text);
       if (completion.clear) delete item.completion; else item.completion = completion.category;
       task.celebrateUntil = completion.mood === 'happy' ? this.now() + 2500 : 0;
@@ -161,19 +167,20 @@ export class PetModel {
       case 'turn/start':
         if (event.data.turn <= task.ended) return;
         delete item.completion;
-        task.turn = event.data.turn; task.active = true; task.tools.clear(); task.approvals.clear(); task.celebrateUntil = 0;
+        task.turn = event.data.turn; task.hasTurn = true; task.active = true; task.stage = 'focus'; task.outcome = undefined; task.tools.clear(); task.approvals.clear(); task.celebrateUntil = 0;
         task.stream = undefined; task.finalText = undefined; item.streaming = false; item.speechId = ''; item.updatedAt = event.time;
         this.present(item, 'thinking', '让我想一想…'); break;
       case 'step/start':
+        if (!task.tools.size) task.stage = 'focus';
         task.active = true; task.finalText = undefined;
         if (!task.approvals.size && !task.tools.size) this.present(item, 'thinking', '正在思考…'); break;
       case 'tool/call':
         if (!task.active) break;
-        task.tools.set(event.data.callId, event.data.name);
+        task.tools.set(event.data.callId, event.data.name); task.stage = 'tools';
         if (!task.approvals.size) this.present(item, 'working', toolLabel(event.data.name)); break;
       case 'tool/result':
         if (!task.active) break;
-        task.tools.delete(event.data.message.toolCallId);
+        task.tools.delete(event.data.message.toolCallId); task.stage = task.tools.size ? 'tools' : 'focus';
         if (task.approvals.size) break;
         if (task.tools.size) { this.present(item, 'working', toolLabel(task.tools.values().next().value!)); break; }
         if (event.data.message.isError) {
@@ -184,6 +191,7 @@ export class PetModel {
         const text = event.data.message.content.filter(p => p.type === 'text').map(p => p.text).join('\n');
         if (!task.active) break;
         item.streaming = false;
+        if (text.trim() && !task.tools.size) task.stage = 'report';
         task.finalText = event.data.message.content.some(p => p.type === 'tool-call') ? undefined : text;
         if (text.trim() && !task.tools.size && !task.approvals.size) this.present(item, 'talking', '正在组织回复…');
         break;
@@ -197,6 +205,7 @@ export class PetModel {
       case 'turn/end': {
         if (event.data.turn <= task.ended) return;
         task.ended = event.data.turn;
+        task.outcome = completion ? { category: completion.category, ...(completion.goal ? { goal: completion.goal } : {}) } : { category: event.data.reason.kind === 'aborted' ? 'stopped' : event.data.reason.kind as TaskNotice['category'] };
         task.turn = event.data.turn; task.active = false; task.tools.clear(); task.approvals.clear(); task.celebrateUntil = 0;
         task.stream = undefined; item.streaming = false;
         switch (event.data.reason.kind) {
@@ -300,7 +309,15 @@ export class PetModel {
   snapshot(): PetSnapshot {
     const item = this.selected ? this.sessions.get(this.selected) : undefined;
     this.settle();
-    return { mood: item?.mood ?? 'idle', text: item?.text ?? ready, sessionId: item?.id ?? null, revision: item?.revision ?? 0, active: item?.active ?? false, streaming: item?.streaming ?? false, speechId: item?.speechId ?? '', results: [...this.results.values()].map(r => ({ ...r })), sessions: [...this.sessions.values()].map(s => ({ ...s })) };
+    const withActivity = (value: PetSession) => {
+      const task = this.tasks.get(value.id)!;
+      // Agent running can precede turn/start. Do not invent turn 0 or reactivate an ended identity.
+      const observed = task.hasTurn && (!task.active || task.turn > task.ended);
+      return { ...value, ...(observed ? { activity: { id: JSON.stringify([value.id, task.turn]), stage: task.stage,
+        tools: task.tools.size, seq: task.seq, atMs: task.atMs, ...(task.outcome ? { outcome: task.outcome } : {}) } } : {}) };
+    };
+    const selected = item ? withActivity(item) : undefined;
+    return { mood: item?.mood ?? 'idle', text: item?.text ?? ready, sessionId: item?.id ?? null, revision: item?.revision ?? 0, active: item?.active ?? false, streaming: item?.streaming ?? false, speechId: item?.speechId ?? '', ...(selected?.activity ? { activity: selected.activity } : {}), results: [...this.results.values()].map(r => ({ ...r })), sessions: [...this.sessions.values()].map(withActivity) };
   }
 }
 

@@ -1,0 +1,219 @@
+{
+  "manifest": 2,
+  "api": 2,
+  "id": "little-deep-experimental",
+  "version": "0.0.1",
+  "name": {
+    "zh": "小湛 · 实验版",
+    "en": "Little Deep · Experimental"
+  },
+  "about": {
+    "zh": "实验性工作与请求角色：集中潜入，提问／审批浮出，结算后接回当前事情。"
+  },
+  "author": "takboo",
+  "license": "AGPL-3.0-or-later",
+  "credits": [
+    {
+      "role": "animation engine",
+      "name": "Livelings by MakerJackie",
+      "url": "https://github.com/makerjackie/livelings"
+    }
+  ],
+  "entry": "figure.js",
+  "export": "createLittleDeepBody",
+  "axes": [
+    {
+      "id": "colour",
+      "name": {
+        "zh": "配色"
+      },
+      "options": [
+        {
+          "id": "deep",
+          "name": {
+            "zh": "Deep 蓝"
+          }
+        },
+        {
+          "id": "soft",
+          "name": {
+            "zh": "初版小湛蓝"
+          }
+        },
+        {
+          "id": "milk",
+          "name": {
+            "zh": "奶白"
+          }
+        },
+        {
+          "id": "night",
+          "name": {
+            "zh": "夜游"
+          }
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": "deep",
+      "name": {
+        "zh": "Deep 蓝"
+      },
+      "pick": {
+        "colour": "deep"
+      }
+    },
+    {
+      "id": "soft",
+      "name": {
+        "zh": "初版小湛蓝"
+      },
+      "pick": {
+        "colour": "soft"
+      }
+    },
+    {
+      "id": "milk",
+      "name": {
+        "zh": "奶白"
+      },
+      "pick": {
+        "colour": "milk"
+      }
+    },
+    {
+      "id": "night",
+      "name": {
+        "zh": "夜游"
+      },
+      "pick": {
+        "colour": "night"
+      }
+    }
+  ],
+  "vocab": [
+    {
+      "id": "neutral",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "平静"
+        ]
+      },
+      "about": {
+        "zh": "平静"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "thinking",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "思考"
+        ]
+      },
+      "about": {
+        "zh": "思考"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "determined",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "认真"
+        ]
+      },
+      "about": {
+        "zh": "认真"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "worried",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "等候"
+        ]
+      },
+      "about": {
+        "zh": "等候"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "curious",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "好奇"
+        ]
+      },
+      "about": {
+        "zh": "好奇"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "sad",
+      "kind": "expression",
+      "names": {
+        "zh": [
+          "担忧"
+        ]
+      },
+      "about": {
+        "zh": "担忧"
+      },
+      "seconds": 1,
+      "lasting": false
+    },
+    {
+      "id": "sleep",
+      "kind": "motion",
+      "names": {
+        "zh": [
+          "休息"
+        ]
+      },
+      "about": {
+        "zh": "休息"
+      },
+      "seconds": 1,
+      "lasting": true
+    },
+    {
+      "id": "stand",
+      "kind": "motion",
+      "names": {
+        "zh": [
+          "起身"
+        ]
+      },
+      "about": {
+        "zh": "起身"
+      },
+      "seconds": 1,
+      "lasting": false
+    }
+  ],
+  "sounds": {},
+  "can": {
+    "walk": false
+  },
+  "extensions": {
+    "dsh-coopanion": {
+      "state": 1
+    }
+  }
+}

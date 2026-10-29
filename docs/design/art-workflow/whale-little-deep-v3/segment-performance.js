@@ -86,6 +86,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
   function phase() {
     if(context.pending.length)return 'request';
     if(context.mode==='life')return lifePhase(context.life.clock);
+    if(context.mode==='rest')return 'idle';
     const w=context.work;
     if(w.resumeClock<RESUME_DURATION)return 'resume';
     if(w.group==='report')return w.groupClock<.85?'surface':'report';
@@ -94,18 +95,22 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
   }
   const api={
     actor:engine.actor,
+    tap:engine.tap,beginDrag:engine.beginDrag,drag:engine.drag,release:engine.release,lookAt:engine.lookAt,
     get view(){return {...engine.view,mode:context.mode,phase:phase(),work:{...context.work},life:{...context.life},
       clocks:{eventTimeMs:context.eventTimeMs,lastFactMs:context.lastFactMs,animationSeconds:context.animationTime}};},
     sync(value) {
+      const nextSession=value.sessionId??sessionId;
+      if(typeof nextSession!=='string'||!nextSession)throw new Error('Expected a selected session identity');
+      const switchedSession=nextSession!==sessionId;sessionId=nextSession;
       const nextMode=value.mode??context.mode,nextStage=value.stage??context.work.stage,nextId=value.workId??context.work.id;
-      if(!['work','life'].includes(nextMode)||!['focus','tools','report'].includes(nextStage)||typeof nextId!=='string'||!nextId)
+      if(!['work','life','rest'].includes(nextMode)||!['focus','tools','report'].includes(nextStage)||typeof nextId!=='string'||!nextId)
         throw new Error('Expected an explicit mode, work stage and work identity');
       const interactions=value.pending??context.pending;
       if(!Array.isArray(interactions))throw new Error('Expected folded pending interactions');
       const next=[...new Map(interactions.filter(p=>p.sessionId===sessionId&&typeof p.id==='string'&&p.id&&
         ['question','approval'].includes(p.kind)&&['open','continued'].includes(p.state)).map(p=>[p.id,{...p}])).values()];
       if(value.atMs!==undefined){if(!Number.isFinite(value.atMs)||value.atMs<0)throw new Error('Invalid source timestamp');context.lastFactMs=value.atMs;context.eventTimeMs=Math.max(context.eventTimeMs,value.atMs);}
-      const wasPending=context.pending.length>0,wasMode=context.mode,newWork=nextMode==='work'&&(wasMode!=='work'||nextId!==context.work.id);
+      const wasPending=context.pending.length>0,wasMode=context.mode,newWork=nextMode==='work'&&(switchedSession||wasMode!=='work'||nextId!==context.work.id);
       if(newWork)Object.assign(context.work,{id:nextId,clock:0,groupClock:0,tailPhase:0,tailSpeed:1,entries:context.work.entries+1,
         group:nextStage==='report'?'report':'deep',initial:true,fromDepth:0,resumeClock:RESUME_DURATION});
       else if(nextMode==='work') {
@@ -117,7 +122,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
       context.mode=nextMode;context.work.stage=nextStage;context.pending=next;
       if(wasPending&&!next.length&&nextMode==='work'&&!newWork)Object.assign(context.work,
         {resumeClock:0,resumeFrom:engine.actor.fxValue('hidden')});
-      engine.sync({sessionId,mood:nextMode==='work'?'focus-segment':'life-segment',interactions:next});
+      engine.sync({sessionId,mood:nextMode==='work'?'focus-segment':nextMode==='life'?'life-segment':'idle',interactions:next});
     },
     advanceAnimation(seconds) {
       if(!Number.isFinite(seconds)||seconds<0)throw new Error('Expected a finite non-negative animation interval');
@@ -129,7 +134,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
           if(context.mode==='work') {
             const w=context.work;w.clock+=dt;w.groupClock+=dt;w.resumeClock=Math.min(RESUME_DURATION,w.resumeClock+dt);
             if(w.group==='deep'){w.tailSpeed+=((w.stage==='tools'?1.2:.8)-w.tailSpeed)*(1-Math.exp(-dt/.45));w.tailPhase+=dt*w.tailSpeed;}
-          } else if(!lifePerformance?.advance(dt))context.life.clock+=dt;
+          } else if(context.mode==='life'&&!lifePerformance?.advance(dt))context.life.clock+=dt;
         }
         engine.advance(dt);
         if(context.mode==='work'&&!context.pending.length)engine.actor.cues.tailClock=context.work.tailPhase;

@@ -1,3 +1,4 @@
+import { supportsCharacterState, projectCharacterState } from './character-state.js';
 import { advanceRenderCadence } from './render-cadence.js';
 import { createDiagnosticCounters } from './diagnostics.js';
 import { createCompanionStroke } from './companion-touch.js';
@@ -358,6 +359,10 @@ function updateMood() {
     actionRestorePending = false;
   }
   const controls = { roam: 'off', dialogOpen: dialogOpen || !interaction.hidden, thinking: mood === 'thinking', thoughtShown: false, expression: { thinking: 'thinking', talking: 'determined', working: 'determined', waiting: 'worried', error: 'sad' }[mood] ?? (npc.reason === 'none' && !userInputOccupied() && activityWords.includes(npc.emotion) ? npc.emotion : null), listening: !chat.hidden && !active };
+  if (supportsCharacterState(activeView)) {
+    const state = projectCharacterState(snapshot, notificationState, { visible: !document.hidden, calm: reduced });
+    if (state) controls.companionState = state;
+  }
   const key = JSON.stringify(controls);
   if (key !== appliedControls) { body.set(controls); appliedControls = key; }
   $('toggle-roam').setAttribute('aria-checked', String(options.roam));

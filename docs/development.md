@@ -124,6 +124,8 @@ bash scripts/run-resource-observation.sh \
 
 VM 需图形依赖、Xvfb、Openbox、Python 3、procps 及固定工具链。观察器核对包内采样脚本，使用独立 profile，设置 `roam=true`、`companionship=interactive`、`diagnostics=true`；开始时用 CDP 证明渲染并设置随机源，周期采样交给同一独立采样器。默认预热 20 秒、采样至少 7200 秒、每 5 秒一次，首末各 1800 秒时间加权 RSS 增量 ≤20 MiB；NPC 覆盖、邀请落盘、存档与队列边界另行检查。`--seconds 60 --window 20` 仅做短检。
 
+原生角色接入使用[macOS 隔离测试机](macos-vm-testing.md)，源码与产物身份按该页记录。
+
 ## 运行时与隔离
 
 高频事件只发送动画元数据，完整结果在结果或已读状态变化时传输。角色脚本运行于 `sandbox="allow-scripts"` 的 opaque-origin iframe，仅通过有限协议交互；没有 Node、Electron 桥、外部网络或顶层导航权限。本地资源服务只监听 `127.0.0.1`，原生实例使用随机路径，写入校验可信页面来源。
