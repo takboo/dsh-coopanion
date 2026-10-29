@@ -38,14 +38,15 @@ try {
           const pet = document.getElementById('pet');
           resolve({ visibility: document.visibilityState, width: innerWidth, height: innerHeight, dpr: devicePixelRatio, animationFrames: ticks,
             pet: pet ? { hidden: pet.hidden, mode: pet.dataset.mode ?? null, character: pet.dataset.character ?? null, hostReady: pet.dataset.hostReady ?? null } : null,
-            canvases: [...document.querySelectorAll('canvas')].map(canvas => ({ width: canvas.width, height: canvas.height })), frames: document.querySelectorAll('iframe').length });
+            canvases: [...document.querySelectorAll('canvas')].map(canvas => ({ width: canvas.width, height: canvas.height })), frames: document.querySelectorAll('iframe').length,
+            status: document.getElementById('character-status')?.textContent?.replace(/https?:\/\/[^\s"'<>]+/g, '[url]').slice(0, 500) });
         }, 1000);
       })));
     }
     report.samples.push({ label, frames });
   };
   const visible = async timeout => { try { await page.waitForSelector('#pet[data-host-ready=true][data-mode]', { timeout }); return true; } catch { return false; } };
-  report.inactiveReady = await visible(30000);
+  report.inactiveReady = await visible(10000);
   await observe('inactive');
   if (!report.inactiveReady) await page.screenshot({ path: 'artifacts/native-startup-debug-before.png' });
   await page.bringToFront();
