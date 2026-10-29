@@ -78,6 +78,8 @@ CI 的受控冷启动检查先启用 `DSH_LIFECYCLE_TRACE=1`，在退出消息�
 
 同一诊断入口通过 `uncaughtExceptionMonitor` 观察默认异常路径，只记录分类、错误码与源码文件名／函数帧，不拦截异常或关闭原生错误框；出现异常也判为失败。Windows 手动几何探针先等待首个本地页面加载完成，再刷新以注入受控时钟，避免窗口刚创建便取消尚未完成的首次导航。
 
+CI 额外用 `DSH_LIFECYCLE_LATE_DISPLAY=1` 在原生窗口关闭后强制派发显示器更新，复现排队回调的寿命竞态；同样要求正常退出、无未处理异常，报告单独写入 `lifecycle-startup-late-display.json`。这是受控事件验证，不改变系统显示设置。
+
 ## 资源与诊断
 
 先按[使用指南](usage.md#自主陪伴)核对开关，再按[诊断契约](diagnostics-contract.md)解释时长、缺口和报告状态。独立采样器 `scripts/sample-companion.mjs` 使用本地诊断接口及 OS 指标，不操作窗口、不读取聊天正文、不启动模型。

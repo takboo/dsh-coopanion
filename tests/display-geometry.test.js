@@ -39,7 +39,7 @@ it('native controller replays switching, taskbars, unplugging and DPI/rotation c
   let layout = structuredClone(irregular), rectangle = {...layout[0].workArea}, cursor = {x:500,y:-500};
   const messages = [], moves = [];
   const screen = { getPrimaryDisplay: () => layout[0], getAllDisplays: () => layout, getCursorScreenPoint: () => cursor };
-  const win = { getBounds: () => rectangle, getContentBounds: () => ({...rectangle}), setBounds(b) { rectangle = {...b}; moves.push(b); } };
+  const win = { isDestroyed: () => false, getBounds: () => rectangle, getContentBounds: () => ({...rectangle}), setBounds(b) { rectangle = {...b}; moves.push(b); } };
   const c = createDisplayController({screen, win, send: m => messages.push(m)});
   c.refresh(); expect(c.state.displayId).toBe(1);
   c.moveToCursor(); expect(c.state.displayId).toBe(3); expect(rectangle).toEqual(layout[2].workArea);
@@ -60,7 +60,7 @@ it('re-reads settled content bounds when replaying geometry after an asynchronou
   const messages = [];
   const controller = createDisplayController({
     screen: { getPrimaryDisplay: () => target, getAllDisplays: () => [target] },
-    win: { getBounds: () => bounds, getContentBounds: () => ({ ...content }), setBounds: value => { bounds = { ...value }; } },
+    win: { isDestroyed: () => false, getBounds: () => bounds, getContentBounds: () => ({ ...content }), setBounds: value => { bounds = { ...value }; } },
     send: value => messages.push(value),
   });
   controller.refresh();
@@ -72,4 +72,20 @@ it('re-reads settled content bounds when replaying geometry after an asynchronou
   expect(messages.at(-1).revision).toBeGreaterThan(revision);
   controller.publish();
   expect(messages.at(-1).revision).toBe(controller.state.revision);
+});
+
+it('ignores queued display work after its native window is destroyed', () => {
+  const target = irregular[0], messages = [];
+  let destroyed = false, calls = 0;
+  const alive = () => { if (destroyed) throw new TypeError('Object has been destroyed'); calls++; };
+  const controller = createDisplayController({
+    screen: { getPrimaryDisplay: () => target, getAllDisplays: () => { alive(); return [target]; }, getCursorScreenPoint: () => { alive(); return { x: 0, y: 0 }; } },
+    win: { isDestroyed: () => destroyed, getBounds: () => { alive(); return target.workArea; }, getContentBounds: () => { alive(); return target.workArea; } },
+    send: value => messages.push(value),
+  });
+  controller.refresh(); const before = { calls, messages: messages.length };
+  destroyed = true;
+  expect(() => { controller.refresh(); controller.publish(); controller.moveToCursor(); }).not.toThrow();
+  expect(controller.cursor()).toBeUndefined();
+  expect({ calls, messages: messages.length }).toEqual(before);
 });

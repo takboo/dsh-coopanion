@@ -14,7 +14,8 @@ const expectedRealState = process.env.DSH_LIFECYCLE_EXPECT_STATE ?? 'locked';
 assert.ok(['locked', 'unlocked'].includes(expectedRealState));
 const records = [], shutdowns = [];
 const traceShutdown = !real && process.env.DSH_LIFECYCLE_TRACE === '1';
-const reportPath = real ? 'artifacts/lifecycle-startup-real.json' : 'artifacts/lifecycle-startup-native.json';
+const lateDisplay = !real && process.env.DSH_LIFECYCLE_LATE_DISPLAY === '1';
+const reportPath = real ? 'artifacts/lifecycle-startup-real.json' : lateDisplay ? 'artifacts/lifecycle-startup-late-display.json' : 'artifacts/lifecycle-startup-native.json';
 for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-locked', 'system']) {
   console.log(`Lifecycle startup case: ${initialState}`);
   const root = await mkdtemp(join(tmpdir(), 'dsh-initial-lock-'));
@@ -22,12 +23,13 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
   delete env.ELECTRON_RUN_AS_NODE;
   if (real) { delete env.DSH_PET_TEST_NO_SANDBOX; delete env.DSH_PET_TEST_DEBUG_PORT; delete env.DSH_PET_TEST_INITIAL_LOCK_STATE; }
   else { env.DSH_PET_TEST_NO_SANDBOX = '1'; env.DSH_PET_TEST_DEBUG_PORT = '0'; env.DSH_PET_TEST_INITIAL_LOCK_STATE = initialState === 'restore-locked' ? 'unlocked' : initialState; }
-  const child = spawn(require('electron'), [...(traceShutdown ? ['--require', resolve('tests/fixtures/lifecycle-shutdown-trace.cjs')] : []), ...(real ? [] : ['--no-sandbox']), join(packageRoot, 'desktop/main.cjs')], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  const child = spawn(require('electron'), [...(traceShutdown ? ['--require', resolve('tests/fixtures/lifecycle-shutdown-trace.cjs')] : []), ...(lateDisplay ? ['--require', resolve('tests/fixtures/late-display-quit.cjs')] : []), ...(real ? [] : ['--no-sandbox']), join(packageRoot, 'desktop/main.cjs')], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   const exited = once(child, 'exit'); let stderr = '';
-  let nativeReady = false, originalError, shutdownError;
+  let nativeReady = false, lateDisplayEvents = 0, originalError, shutdownError;
   const phases = [];
   child.on('message', message => {
     if (message?.type === 'ready') nativeReady = true;
+    if (message?.type === 'late-display-injected') lateDisplayEvents++;
     if (message?.type === 'lifecycle-shutdown-trace' && phases.length < 64) phases.push(message);
   });
   child.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-4000); });
@@ -84,10 +86,11 @@ for (const initialState of real ? ['system'] : ['locked', 'unknown', 'restore-lo
       const [code, signal] = await exited;
       assert.equal(signal, null, stderr); assert.equal(code, 0, stderr);
       assert.ok(!stderr.includes('Lifecycle exception: '), stderr);
+      if (lateDisplay) assert.ok(lateDisplayEvents > 0, 'The late native display event must actually fire');
     } catch (error) { shutdownError = error;
     } finally {
       clearTimeout(deadline); clearTimeout(sampling); await sample;
-      shutdowns.push({ initialState, nativeReady, code: child.exitCode, signal: child.signalCode, forced, elapsedMs: Math.round((exitedAt ?? performance.now()) - began), phases,
+      shutdowns.push({ initialState, nativeReady, lateDisplayEvents, code: child.exitCode, signal: child.signalCode, forced, elapsedMs: Math.round((exitedAt ?? performance.now()) - began), phases,
         ...(sampleFile ? { sampleFile, ...(sampleError ? { sampleError } : {}) } : {}),
         originalError: originalError ? String(originalError) : null, shutdownError: shutdownError ? String(shutdownError) : null });
       await mkdir('artifacts', { recursive: true });

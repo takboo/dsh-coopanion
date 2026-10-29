@@ -269,7 +269,10 @@ app.whenReady().then(async () => {
   const icon = nativeImage.createFromPath(join(__dirname, 'icon.png')).resize({ height: 24 });
   tray = new Tray(icon); syncTray();
   tray.on('click', show);
-  for (const event of ['display-added', 'display-removed', 'display-metrics-changed']) screen.on(event, () => { displays.refresh(); lastTrayKey = undefined; syncTray(); });
+  const displayEvents = ['display-added', 'display-removed', 'display-metrics-changed'];
+  const displayChanged = () => { if (!win.isDestroyed()) { displays.refresh(); lastTrayKey = undefined; syncTray(); } };
+  for (const event of displayEvents) screen.on(event, displayChanged);
+  win.once('closed', () => { for (const event of displayEvents) screen.off(event, displayChanged); });
   process.send?.({ type: 'ready' });
 }).catch(error => {
   console.error(error);

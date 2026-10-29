@@ -3,7 +3,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { once } from 'node:events';
-import { request } from 'node:http';
+import { request, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createConnection } from 'node:net';
 import { zipSync, strToU8, unzipSync, strFromU8 } from 'fflate';
 import { CharacterStore, knownScheme, PACK_LIMIT } from '../src/character-store.ts';
@@ -76,7 +76,7 @@ it('serves accepted pipelined requests after the listening socket closes', async
   const secondRequest = new Promise<void>(resolve => { second = resolve; });
   store.list = async () => { entered(); await blocked; return listing; };
   const server = createPetServer({ webRoot: resolve('web'), store });
-  const handler = server.listeners('request')[0]!;
+  const handler = server.listeners('request')[0] as (req: IncomingMessage, res: ServerResponse) => Promise<void>;
   const escaped: unknown[] = [];
   let requests = 0;
   // Observe escaped async listener errors without letting the test runner's
