@@ -1,0 +1,35 @@
+name: Browser input diagnostic
+on: pull_request
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [shell, full]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-toolchain
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npx playwright-core install chromium
+      - name: Compare unchanged real input tests
+        env:
+          DSH_INPUT_PROBE_BROWSER: ${{ matrix.browser }}
+        run: |
+          mkdir -p artifacts
+          node --import ./tests/fixtures/browser-input-probe.mjs --test --test-name-pattern='real strokes|manual interaction survives' tests/companionship-ui.mjs 2>&1 | tee "artifacts/browser-input-$DSH_INPUT_PROBE_BROWSER.log"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: browser-input-${{ matrix.browser }}
+          path: artifacts/browser-input-*
+          retention-days: 7
