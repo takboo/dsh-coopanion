@@ -23,4 +23,4 @@
 
 同一固定 tgz 用于隔离 CLI 安装与实际 Desktop 更新，角色保持既有 ZIP。完整插件包摘要、运行时 productDigest、源码摘要及安装回执关联保存在本机独立目录 `artifacts/little-deep-session-source-20261030-okbx77tj/verification.json`；该忽略目录不保证在其他 checkout 存在。源码导出不带 .git，构建 commit／dirty 为 null，最终提交另绑定于验证记录。私密配置备份与原始安装日志不进入仓库。
 
-真实 provider 驱动已补上“旧聊天空闲”的前置场景，但本轮没有重新调用 provider；本轮指定会话核对是持久元数据回放。用户对修复后实际新 session 的体验仍须单独确认。未发布或推送。
+真实 provider 驱动已补上“旧聊天空闲”的前置场景，但本次修复验证没有重新调用 provider；本次指定旧会话核对是持久元数据回放。随后用户新建真实 session 并确认工作主线及请求续接正常，另见[2026-10-30 实机体验记录](little-deep-real-session-acceptance.md)，不改写本次回放的证据范围。未发布或推送。
