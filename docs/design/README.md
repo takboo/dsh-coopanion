@@ -1,6 +1,6 @@
 # 小湛当前设计与接手
 
-更新于 2026-10-29。本分支 `codex/little-deep-api2` 在已确认的 `codex/little-deep-livelings` 表演基线上制作实验性 API 2 接入；状态传递、角色包及虚拟机验证按下文记录。现有大肥鱼及旧角色继续兼容。`codex/aliveness-foundation` 是另一条未合并路线。
+更新于 2026-10-30。本分支 `codex/little-deep-api2` 在已确认的 `codex/little-deep-livelings` 表演基线上制作实验性 API 2 接入；状态传递、角色包及虚拟机验证按下文记录。现有大肥鱼及旧角色继续兼容。`codex/aliveness-foundation` 是另一条未合并路线。
 
 ## 当前基线与下一步
 
@@ -9,6 +9,8 @@
 用户已确认 `?`、`!` 的出场、结算退场与基本交互，并于 2026-10-29 对工作／生活样片反馈“整体观感可以”。这些作为当前表演基线；连续观看能区分工作与生活，汇报与安静生活的个别静态姿态仍接近。
 
 **当前成果：已修复所有角色的统一投掷入口，以及小湛的掉落、工作触摸和朝向，并提供工具执行及角色 UI 皮肤候选。** [0.0.2 分镜](storyboards/little-deep-api2-feedback-v1.md)与[本轮验证](little-deep-feedback-validation.md)为当前入口，新观感待用户确认。首轮[API 2 记录](little-deep-api2-validation.md)保留原事件链范围，不能用来结算本轮体验。
+
+最新实机反馈发现新 session 的工作表演仍绑定旧的聊天目标。当前修复将表演来源与发送目标分开，选中会话空闲时自动呈现正在工作的会话；0.0.2 角色包保持原字节。复现、验证及安装范围见[新会话工作状态修复](little-deep-session-source-validation.md)。此前手动选中测试会话的记录不覆盖这条普通使用路径。
 
 **生活续做候选：[生活交互分镜](storyboards/little-deep-life-touch-v0.md)与[16 秒连续样片](art-workflow/whale-little-deep-v3/life-touch-study.html)。** 已制作靠近、轻触、持续抚摸与松手余韵，支持手动体验及请求／工作接管，尚待观看反馈。生活交互反馈及藏身／隐身分镜安排在本轮接入之后，其触发和表现待后续确认。已通过的工作／请求基线保留；异常／停止、目标完成和产品接入分别推进。
 
@@ -20,7 +22,7 @@
 | 真实会话结构、双时钟、请求身份 | [会话观察说明](session-observation.md)，机制参照，使用旧表面动作 |
 | 生活交互 | [新候选](storyboards/little-deep-life-touch-v0.md)，分镜与连续样片已制作，尚待观看 |
 | 藏身／隐身、异常与停止 | 待分镜；原动作库中的实现不等于新场景已确认 |
-| 宿主状态扩展、API 2、原生窗口 | 0.0.2 候选的浏览器／原生各 12 场景、实际安装及完整 UI 回归通过；见[验证范围](little-deep-feedback-validation.md)，待用户体验 |
+| 宿主状态扩展、API 2、原生窗口 | 最新新会话来源修复见[验证范围](little-deep-session-source-validation.md)；此前 0.0.2 交互与 UI 的验证见[反馈记录](little-deep-feedback-validation.md)，用户体验分别确认 |
 | NPC 自主策略 | 首轮未接入；生活表演不自动启用日常调度 |
 
 ## 固定造型

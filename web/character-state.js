@@ -31,14 +31,23 @@ export function readCharacterState(value) {
   return {protocol:1,sessionId:value.sessionId,work,pending,visible:value.visible,calm:value.calm,generation:value.generation};
 }
 
-/** Full selected-session snapshot, independent of notification-card visibility and transient reactions. */
-export function projectCharacterState(snapshot,notifications,{visible=true,calm=false}={}) {
-  const sessionId=typeof snapshot?.sessionId==='string'?snapshot.sessionId:null;
-  const selected=snapshot?.sessions?.find(s=>s.id===sessionId);
-  const activity=selected?selected.activity:snapshot?.activity;
+/** Choose a presentation source without changing the Host-owned chat target. */
+export function projectCharacterState(snapshot,notifications,{visible=true,calm=false,previousSessionId=null}={}) {
+  const sessions=snapshot?.sessions??[],focused=sessions.find(s=>s.id===snapshot?.sessionId);
+  const previous=sessions.find(s=>s.id===previousSessionId);
+  const interactions=(notifications?.interactions??[]).filter(p=>p.state!=='settled');
+  const requested=new Set(interactions.map(p=>p.sessionId));
+  const pending=s=>s&&requested.has(s.id),active=s=>s?.active===true;
+  // Explicitly focused work/requests win. Otherwise keep one live presentation
+  // source stable, while letting a pending request take attention from background work.
+  const source=(pending(focused)||active(focused)?focused:null)??
+    (pending(previous)?previous:null)??sessions.find(pending)??
+    (active(previous)?previous:null)??sessions.find(active)??focused;
+  const sessionId=source?.id??(typeof snapshot?.sessionId==='string'?snapshot.sessionId:null);
+  const activity=source?source.activity:snapshot?.activity;
   const runtime=notifications?.runtime;
-  const pending=(notifications?.interactions??[]).filter(p=>p.sessionId===sessionId&&p.state!=='settled').map(({id,sessionId,kind,state})=>({id,sessionId,kind,state}));
+  const requests=interactions.filter(p=>p.sessionId===sessionId).map(({id,sessionId,kind,state})=>({id,sessionId,kind,state}));
   return readCharacterState({protocol:1,sessionId,
-    work:activity?{...activity,active:selected?.active??snapshot.active??false,outcome:activity.outcome??null}:null,pending,
+    work:activity?{...activity,active:source?.active??snapshot.active??false,outcome:activity.outcome??null}:null,pending:requests,
     visible:Boolean(visible&&(!runtime||(runtime.phase==='running'&&runtime.visible&&!runtime.suspended))),calm:Boolean(calm),generation:runtime?.generation??0});
 }

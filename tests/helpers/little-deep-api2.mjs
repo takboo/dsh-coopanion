@@ -63,6 +63,21 @@ export async function exerciseLittleDeep({page,send,zip,artifacts,native=false})
   assert.equal(await page.locator('#chat').evaluate(n=>getComputedStyle(n).borderTopLeftRadius),'18px');
   await page.screenshot({path:join(artifacts,native?'native-character-ui.png':'browser-character-ui.png')});await page.locator('#chat-close').click();cases.declarativeCharacterUi=true;
   active=false;await facts();await frame().locator('canvas[data-phase="idle"]').waitFor();
+  // Ordinary use: chat stays on an older idle conversation, then another session starts work.
+  const idle=snapshot(),backgroundId='api2-new-work-full';
+  const background={...idle.sessions[0],id:backgroundId,label:'新工作会话',mood:'thinking',active:true,
+    activity:{id:JSON.stringify([backgroundId,1]),stage:'focus',tools:0,seq:1,atMs:2000}};
+  const backgroundFacts=()=>send({type:'snapshot',snapshot:{...idle,sessions:[idle.sessions[0],background]}});
+  await backgroundFacts();await frame().locator('canvas[data-shape="tail"]').waitFor();
+  assert.equal(await page.locator('#pet').getAttribute('data-presentation-session'),backgroundId);
+  assert.equal(await page.locator('#conversation-list [aria-selected="true"]').getAttribute('data-session-id'),sessionId);
+  pending=[{...request('question','background-request'),id:JSON.stringify([backgroundId,'question','background-request']),sessionId:backgroundId}];await state();
+  await frame().locator('canvas[data-symbol="question"][data-symbol-progress="1"]').waitFor();
+  const entries=await canvas().getAttribute('data-work-entries');pending=[];await state();await frame().locator('canvas[data-shape="tail"][data-symbol=""]').waitFor();
+  assert.equal(await canvas().getAttribute('data-work-entries'),entries);
+  await page.screenshot({path:join(artifacts,native?'native-new-session-work.png':'browser-new-session-work.png')});
+  background.active=false;await backgroundFacts();await frame().locator('canvas[data-phase="idle"]').waitFor();
+  cases.newSessionWorksWithoutChangingChat=true;
   sessionId='api2-other-full';await facts();await state();assert.equal(await canvas().getAttribute('data-pending'),'0');cases.focusSwitchClearsOldRequest=true;
   const observed=await orders.evaluate(()=>window.bodyOrders.filter(o=>o.t==='set'&&o.state.companionState).map(o=>o.state.companionState));
   assert(observed.length>0);assert(!JSON.stringify(observed).includes('受控请求'));assert(!observed.some(v=>'text' in v||'preview' in v||'credentials' in v));cases.metadataOnly=true;

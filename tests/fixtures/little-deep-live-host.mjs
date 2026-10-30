@@ -33,11 +33,13 @@ export async function apply(ctx) {
   const handle=async message=>{
     try{
       if(message?.type==='probe-prepare'){
+        const previousId='little-deep-previous-chat';
+        await ctx.sessionController.create({sessionId:previousId,cwd:process.env.COOPANION_PROBE_CWD});
         owned=await ctx.agents.create({sessionId,meta:{cwd:process.env.COOPANION_PROBE_CWD},agentOptions:{provider:'opencode-go',model:'deepseek-v4.1-flash'}});
         await ctx.sessionController.selectModel({sessionId,provider:'opencode-go',model:'deepseek-v4.1-flash'});
         const askUser=await import(pathToFileURL(join(process.env.COOPANION_TEST_MODULES,'@deepseek-ai/dsh-tool-ask-user/lib/index.js')).href);
         await owned.agent.ctx.plugin(askUser,{mode:'timed',timeout:-1}).await();
-        owned.agent.ctx.tools.presentAs('native');ctx.approval.setPolicy(owned.agent,'ask');notify({type:'probe-prepared',sessionId});
+        owned.agent.ctx.tools.presentAs('native');ctx.approval.setPolicy(owned.agent,'ask');notify({type:'probe-prepared',sessionId,previousId});
       }else if(message?.type==='probe-run'){
         const text='这是已授权的隔离角色测试。只使用 companion_probe_read、companion_probe_approval 和 ask_user_question 三种工具；不创建目标或待办，不使用其他工具，不访问网络或其他文件。严格依次完成：1. 独立调用 companion_probe_read 8 次，index 从1到8，不要提前提问，其间不输出过程文字；2. 简短公开说明进度，再调用 ask_user_question 问是否继续，必须等待答复；3. 收到继续后再独立调用 companion_probe_read 6 次，index 从9到14；4. 调用 companion_probe_approval 一次，等待真实决定，被拒绝就尊重拒绝并继续；5. 再调用 companion_probe_read 4次，index从15到18；6. 调用 ask_user_question 问是否结束，必须等待答复；7. 收到结束后用一句话结束本轮。每次问题仅问一个，并使用稳定的不同问题id。';
         const receipt=await ctx.sessionController.prompt({sessionId,requestId:'little-deep-real-prompt-1',mode:'queue',content:[{type:'text',text}],clientTimeZone:'Asia/Shanghai'},new AbortController().signal);

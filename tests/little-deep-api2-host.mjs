@@ -42,12 +42,16 @@ try{
   assert(browser,'Native debug endpoint was not ready');page=browser.contexts()[0].pages()[0];page.setDefaultTimeout(15000);
   await page.waitForSelector('#pet[data-character="little-deep-experimental"][data-mode]');const frame=()=>page.locator('#body-layer iframe').contentFrame(),canvas=()=>frame().locator('canvas[data-state-protocol="1"]');
   host.send({type:'probe-prepare'});const prepared=await waitMessage('probe-prepared');
-  await page.evaluate(id=>window.dshPetBridge.action({type:'select',sessionId:id}),prepared.sessionId);
+  // Keep chat on the idle conversation. The newly started agent must still drive the character.
+  await page.evaluate(id=>window.dshPetBridge.action({type:'select',sessionId:id}),prepared.previousId);
   await canvas().waitFor();
   const sandbox=await frame().locator('body').evaluate(()=>({node:typeof process,bridge:typeof window.dshPetBridge}));assert.deepEqual(sandbox,{node:'undefined',bridge:'undefined'});report.cases.normalSandbox=true;
   host.send({type:'probe-run'});await waitMessage('probe-started');
   const settledWork=()=>frame().locator('canvas[data-shape="tail"][data-symbol=""][data-phase="focus"],canvas[data-shape="rest"][data-symbol=""][data-phase="execute"],canvas[data-shape="rest"][data-symbol=""][data-phase="review"]');
   await settledWork().waitFor({timeout:45000});report.cases.realWorkSegment=true;
+  assert.equal(await page.locator('#pet').getAttribute('data-presentation-session'),prepared.sessionId);
+  assert.equal(await page.locator('#conversation-list [aria-selected="true"]').getAttribute('data-session-id'),prepared.previousId);
+  report.cases.newWorkDoesNotRequireChangingChat=true;
   assert.equal(await canvas().getAttribute('data-work-entries'),'1');
   await page.screenshot({path:join(output,'real-work.png')});
   for(let i=0;i<2;i++){

@@ -55,6 +55,7 @@ let stageWidth = innerWidth, pressedPointerId;
 const composer = new ChatComposer();
 const sessionAttention = new SessionAttention();
 let attentionSnapshot = snapshot;
+let presentedSessionId = null;
 const chatTimers = new Map();
 let draftSessionId;
 let pendingSessionId;
@@ -361,8 +362,8 @@ function updateMood() {
   }
   const controls = { roam: 'off', dialogOpen: dialogOpen || !interaction.hidden, thinking: mood === 'thinking', thoughtShown: false, expression: { thinking: 'thinking', talking: 'determined', working: 'determined', waiting: 'worried', error: 'sad' }[mood] ?? (npc.reason === 'none' && !userInputOccupied() && activityWords.includes(npc.emotion) ? npc.emotion : null), listening: !chat.hidden && !active };
   if (supportsCharacterState(activeView)) {
-    const state = projectCharacterState(snapshot, notificationState, { visible: !document.hidden, calm: reduced });
-    if (state) controls.companionState = state;
+    const state = projectCharacterState(attentionSnapshot, notificationState, { visible: !document.hidden, calm: reduced, previousSessionId: presentedSessionId });
+    if (state) { controls.companionState = state; presentedSessionId = state.sessionId; pet.dataset.presentationSession = state.sessionId ?? ''; }
   }
   const key = JSON.stringify(controls);
   if (key !== appliedControls) { body.set(controls); appliedControls = key; }
@@ -946,6 +947,7 @@ async function setCharacter(view, scheme = '') {
   npc = initialNpc(++npcGeneration); npcEvent = undefined; npcRelocated = false; npcGeometry = undefined; npcGroundLayout = undefined; npcSeated = false;
   companionStroke.reset(); companion = initialCompanionship(); companionAction = companionManualId = undefined; companionInvitation.hidden = companionFeedback.hidden = true;
   body?.dispose(); body = next; body.set({ bounds: bounds() }); activeView = view; activeScheme = knownScheme(view, scheme); activeName = nameIn(view.name);
+  presentedSessionId = null; delete pet.dataset.presentationSession;
   actionRestorePending = false; activityWords = view.vocab.map(w => w.id).filter(w => next.words?.includes(w)); hourCheckedAt = -Infinity;
   // A new body has not reported its geometry yet. Retire the previous body's
   // input region until position() receives the new body's first frame.
