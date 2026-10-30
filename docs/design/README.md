@@ -6,7 +6,7 @@
 
 **[打开回复结束／目标完成连续样片](art-workflow/whale-little-deep-v3/completion-study.html)**，配套[分镜 v1](storyboards/little-deep-completion-v1.md)。同机位双画面对照普通回复结束与真正目标完成，可插入新工作、?、!，并选择喷水前、庆祝中、收尾时打断。
 
-本轮是独立浏览器候选，尚待用户观看；没有更新实机插件或角色包。重点看区分是否清楚、庆祝是否适度、打断及退出是否自然。观看后再决定角色包接入。
+本轮是独立浏览器候选。用户反馈初版水花不够显著，当前已参考 Livelings Celebrate 改为喷柱顶起、扇形展开及两侧落散，待复看；没有更新实机插件或角色包。重点看区分是否清楚、庆祝是否适度、打断及退出是否自然。观看后再决定角色包接入。
 
 ## 已通过的实机基线
 
@@ -39,6 +39,7 @@
 | 当前实现 | 入口 |
 | --- | --- |
 | 工作／生活段落 | [segment-performance.js](art-workflow/whale-little-deep-v3/segment-performance.js)；实机使用 readable 策略 |
+| 喷水表现 | [completion-spout.js](art-workflow/whale-little-deep-v3/completion-spout.js)，局部喷柱与可取消扇形水花 |
 | 完成消费、收势与取消 | [completion-performance.js](art-workflow/whale-little-deep-v3/completion-performance.js) |
 | 完成样片与同源关键帧 | [completion-film.js](art-workflow/whale-little-deep-v3/completion-film.js)、[completion-study.js](art-workflow/whale-little-deep-v3/completion-study.js) |
 | 请求身体、完整身份与笔画 | [request-performance.js](art-workflow/whale-little-deep-v3/request-performance.js)、[storyboard-performance.js](art-workflow/whale-little-deep-v3/storyboard-performance.js)、[storyboard-symbol.js](art-workflow/whale-little-deep-v3/storyboard-symbol.js) |

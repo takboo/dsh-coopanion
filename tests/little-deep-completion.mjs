@@ -3,6 +3,7 @@ import test from 'node:test';
 globalThis.HTMLElement??=class {};
 const {createCompletionPerformance}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-performance.js');
 const {createCompletionFilm,COMPLETION_ROUTES}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-film.js');
+const {completionSpoutPose}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-spout.js');
 const outcome={category:'completed',goal:{id:'full-goal/id',revision:2,round:1}};
 const create=()=>createCompletionPerformance({sessionId:'s'});
 const result=(out=outcome)=>({active:false,outcome:out});
@@ -14,7 +15,8 @@ test('ordinary replies and intermediate goal rounds close quietly; complete requ
   assert.throws(()=>create().sync(result({category:'completed',goal:{id:'',revision:1}})));
 });
 test('same goal version plays once; even round changes do not replay, while a new revision can',()=>{
-  const p=create(),actor=p.actor;p.sync(result());p.advance(.9);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,8);
+  const p=create(),actor=p.actor;p.sync(result());p.advance(.9);assert.equal(p.view.spouts,1);const drops=p.actor.particles.filter(x=>x.kind==='drop');
+  assert(drops.length>=20);assert(drops.filter(x=>x.size>=.065).length>=12);assert(Math.max(...drops.map(x=>x.x))-Math.min(...drops.map(x=>x.x))>.6);
   p.sync(result(structuredClone(outcome)));p.advance(4);p.sync(result({...outcome,goal:{...outcome.goal,round:2}}));p.advance(4);assert.equal(p.view.spouts,1);assert.equal(p.view.mode,'life');assert.equal(p.actor,actor);
   p.sync(result({...outcome,goal:{...outcome.goal,revision:3}}));p.advance(.9);assert.equal(p.view.spouts,2);
 });
@@ -39,7 +41,20 @@ test('pending set owns the body until all exact identities settle, including a l
 test('hide freezes the finish and burst clock; palette changes preserve pose; calm emits only two drops',()=>{
   const p=create();p.setCalm(true);p.sync(result());p.advance(.5);const before=pose(p.actor),clock=p.view.finish.elapsed;
   p.setVisible(false);p.advance(100);assert.deepEqual(pose(p.actor),before);assert.equal(p.view.finish.elapsed,clock);
-  p.setPalette('night');assert.deepEqual(pose(p.actor),before);p.setVisible(true);p.advance(.3);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,2);
+  p.setPalette('night');assert.deepEqual(pose(p.actor),before);p.setVisible(true);p.advance(.4);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,2);
+});
+test('a request between pressure launch and the fan cancels unplayed droplets and freezes the fading jet geometry',()=>{
+  const p=create();p.sync(result());p.advance(.72);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.length,0);
+  const before=completionSpoutPose(p.view.spout),anchor=p.view.spout.anchor;p.sync({pending:[pending('approval')]});p.advance(.08);
+  const after=completionSpoutPose(p.view.spout);assert.equal(after.height,before.height);assert(after.opacity<before.opacity);assert.deepEqual(p.view.spout.anchor,anchor);
+  p.advance(2);assert.equal(p.view.spout,null);assert.equal(p.actor.particles.length,0);assert.equal(p.view.symbol.kind,'approval');
+});
+test('water keeps a readable spread, falls around the face, and freezes with the animation clock',()=>{
+  const p=create();p.sync(result());p.advance(.95);const clock=p.view.spout.age,particles=p.actor.particles.map(x=>[x.x,x.y,x.age]);
+  p.setVisible(false);p.advance(50);assert.equal(p.view.spout.age,clock);assert.deepEqual(p.actor.particles.map(x=>[x.x,x.y,x.age]),particles);
+  p.setVisible(true);p.advance(.7);const big=p.actor.particles.filter(x=>x.size>=.065);assert(big.length>0);
+  assert(big.every(x=>Math.abs(x.x-p.actor.bodyCenter().x)>.8),'large drops should fall to the sides instead of covering the face');
+  p.advance(4);assert.equal(p.view.spout,null);assert(!p.actor.particles.some(x=>x.kind==='drop'));
 });
 test('a request also cancels an unplayed life bubble; exit starts a fresh quiet plan',()=>{
   const p=create();p.sync(result({category:'reply'}));p.advance(13.6);assert(p.view.life.clock>12.5);assert(!p.actor.particles.some(x=>x.kind==='bubble'));

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Storyboard-only consumption of already-classified Host outcomes. No success inference.
 import {createSegmentPerformance} from './segment-performance.js';
+import {createCompletionSpout,advanceCompletionSpout,cutCompletionSpout} from './completion-spout.js';
 const clamp=n=>Math.max(0,Math.min(1,n)),smooth=n=>{const t=clamp(n);return t*t*(3-2*t);};
 export const COMPLETION_TIMING=Object.freeze({prepare:.3,burst:.68,release:2.5,end:3.5,replyEnd:1});
 export function createCompletionPerformance({sessionId='completion-study',palette='deep',calm=false}={}) {
   let active=true,workId='work-1',stage='focus',pending=[],finish=null,visible=true;
-  let outcome=null,spouts=0,starts=0,cancellations=0;
+  let outcome=null,spouts=0,starts=0,cancellations=0,spout=null;
   const consumed=new Set();
   const restPerformance={
     advance(dt){if(finish)finish.elapsed+=dt;},
@@ -21,13 +22,12 @@ export function createCompletionPerformance({sessionId='completion-study',palett
         a.express({h:.95-.12*nod,topLid:.07});a.lookAt(-.4,-.05);
       }else{
         const u=t-COMPLETION_TIMING.prepare,open=smooth(u/.25)*(1-smooth((t-COMPLETION_TIMING.release)/(COMPLETION_TIMING.end-COMPLETION_TIMING.release)));
-        a.lean.target=-.16*Math.sin(u*3.1)*open*amp;a.hover.target=.13+.12*Math.sin(Math.PI*clamp(u/.9))*amp;
+        const launch=smooth((t-.49)/.19)*(1-smooth((t-1.05)/.65));
+        a.lean.target=-.16*Math.sin(u*3.1)*open*amp;a.hover.target=.13+.22*launch*amp;
         a.fx('fin').target=.1+.7*open*amp;a.fx('tail').target=Math.sin(u*5.3)*.18*open*amp;
-        a.fx('ripple').target=.22*open;a.express(t<1.9?'happy':'proud');a.lookAt(-.55,-.3);
+        a.fx('ripple').target=.22*open;a.express(t<COMPLETION_TIMING.burst?'excited':t<1.9?'happy':'proud');a.lookAt(-.55,-.3);
         if(t>=COMPLETION_TIMING.burst&&!finish.emitted){
-          finish.emitted=true;spouts++;const c=a.bodyCenter();
-          for(let i=0;i<(a.calm?2:8);i++)a.emit({kind:'drop',x:c.x+.17,y:c.y-.88,
-            vx:(a.rand()-.5)*1.2,vy:-1.7-a.rand(),ay:3.6,life:.9,size:.035+a.rand()*.025,color:a.palette.accent});
+          finish.emitted=true;spouts++;spout=createCompletionSpout(a);
         }
       }
       return true;
@@ -35,10 +35,10 @@ export function createCompletionPerformance({sessionId='completion-study',palett
   };
   const segment=createSegmentPerformance({sessionId,palette,calm,mode:'work',workStyle:'readable',restPerformance});
   function syncSegment(){segment.sync({sessionId,workId,stage,pending,mode:active?'work':finish?'rest':'life'});}
-  function cancel(){if(finish){cancellations++;finish=null;}}
+  function cancel(){if(finish){cancellations++;finish=null;cutCompletionSpout(spout);}}
   const api={
     actor:segment.actor,
-    get view(){return {...segment.view,outcome,finish:finish?{...finish}:null,spouts,starts,cancellations,consumed:consumed.size,
+    get view(){return {...segment.view,outcome,finish:finish?{...finish}:null,spout:spout?{...spout,anchor:{...spout.anchor}}:null,spouts,starts,cancellations,consumed:consumed.size,
       finishPhase:finish?finish.kind!=='completed'?'reply-settle':finish.elapsed<COMPLETION_TIMING.prepare?'gather':finish.elapsed<COMPLETION_TIMING.release?'celebrate':'release':null};},
     sync(value){
       const priorSession=sessionId;sessionId=value.sessionId??sessionId;
@@ -72,6 +72,7 @@ export function createCompletionPerformance({sessionId='completion-study',palett
       if(!Number.isFinite(seconds)||seconds<0)throw new Error('Expected a finite animation duration');
       if(!visible)return;
       for(let left=seconds;left>1e-9;){const dt=Math.min(left,1/120);left-=dt;segment.advanceAnimation(dt);
+        if(spout&&!advanceCompletionSpout(spout,segment.actor,dt))spout=null;
         if(finish&&finish.elapsed>=(finish.kind==='completed'?COMPLETION_TIMING.end:COMPLETION_TIMING.replyEnd)-1e-8){finish=null;syncSegment();}}
     },
     setVisible(value){visible=Boolean(value);segment.setVisible(visible);},

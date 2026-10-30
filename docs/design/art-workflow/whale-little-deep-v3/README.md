@@ -9,6 +9,7 @@
 | 范围 | 文件与入口 |
 | --- | --- |
 | 当前完成候选 | [completion-study.html](completion-study.html)，共用段落与同源关键帧，普通回复／真正完成及新工作、?、! 打断 |
+| 完成喷水 | [completion-spout.js](completion-spout.js) 提供水柱起势、扇形展开与落散；被打断后停止后续喷发，已出现的水花自然消散 |
 | 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
 | 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
 | 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |

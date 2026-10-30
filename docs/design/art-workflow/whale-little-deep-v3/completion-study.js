@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {renderActor} from '../vendor/livelings/workspace/livelings.js';
 import {drawSymbol} from './storyboard-symbol.js';
+import {drawCompletionSpout} from './completion-spout.js';
 import {createCompletionFilm,COMPLETION_LANDMARKS} from './completion-film.js';
 const $=s=>document.querySelector(s),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const names={'reply-settle':'说完了，轻轻收起',gather:'先接住上一段余势',celebrate:'做完了，开心展开',release:'让开心自然落定',
@@ -12,7 +13,7 @@ function draw(canvas,lane){
   const b=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=Math.round(b.width*dpr),h=Math.round(b.height*dpr);
   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
   const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=$('#palette').value==='night'?'#15263f':'#e8eef8';g.fillRect(0,0,b.width,b.height);
-  const layout={cx:b.width/2,cy:b.height*.65,R:Math.min(b.width/4.6,b.height/3.5),shadow:true};renderActor(g,lane.actor,layout);
+  const layout={cx:b.width/2,cy:b.height*.68,R:Math.min(b.width/4.6,b.height/4.1),shadow:true};renderActor(g,lane.actor,layout);drawCompletionSpout(g,lane.actor,layout,lane.view.spout);
   for(const s of lane.view.symbols)drawSymbol(g,lane.actor,layout,s.progress,s.kind,$('#palette').value,lane.actor.time,s.tremor,{...s,calm:reduced.matches});
   Object.assign(canvas.dataset,{rendered:'true',phase:lane.view.finishPhase??lane.view.phase,mode:lane.view.mode,spouts:String(lane.view.spouts),pending:String(lane.view.pendingIds.length),shape:lane.actor.shapeKey});
 }
@@ -26,7 +27,7 @@ function render(){if(!film)return;
   $('#playback-status').textContent=!film.view.scored?'手动接管中，后续模拟事件已停止。':film.time>=film.duration?'本段结束，可重播或手动插入新事件。':playing?'连续播放；画内只有角色及图形附属物。':'已暂停；可定位分镜节点，或从头播放。';
 }
 function boards(){for(const lane of ['reply','goal']){const box=$('#'+lane+'-board');box.replaceChildren();
-  for(const [at,title,detail] of [[5.18,'收势','承接同一段汇报的余势'],[5.85,lane==='reply'?'普通结束':'一次水花',lane==='reply'?'小幅收鳍与点头':'开心展开，水花只出现一次'],[7.1,'余韵',lane==='reply'?'已回到生活':'开心逐渐收弱']]){
+  for(const [at,title,detail] of [[5.18,'收势','承接同一段汇报的余势'],[6.05,lane==='reply'?'普通结束':'喷泉展开',lane==='reply'?'轻收势后安静陪伴':'喷柱顶起，水花向两侧展开'],[7.1,'余韵',lane==='reply'?'已回到生活':'水滴自然落散']]){
     const figure=document.createElement('figure'),image=document.createElement('div'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption'),strong=document.createElement('strong');image.className='keyframe-image';strong.textContent=title;caption.append(strong,detail);image.append(canvas);figure.append(image,caption);box.append(figure);
     const sample=createCompletionFilm({...options(),route:'none'});sample.seek(at);canvas.dataset.keyframe=lane;draw(canvas,sample[lane]);
   }}
