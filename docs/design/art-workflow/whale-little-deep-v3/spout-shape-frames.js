@@ -9,6 +9,10 @@ export const SPOUT_FRAMES=Object.freeze([
   {id:'open',title:'展开',detail:'短水束与分离水滴，向上、向两侧甩开。',lean:-.075,hover:.23,fin:.58,tail:.045,squash:-.015,eyes:'happy'},
   {id:'fall',title:'落散',detail:'水冠散成六颗大水滴，从两侧落下。',lean:-.025,hover:.15,fin:.22,tail:.015,squash:0,eyes:'proud'},
 ]);
+export const SPOUT_OPEN_DROPS=Object.freeze([
+  [-.06,-.58,.082,3.05],[-.33,-.67,.115,2.10],[.29,-.61,.105,-2.25],
+  [-.68,-.39,.095,1.0],[.64,-.27,.12,-1.10],[.58,-.67,.065,-1.65],
+].map(([x,y,r,turn],id)=>Object.freeze({id,x,y,r,turn})));
 
 export function createSpoutFrame(frame,palette='deep'){
   const pose=a=>{
@@ -31,25 +35,30 @@ function drop(g,x,y,r,turn){
   g.bezierCurveTo(-r,-r*.13,-r*.32,-r*.75,0,-r*1.35);g.closePath();g.fill();g.stroke();g.restore();
 }
 
-export function drawSpoutFrameWater(g,actor,layout,id){
-  if(id==='gather')return;
-  const c=spoutAnchor(actor),night=actor.palette.id==='night';
+export function drawSpoutArtwork(g,actor,layout,{anchor=spoutAnchor(actor),jet=0,jetOpacity=1,drops=[]}={}){
+  const c=anchor,night=actor.palette.id==='night';
   g.save();g.translate(layout.cx+c.x*layout.R,layout.cy+c.y*layout.R);g.scale(layout.R,layout.R);
   g.fillStyle=night?'#a8c2ff':'#9bb8ff';g.strokeStyle=night?'#708fc7':'#5d7bdb';
   g.lineWidth=.026;g.lineJoin='round';g.lineCap='round';
-  if(id==='open'){
+  if(jet>0&&jetOpacity>0){
+    g.save();g.globalAlpha*=jetOpacity;g.scale(1,jet);
     // Air gaps and outward-facing drop heads replace the solid, three-lobed crown.
     g.beginPath();g.moveTo(-.035,.005);
     g.bezierCurveTo(-.038,-.10,-.07,-.24,-.11,-.31);
     g.quadraticCurveTo(-.06,-.36,-.02,-.32);
     g.bezierCurveTo(.025,-.24,.045,-.10,.045,.005);
     g.closePath();g.fill();g.stroke();
-    for(const p of [[-.06,-.58,.082,3.05],[-.33,-.67,.115,2.10],[.29,-.61,.105,-2.25],[-.68,-.39,.095,1.0],[.64,-.27,.12,-1.10],[.58,-.67,.065,-1.65]])drop(g,...p);
-  }else{
-    // Fixed positions for art review; falling motion is deliberately not implemented here.
-    for(const p of [[-1.35,-.05,.12,-.48],[-.85,-.55,.10,-.30],[-.25,-.91,.115,-.10],[.40,-.83,.095,.26],[1.15,-.85,.135,.45],[1.9,-.15,.09,.62]])drop(g,...p);
+    g.restore();
   }
+  for(const p of drops){g.save();g.globalAlpha*=p.opacity??1;drop(g,p.x,p.y,p.r,p.turn);g.restore();}
   g.restore();
+}
+
+export function drawSpoutFrameWater(g,actor,layout,id){
+  if(id==='gather')return;
+  const drops=id==='open'?SPOUT_OPEN_DROPS:
+    [[-1.35,-.05,.12,-.48],[-.85,-.55,.10,-.30],[-.25,-.91,.115,-.10],[.40,-.83,.095,.26],[1.15,-.85,.135,.45],[1.9,-.15,.09,.62]].map(([x,y,r,turn])=>({x,y,r,turn}));
+  drawSpoutArtwork(g,actor,layout,{jet:id==='open'?1:0,drops});
 }
 
 export function renderSpoutFrame(canvas,actor,id,{size=150,background='light'}={}){

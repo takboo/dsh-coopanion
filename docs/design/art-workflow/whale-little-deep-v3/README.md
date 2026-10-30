@@ -2,13 +2,14 @@
 
 当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
 
-当前先评审[喷水三帧的正常／实际尺寸对照](spout-shape-study.html)及[造型分镜](../../storyboards/little-deep-spout-shape-v0.md)。用户反馈上一版水柱节奏快、柱身与画风不协调，造型确认后再制作连续样片。[目标完成双画面对照](completion-study.html)保留原样用于机制追溯。旧 work-life 页使用早期工具留尾巴映射；实机 0.0.2 及完成页使用 readable 工具完整身体。
+当前评审[慢喷水短片的正常／实际尺寸对照](spout-motion-study.html)及[节奏分镜](../../storyboards/little-deep-spout-motion-v0.md)。分离水滴的展开造型已获用户确认，新短片重点看停留和落散。[静态三帧](spout-shape-study.html)与[目标完成双画面对照](completion-study.html)分别保留作造型和机制参考。旧 work-life 页使用早期工具留尾巴映射；实机 0.0.2 及完成页使用 readable 工具完整身体。
 
 ## 模块与页面
 
 | 范围 | 文件与入口 |
 | --- | --- |
-| 当前喷水造型候选 | [spout-shape-study.html](spout-shape-study.html) 与 [spout-shape-frames.js](spout-shape-frames.js)，三帧两排共用静态姿态及水花路径 |
+| 当前喷水短片候选 | [spout-motion-study.html](spout-motion-study.html) 与 [spout-motion.js](spout-motion.js)，两种大小共用一只 Actor 与一次慢喷水 |
+| 已确认的展开造型 | [spout-shape-study.html](spout-shape-study.html) 与 [spout-shape-frames.js](spout-shape-frames.js)，静帧和短片共用绘图 |
 | 上一版完成样片 | [completion-study.html](completion-study.html)，普通回复／真正完成及新工作、?、! 打断机制保留，喷水待复做 |
 | 上一版完成喷水 | [completion-spout.js](completion-spout.js) 保留水柱起势、扇形展开与落散机制；造型与节奏尚未通过 |
 | 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
@@ -65,6 +66,8 @@
 引擎与工作台保留 [Livelings 原始字节与许可](../vendor/livelings/README.md)，页面署名 Livelings by MakerJackie；不修改第三方源码。默认眨眼与偶发双眨沿用原生机制。
 
 ## 检查
+
+当前独立慢喷水先执行 `node --test tests/little-deep-spout-motion.mjs`，浏览器检查为 `tests/little-deep-spout-motion-ui.mjs`，设置 CHROMIUM_PATH 与新的 DSH_TEST_ARTIFACTS，并启动同源静态服务。新短片不消费真实完成事实，确认后再回完成主线测试打断与接入。
 
 当前完成候选先执行 `node --test tests/little-deep-completion.mjs tests/little-deep-work-life.mjs`。浏览器控件及真实画面检查为 `tests/little-deep-completion-ui.mjs`，设置已核对的 CHROMIUM_PATH 和新的 DSH_TEST_ARTIFACTS 目录，并先启动本地静态预览。
 

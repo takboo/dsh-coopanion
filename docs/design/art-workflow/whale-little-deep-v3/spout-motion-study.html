@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小湛 · 慢喷水短样片</title><link rel="stylesheet" href="spout-shape-study.css"><link rel="stylesheet" href="spout-motion-study.css"></head>
+<body><main>
+<header><div><p class="eyebrow">LITTLE DEEP · 喷水短样片</p><h1>展开，停一会儿，再落下。</h1><p class="intro">沿用已确认的短水束与六颗水滴，重点看展开的停留和落散。</p></div><a href="spout-shape-study.html">已确认的展开造型 ↗</a></header>
+<div class="controls"><button id="replay">从头播放</button><button id="play" aria-pressed="false">播放</button><label>画面配色 <select id="palette"><option value="deep">日光</option><option value="night">夜色</option></select></label><label>角色实际大小 <input id="size" type="number" min="90" max="240" step="10" value="150"> px</label><button id="blind" aria-pressed="false">遮住分镜文字</button></div>
+<div class="motion-pair" id="motion-pair">
+<figure><div class="row-title"><h2>正常查看</h2><span id="normal-size">角色大小 300 px</span></div><canvas id="normal" role="img" aria-label="正常尺寸的喷水短样片"></canvas><figcaption><strong class="phase">蓄势</strong><span>查看水滴的方向和停留。</span></figcaption></figure>
+<figure><div class="row-title"><h2>角色实际尺寸</h2><span id="actual-size">宿主设置 150 px · 原比例</span></div><canvas id="actual" role="img" aria-label="实际尺寸的喷水短样片"></canvas><figcaption><strong class="phase">蓄势</strong><span>与左侧同一时间、同一只鲸鱼。</span></figcaption></figure>
+</div>
+<div class="transport"><label for="progress">样片进度</label><input id="progress" type="range" min="0" max="4100" step="1" value="0"><output id="clock">0.00 / 4.10 s</output></div>
+<div class="landmarks"><button data-at="0.30">蓄势</button><button data-at="1.30">展开停留</button><button data-at="2.25">水滴落散</button><button data-at="3.50">收尾</button></div>
+<p id="playback-status" aria-live="polite">已暂停，可从头播放；两种尺寸同步。</p>
+<footer><p>单次约 4.1 秒：0.5 秒蓄势、0.6 秒展开、0.6 秒顶点停留、1.2 秒落散，再舒缓收尾。不自动循环。</p><p>实际尺寸按本轮宿主配置 150 px 和角色包比例绘制，请保持浏览器缩放 100%。页面隐藏时暂停，恢复后继续当前时间。</p><p>这是独立喷水表演候选，尚未接入目标完成主线或实机包。鲸鱼与渲染引擎基于 Livelings by MakerJackie。</p></footer>
+</main><script type="module" src="spout-motion-study.js"></script></body></html>
