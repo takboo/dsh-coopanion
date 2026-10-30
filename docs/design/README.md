@@ -4,9 +4,11 @@
 
 ## 当前任务：目标完成分支
 
-**[打开回复结束／目标完成连续样片](art-workflow/whale-little-deep-v3/completion-study.html)**，配套[分镜 v1](storyboards/little-deep-completion-v1.md)。同机位双画面对照普通回复结束与真正目标完成，可插入新工作、?、!，并选择喷水前、庆祝中、收尾时打断。
+**[当前观看：喷水三帧及实际尺寸对照](art-workflow/whale-little-deep-v3/spout-shape-study.html)**，配套[造型分镜](storyboards/little-deep-spout-shape-v0.md)。先确认蓄势、展开、落散的造型，用户确认后再做连续样片。
 
-本轮是独立浏览器候选。用户反馈初版水花不够显著，当前已参考 Livelings Celebrate 改为喷柱顶起、扇形展开及两侧落散，待复看；没有更新实机插件或角色包。重点看区分是否清楚、庆祝是否适度、打断及退出是否自然。观看后再决定角色包接入。
+用户反馈上一版水柱节奏偏快、柱身与画风不协调，已选择短束水流、圆润水冠和几颗大水滴的方向。本轮仅制作静帧，造型尚未确认；没有更新连续样片、实机插件或角色包。
+
+此前的[回复结束／目标完成连续样片](art-workflow/whale-little-deep-v3/completion-study.html)及[分镜 v1](storyboards/little-deep-completion-v1.md)保留，用于追溯普通回复／真正完成与新工作、?、! 的打断机制，喷水造型已被本轮反馈要求复做。
 
 ## 已通过的实机基线
 
@@ -24,7 +26,7 @@
 | 范围 | 当前状态 |
 | --- | --- |
 | 工作主线与 ?／! | 0.4.15 + 0.0.2 实机工作流程通过；[工作反馈分镜](storyboards/little-deep-api2-feedback-v1.md)记录当前工具身体 |
-| 目标完成 | [v1 分镜](storyboards/little-deep-completion-v1.md)与连续样片，当前待观看候选 |
+| 目标完成 | 当前先评审[喷水三帧](storyboards/little-deep-spout-shape-v0.md)；上一版连续样片机制保留，喷水造型待重做 |
 | 生活交互 | [生活分镜](storyboards/little-deep-life-touch-v0.md)与[样片](art-workflow/whale-little-deep-v3/life-touch-study.html)已制作，待单独反馈 |
 | 异常／停止、藏身／隐身 | 待分镜；素材库已有动作不代表新场景通过 |
 | 角色 UI 皮肤、其他交互细节 | 实现与机制验证已有记录，不把工作流程测试扩大为全部审美验收 |
@@ -39,7 +41,8 @@
 | 当前实现 | 入口 |
 | --- | --- |
 | 工作／生活段落 | [segment-performance.js](art-workflow/whale-little-deep-v3/segment-performance.js)；实机使用 readable 策略 |
-| 喷水表现 | [completion-spout.js](art-workflow/whale-little-deep-v3/completion-spout.js)，局部喷柱与可取消扇形水花 |
+| 当前喷水造型 | [spout-shape-frames.js](art-workflow/whale-little-deep-v3/spout-shape-frames.js)，三张静帧和两种大小共用形态，尚未编排连续动画 |
+| 上一版喷水 | [completion-spout.js](art-workflow/whale-little-deep-v3/completion-spout.js)，原样保留；柱身与节奏待按本轮静帧重做 |
 | 完成消费、收势与取消 | [completion-performance.js](art-workflow/whale-little-deep-v3/completion-performance.js) |
 | 完成样片与同源关键帧 | [completion-film.js](art-workflow/whale-little-deep-v3/completion-film.js)、[completion-study.js](art-workflow/whale-little-deep-v3/completion-study.js) |
 | 请求身体、完整身份与笔画 | [request-performance.js](art-workflow/whale-little-deep-v3/request-performance.js)、[storyboard-performance.js](art-workflow/whale-little-deep-v3/storyboard-performance.js)、[storyboard-symbol.js](art-workflow/whale-little-deep-v3/storyboard-symbol.js) |
@@ -47,6 +50,6 @@
 
 ## 本地预览与追溯
 
-仓库根目录运行 `python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow`，已有同源服务时复用。当前页为 `http://127.0.0.1:4187/whale-little-deep-v3/completion-study.html`。
+仓库根目录运行 `python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow`，已有同源服务时复用。当前页为 `http://127.0.0.1:4187/whale-little-deep-v3/spout-shape-study.html`。
 
 [本轮整理与验证](workspace-maintenance.md)说明生成物、证据、备份和环境的处理；历史方案从[归档索引](../archive/README.md)显式进入。旧验证摘要保留原路径并屏蔽普通搜索，以保持历史相对链接与原字节；只由[验证索引](runtime-baseline.md)读取。固定报告、原始证据及第三方许可不改写。

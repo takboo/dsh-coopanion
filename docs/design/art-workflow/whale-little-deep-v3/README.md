@@ -2,14 +2,15 @@
 
 当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
 
-当前新候选为 [目标完成双画面对照](completion-study.html)及[分镜 v1](../../storyboards/little-deep-completion-v1.md)。旧 work-life 页使用早期工具留尾巴映射；实机 0.0.2 及新完成页使用 readable 工具完整身体。
+当前先评审[喷水三帧的正常／实际尺寸对照](spout-shape-study.html)及[造型分镜](../../storyboards/little-deep-spout-shape-v0.md)。用户反馈上一版水柱节奏快、柱身与画风不协调，造型确认后再制作连续样片。[目标完成双画面对照](completion-study.html)保留原样用于机制追溯。旧 work-life 页使用早期工具留尾巴映射；实机 0.0.2 及完成页使用 readable 工具完整身体。
 
 ## 模块与页面
 
 | 范围 | 文件与入口 |
 | --- | --- |
-| 当前完成候选 | [completion-study.html](completion-study.html)，共用段落与同源关键帧，普通回复／真正完成及新工作、?、! 打断 |
-| 完成喷水 | [completion-spout.js](completion-spout.js) 提供水柱起势、扇形展开与落散；被打断后停止后续喷发，已出现的水花自然消散 |
+| 当前喷水造型候选 | [spout-shape-study.html](spout-shape-study.html) 与 [spout-shape-frames.js](spout-shape-frames.js)，三帧两排共用静态姿态及水花路径 |
+| 上一版完成样片 | [completion-study.html](completion-study.html)，普通回复／真正完成及新工作、?、! 打断机制保留，喷水待复做 |
+| 上一版完成喷水 | [completion-spout.js](completion-spout.js) 保留水柱起势、扇形展开与落散机制；造型与节奏尚未通过 |
 | 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
 | 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
 | 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |

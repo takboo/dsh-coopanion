@@ -2,7 +2,7 @@
 
 本目录维护当前产品行为与开发契约。安装入口见 [项目首页](../README.md)，各版本改动见 [版本记录](release-notes.md)。实际版本、依赖、命令和支持的宿主列表以 `package.json`、`npm-shrinkwrap.json` 与 `.github/workflows/` 为准。
 
-本分支的小湛／Livelings 工作从[唯一当前设计入口](design/README.md)接手：0.4.15 + 0.0.2 工作流程已通过实机反馈，当前制作目标完成分镜与连续样片候选。历史验证按[基线与验证索引](design/runtime-baseline.md)显式读取，不把旧待办或旧动作映射当作当前状态。现有插件契约继续生效，可选角色状态见[状态传递契约](character-state-contract.md)。
+本分支的小湛／Livelings 工作从[唯一当前设计入口](design/README.md)接手：0.4.15 + 0.0.2 工作流程已通过实机反馈，当前先评审目标完成喷水的静态三帧与实际尺寸，造型确认后再复做连续样片。历史验证按[基线与验证索引](design/runtime-baseline.md)显式读取，不把旧待办或旧动作映射当作当前状态。现有插件契约继续生效，可选角色状态见[状态传递契约](character-state-contract.md)。
 
 ## 按任务阅读
 

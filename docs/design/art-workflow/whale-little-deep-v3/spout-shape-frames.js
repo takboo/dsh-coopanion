@@ -1,0 +1,70 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Static design poses only. No clock, emission schedule or completion integration.
+import {Actor,renderActor} from '../vendor/livelings/workspace/livelings.js';
+import character from './character.js';
+import {spoutAnchor} from './completion-spout.js';
+
+export const SPOUT_FRAMES=Object.freeze([
+  {id:'gather',title:'蓄势',detail:'轻收身体，眼睛稍眯；水花尚未出现。',lean:.035,hover:.10,fin:.12,tail:-.025,squash:.035,eyes:{h:.76,topLid:.14}},
+  {id:'open',title:'展开',detail:'短束水流托起圆润水冠，三瓣错落展开。',lean:-.075,hover:.23,fin:.58,tail:.045,squash:-.015,eyes:'happy'},
+  {id:'fall',title:'落散',detail:'水冠散成六颗大水滴，从两侧落下。',lean:-.025,hover:.15,fin:.22,tail:.015,squash:0,eyes:'proud'},
+]);
+
+export function createSpoutFrame(frame,palette='deep'){
+  const pose=a=>{
+    a.morph('rest',{squash:0,blink:false});a.scale.target=1;a.rootX.target=0;
+    a.lean.target=frame.lean;a.hover.target=frame.hover;a.squash.target=frame.squash;
+    a.fx('hidden').target=0;a.fx('eyesOpacity').target=1;a.fx('fin').target=frame.fin;
+    a.fx('tail').target=frame.tail;a.fx('ripple').target=0;a.fx('belly').target=0;
+    a.express(frame.eyes);a.lookAt(-.4,-.18);
+  };
+  const definition={...character,actions:{...character.actions,'spout-static':{kind:'loop',enter:pose,tick:pose}}};
+  const actor=new Actor(definition,{state:'spout-static',palette,seed:42,fidget:false});
+  for(let i=0;i<132;i++){pose(actor);actor.advance(1/120);}
+  return actor;
+}
+
+function drop(g,x,y,r,turn){
+  g.save();g.translate(x,y);g.rotate(turn);g.beginPath();g.moveTo(0,-r*1.35);
+  g.bezierCurveTo(r*.32,-r*.75,r,-r*.13,r,r*.35);
+  g.bezierCurveTo(r,r*1.25,-r,r*1.25,-r,r*.35);
+  g.bezierCurveTo(-r,-r*.13,-r*.32,-r*.75,0,-r*1.35);g.closePath();g.fill();g.stroke();g.restore();
+}
+
+export function drawSpoutFrameWater(g,actor,layout,id){
+  if(id==='gather')return;
+  const c=spoutAnchor(actor),night=actor.palette.id==='night';
+  g.save();g.translate(layout.cx+c.x*layout.R,layout.cy+c.y*layout.R);g.scale(layout.R,layout.R);
+  g.fillStyle=night?'#a8c2ff':'#9bb8ff';g.strokeStyle=night?'#708fc7':'#5d7bdb';
+  g.lineWidth=.026;g.lineJoin='round';g.lineCap='round';
+  if(id==='open'){
+    // A short, broad connection and rounded water lobes share the whale's flat silhouette language.
+    g.beginPath();g.moveTo(-.055,.005);
+    g.bezierCurveTo(-.055,-.13,-.11,-.19,-.22,-.23);
+    g.bezierCurveTo(-.37,-.21,-.52,-.26,-.54,-.39);
+    g.bezierCurveTo(-.57,-.55,-.43,-.61,-.33,-.51);
+    g.bezierCurveTo(-.24,-.43,-.23,-.32,-.12,-.30);
+    g.bezierCurveTo(-.17,-.45,-.22,-.65,-.12,-.75);
+    g.bezierCurveTo(-.02,-.86,.12,-.76,.105,-.63);
+    g.bezierCurveTo(.10,-.51,.015,-.40,.045,-.32);
+    g.bezierCurveTo(.16,-.40,.25,-.57,.37,-.54);
+    g.bezierCurveTo(.54,-.51,.54,-.32,.39,-.27);
+    g.bezierCurveTo(.24,-.23,.095,-.19,.055,.005);
+    g.closePath();g.fill();g.stroke();
+    drop(g,-.66,-.50,.060,-.52);drop(g,.58,-.71,.055,.46);
+  }else{
+    // Fixed positions for art review; falling motion is deliberately not implemented here.
+    for(const p of [[-1.35,-.05,.12,-.48],[-.85,-.55,.10,-.30],[-.25,-.91,.115,-.10],[.40,-.83,.095,.26],[1.15,-.85,.135,.45],[1.9,-.15,.09,.62]])drop(g,...p);
+  }
+  g.restore();
+}
+
+export function renderSpoutFrame(canvas,actor,id,{size=150,background='light'}={}){
+  const b=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=Math.round(b.width*dpr);canvas.height=Math.round(b.height*dpr);
+  const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  g.fillStyle=background==='night'?'#19263f':'#e8eef8';g.fillRect(0,0,b.width,b.height);
+  const layout={cx:b.width*.44,cy:b.height*.69,R:size/3.3,shadow:true};
+  renderActor(g,actor,layout);drawSpoutFrameWater(g,actor,layout,id);
+  Object.assign(canvas.dataset,{rendered:'true',frame:id,size:String(size),radius:String(layout.R),actorTime:String(actor.time)});
+}
