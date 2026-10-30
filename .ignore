@@ -31,3 +31,9 @@
 /tests/little-deep-replay.mjs
 /tests/little-deep-work-rhythm.mjs
 /tests/little-deep-live.mjs
+
+# Superseded six-drop slow-spout study; the current direction is reference-celebration.
+/docs/design/art-workflow/whale-little-deep-v3/spout-motion.js
+/docs/design/art-workflow/whale-little-deep-v3/spout-motion-study.*
+/docs/design/storyboards/little-deep-spout-motion-v0.md
+/tests/little-deep-spout-motion*.mjs

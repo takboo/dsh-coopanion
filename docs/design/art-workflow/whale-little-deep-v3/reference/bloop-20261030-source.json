@@ -1,0 +1,22 @@
+{
+  "path": "/Users/jam/Downloads/whale-preview.html",
+  "sha256": "494fc7faf863a52c0fb1c828d27ce90ac51add72f15ba2e6f5e665aaa818c8e3",
+  "url": "http://localhost:9978/whale-preview.html",
+  "observed": "Cua saw spout and done on user-served page; source read separately.",
+  "source": "User-provided self-contained Bloop Livelings demonstration; author not independently established.",
+  "title": "Bloop 噗噗 · Livelings whale",
+  "role": "Primary spout and celebration motion reference selected by the user",
+  "adaptation": [
+    "Elastic pressure streams and independently falling drops",
+    "Spout pulses at 0.35 and 1.10 seconds",
+    "Excited hop, lean reversal, rainbow and landing spray"
+  ],
+  "preserved": [
+    "Little Deep original rest geometry, white belly, eye definition, tail and facing",
+    "Pinned Livelings engine bytes",
+    "Existing Host completion classification and installed packages"
+  ],
+  "localOriginalCopy": "artifacts/little-deep-reference-celebration-20261030-csuja5kz/reference-original.html",
+  "notes": "The source URL is the user-run local service, not a permanent upstream URL. The bundled reference engine was not imported.",
+  "servedHttpSha256": "494fc7faf863a52c0fb1c828d27ce90ac51add72f15ba2e6f5e665aaa818c8e3"
+}

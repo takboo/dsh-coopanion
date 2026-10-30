@@ -2,7 +2,7 @@
 
 本目录维护当前产品行为与开发契约。安装入口见 [项目首页](../README.md)，各版本改动见 [版本记录](release-notes.md)。实际版本、依赖、命令和支持的宿主列表以 `package.json`、`npm-shrinkwrap.json` 与 `.github/workflows/` 为准。
 
-本分支的小湛／Livelings 工作从[唯一当前设计入口](design/README.md)接手：0.4.15 + 0.0.2 工作流程已通过实机反馈，喷水的分离水滴展开造型已确认，当前评审慢喷水短片的停留与落散，正常／实际尺寸同步对照。历史验证按[基线与验证索引](design/runtime-baseline.md)显式读取，不把旧待办或旧动作映射当作当前状态。现有插件契约继续生效，可选角色状态见[状态传递契约](character-state-contract.md)。
+本分支的小湛／Livelings 工作从[唯一当前设计入口](design/README.md)接手：0.4.15 + 0.0.2 工作流程已通过实机反馈，当前按用户选择的 Bloop 喷水和庆祝重新制作独立短片，保留小湛原造型，提供正常／实际尺寸同步对照。历史验证按[基线与验证索引](design/runtime-baseline.md)显式读取，不把旧待办或旧动作映射当作当前状态。现有插件契约继续生效，可选角色状态见[状态传递契约](character-state-contract.md)。
 
 ## 按任务阅读
 
