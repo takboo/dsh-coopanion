@@ -46,6 +46,8 @@ macOS 15.7.7 / 24G720 arm64 VM 中使用独立源码目录，核对依赖图只�
 
 VM 使用固定 Node 24.21.0／npm 11.19.1 生成唯一 tgz，SHA-256 为 `df7b1405b1a6acbaea0a583d511f33edd332fc448d61c7380e317786b8383064`。先通过独立 profile 的官方 DSH 0.2.1-rc.3 CLI 安装及包内 CharacterStore 的旧角色／0.0.2 兼容检查，再用相同字节经官方 Desktop CLI 更新实机。安装后逐一核对 654 个插件文件、9 个角色文件；角色 revision、选择、既有配置与其他直接依赖均保持。原配置及旧包留在用户目录的私密回滚备份中，不复制到仓库。
 
-正常重启后，Harness 会话界面及 Little Deep Experimental 已加载。实际桌宠服务器提供的 pet.js、character-state.js、session-ui.js 与该包／源码一致。本轮确认实际安装与启动，新的真实 session 体验仍待用户测试；没有借用此前固定包的实机验收。
+正常重启后，Harness 会话界面及 Little Deep Experimental 已加载。实际桌宠服务器提供的 pet.js、character-state.js、session-ui.js 与该包／源码一致。随后用户直接反馈“测试通过”，本轮 rebase 版实机工作流程体验按该反馈记为通过；本次未提供新的 session ID，没有新增指定会话日志核对，也没有借用此前固定包的实机验收。
 
 本地资料位于 `artifacts/little-deep-rebase-install-20261030-gckze668/`，含唯一 tgz、源码与包摘要、隔离安装检查、实机安装回执及启动核对。源码导出不含 .git，构建 commit／dirty 为 null，源码提交与后续记录提交另绑定于 verification.json。本轮测试 VM 已关闭；未推送或发布。
+
+用户后续确认单列于 `artifacts/little-deep-rebase-acceptance-20261030-9l51svt5/`，绑定同一包与角色摘要；安装时的固定报告不回写。该确认不扩大为目标完成、异常／停止或生活交互候选的体验确认。
