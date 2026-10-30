@@ -9,7 +9,11 @@ export const REFERENCE_SCORES=Object.freeze({
   spout:Object.freeze({duration:2.40,jets:Object.freeze([.35,1.10])}),
   celebrate:Object.freeze({duration:2.85,launch:.20,jet:.22,turn:.88,landing:1.20}),
 });
-function waterColor(a){return a.palette.id==='night'?'#bfe9ff':'#86c8eb';}
+export function referenceWaterColors(a){
+  return a.palette.id==='night'?{drop:'#c5d2e7',stream:'#d2ddec',core:'#f4f7fc'}:
+    {drop:'#b3c4df',stream:'#becde5',core:'#f7f9fc'};
+}
+function waterColor(a){return referenceWaterColors(a).drop;}
 export function referencePhase(kind,t){
   if(kind==='spout')return t<.35?'gather':t<.90?'spout':t<1.10?'breathe':t<1.75?'spout-again':t<2.15?'fall':'rest';
   return t<.20?'gather':t<.48?'launch':t<.88?'crest':t<1.20?'return':t<1.78?'splash':t<2.35?'settle':'rest';
@@ -17,7 +21,7 @@ export function referencePhase(kind,t){
 
 export function createReferenceCelebration({kind='celebrate',palette='deep',calm=false}={}){
   if(!REFERENCE_SCORES[kind])throw new Error('Unknown study action');
-  let actor,time=0,visible=true;
+  let actor,time=0,visible=true,rainbowOrigin=null;
   const events=[];
   const amp=calm?.25:1;
   function base(a){
@@ -29,6 +33,7 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
   function jet(a,strength,at){
     events.push({type:'jet',at});a.fx('referenceSpray').snap(.2);a.fx('referenceSpray').target=1;
     const c=spoutAnchor(a),n=calm?3:Math.ceil(10*strength);
+    if(kind==='celebrate'&&!calm&&!rainbowOrigin){rainbowOrigin={...c};a.fx('referenceRainbow').target=1;}
     for(let i=0;i<n;i++)a.emit({kind:'drop',studyKind:'jet',studyId:`jet-${at}-${i}`,x:c.x,y:c.y,
       vx:(a.rand()-.5)*1.6*(calm?.5:1),vy:(-3.2-a.rand()*1.6*strength)*(calm?.55:1),ay:9,
       life:.98,size:.055,color:waterColor(a)});
@@ -55,6 +60,8 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
       a.fx('tail').target=t<1.45?Math.sin((t-.2)*14)*.24*amp:Math.sin(t*2)*.025*amp;
       a.fx('ripple').target=t<1.20?0:.75*(1-smooth((t-1.20)/1.0));
       a.express(t<.20?{h:.76,topLid:.14}:t<.88?'excited':t<1.75?'happy':t<2.35?'proud':'soft');
+      // As in the reference's overlay, keep the light through the spray and release it after 2 s.
+      if(t>=2)a.fx('referenceRainbow').target=0;
       onceAt(t,dt,.20,()=>{events.push({type:'launch',at:.20});a.hop(1.8*amp);});
       onceAt(t,dt,.22,()=>jet(a,1.2,.22));
       onceAt(t,dt,.58,()=>{
@@ -68,8 +75,9 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
     }
   }
   function reset(){
-    time=0;events.length=0;
-    const definition={...character,effects:{...character.effects,referenceSpray:{rest:0,stiffness:120,damping:14}},
+    time=0;events.length=0;rainbowOrigin=null;
+    const definition={...character,effects:{...character.effects,
+      referenceSpray:{rest:0,stiffness:120,damping:14},referenceRainbow:{rest:0,stiffness:90,damping:19}},
       update(a,dt){character.update?.(a,dt);if(a.fx('referenceSpray').target===1&&a.fxValue('referenceSpray')>.95)a.fx('referenceSpray').target=0;},
       actions:{...character.actions,'reference-rest':{kind:'loop',enter:rest,tick:rest},
         'reference-action':{kind:'once',duration:REFERENCE_SCORES[kind].duration,enter(a){base(a);a.squish(6*amp);},tick:animate}}};
@@ -88,18 +96,27 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
       jets:events.filter(e=>e.type==='jet').length,landings:events.filter(e=>e.type==='landing').length,
       launches:events.filter(e=>e.type==='launch').length,events:events.map(e=>({...e})),
       drops:actor.particles.filter(p=>p.kind==='drop').length,visible,
-      rainbow:kind==='celebrate'&&!calm?smooth((time-.20)/.16)*(1-smooth((time-1.25)/.65)):0};},
+      rainbowOrigin:rainbowOrigin?{...rainbowOrigin}:null,
+      rainbow:kind==='celebrate'&&!calm&&time<REFERENCE_SCORES[kind].duration&&actor.fxValue('referenceRainbow')>=.005?clamp(actor.fxValue('referenceRainbow')):0};},
     advance,seek(value){if(!Number.isFinite(value))throw new Error('Expected a finite seek time');const shown=visible;reset();visible=true;advance(Math.max(0,Math.min(REFERENCE_SCORES[kind].duration,value)));visible=shown;},
     setVisible(value){visible=Boolean(value);},
-    setPalette(id){const p=character.palettes.find(p=>p.id===id);if(!p)throw new Error('Unknown palette');palette=id;actor.palette=p;},
+    setPalette(id){const p=character.palettes.find(p=>p.id===id);if(!p)throw new Error('Unknown palette');palette=id;actor.palette=p;
+      for(const drop of actor.particles)if(drop.studyKind==='jet'||drop.studyKind==='splash')drop.color=waterColor(actor);},
   };
 }
 
 export function drawReferenceRainbow(g,study,layout){
-  const alpha=study.view.rainbow;if(alpha<.001)return;
-  const R=layout.R,colors=['#efa3b4','#f3bd94','#f1da93','#afd5a3','#9fc9ef'];
-  g.save();g.globalAlpha=alpha*.72;g.lineCap='butt';g.lineWidth=R*.13;
-  for(let i=0;i<colors.length;i++){g.strokeStyle=colors[i];g.beginPath();g.arc(layout.cx,layout.cy+R*.60,R*(1.42+i*.13),Math.PI,Math.PI*2);g.stroke();}
+  const v=study.view,alpha=v.rainbow;if(alpha<.001||!v.rainbowOrigin)return;
+  const R=layout.R,colors=['#74a8ff','#65cd8d','#ffe066','#ffa94d','#ff7885'];
+  // Centre the light on the released spray's field, rather than attach a badge to the body.
+  const x=layout.cx+(v.rainbowOrigin.x+.34)*R,y=layout.cy+(v.rainbowOrigin.y+1.70)*R;
+  g.save();g.globalAlpha=alpha*.90;g.lineCap='butt';g.lineWidth=R*.145;
+  for(let i=0;i<colors.length;i++){
+    const radius=R*(2.10+i*.135),n=parseInt(colors[i].slice(1),16),rgb=[n>>16&255,n>>8&255,n&255].join(',');
+    const light=g.createLinearGradient(x-radius,0,x+radius,0);
+    for(const [at,opacity] of [[0,0],[.10,.86],[.25,1],[.75,1],[.90,.86],[1,0]])light.addColorStop(at,`rgba(${rgb},${opacity})`);
+    g.strokeStyle=light;g.beginPath();g.arc(x,y,radius,Math.PI,Math.PI*2);g.stroke();
+  }
   g.restore();
 }
 
@@ -107,9 +124,10 @@ export function drawReferenceSpout(g,study,layout){
   const p=study.view.pressure;if(p<.03)return;
   const c=spoutAnchor(study.actor),R=layout.R,h=R*(.35+p*.85)*(study.actor.calm?.65:1);
   const x=layout.cx+c.x*R,y=layout.cy+c.y*R;
+  const colors=referenceWaterColors(study.actor);
   g.save();g.lineCap='round';
   // The Bloop reference uses three elastic, unoutlined streams, not a filled column.
-  for(const [side,color,width] of [[-1,'#8acded',.070],[1,'#8acded',.070],[0,'#e4f8ff',.075]]){
+  for(const [side,color,width] of [[-1,colors.stream,.070],[1,colors.stream,.070],[0,colors.core,.075]]){
     g.strokeStyle=color;g.lineWidth=R*width;g.beginPath();g.moveTo(x,y);
     g.bezierCurveTo(x+side*R*.05,y-h*.90,x+side*R*.40*p,y-h*1.15,x+side*R*.50*p,y-h*.35);g.stroke();
   }

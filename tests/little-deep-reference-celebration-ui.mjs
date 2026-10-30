@@ -20,6 +20,10 @@ try{
   for(const [t,name] of [[.12,'gather'],[.48,'peak'],[.95,'turn'],[1.45,'landing'],[2.4,'afterglow']]){
     await seek(t);const [a,b]=await data();assert.equal(a.time,b.time);assert.equal(a.actorTime,b.actorTime);assert.equal(Number(a.radius)/Number(b.radius),2);await page.locator('#motion-pair').screenshot({path:join(out,name+'.png')});
   }assert((await data()).every(x=>x.jets==='1'&&x.landings==='1'));report.cases.push('One launch jet, rainbow, turning and landing spray at shared keyframes');
+  await seek(.20);assert((await data()).every(x=>x.rainbow==='0'));await seek(.65);assert((await data()).every(x=>Number(x.rainbow)>.8));
+  await seek(1.80);assert((await data()).every(x=>Number(x.rainbow)>.95));await page.locator('#motion-pair').screenshot({path:join(out,'rainbow-light.png')});
+  await seek(2.20);assert((await data()).every(x=>Number(x.rainbow)<.7&&Number(x.rainbow)>.05));await page.locator('#motion-pair').screenshot({path:join(out,'rainbow-fade.png')});
+  await seek(2.65);assert((await data()).every(x=>Number(x.rainbow)<.05));report.cases.push('Spray triggers the light; the larger rainbow remains through falling water and fades afterward');
   for(const kind of ['celebrate','spout']){await page.locator('#action').selectOption(kind);const end=kind==='celebrate'?2.85:2.4;for(let i=0;i<=Math.ceil(end*10);i++){await seek(Math.min(end,i/10));await fit();}}
   report.cases.push('Whale, elastic streams, rainbow and ballistic drops stay within both frames across both clips');
   await page.locator('#action').selectOption('spout');await seek(.55);assert((await data()).every(x=>x.jets==='1'&&x.landings==='0'));await page.locator('#motion-pair').screenshot({path:join(out,'spout-first.png')});
@@ -31,7 +35,7 @@ try{
   await page.locator('#blind').click();assert(await page.locator('body').evaluate(e=>e.classList.contains('blind')));await page.locator('#blind').click();report.cases.push('Playback pauses, ends once without looping, and captions can be hidden');
   await page.emulateMedia({reducedMotion:'reduce'});await page.locator('canvas[data-calm="true"]').last().waitFor();await seek(.48);assert((await data()).every(x=>Number(x.drops)<=3));await page.locator('#motion-pair').screenshot({path:join(out,'reduced-motion.png')});report.cases.push('Reduced motion keeps one outcome with lower jump and fewer drops');
   await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('canvas[data-calm="false"]').last().waitFor();await page.locator('#size').fill('240');await page.locator('#size').press('Tab');
-  for(const width of [860,480]){await page.setViewportSize({width,height:900});for(const kind of ['celebrate','spout']){await page.locator('#action').selectOption(kind);for(const t of [.3,.48,.7,1.3,1.5,1.8]){await seek(t);await fit();assert.equal((await data())[1].size,'240');}}}
+  for(const width of [920,860,480]){await page.setViewportSize({width,height:900});for(const kind of ['celebrate','spout']){await page.locator('#action').selectOption(kind);for(const t of [.3,.48,.7,1.3,1.5,1.8]){await seek(t);await fit();assert.equal((await data())[1].size,'240');}}}
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:join(out,'narrow-240.png'),fullPage:true});report.cases.push('Side-by-side and narrow layouts preserve actual 240 pixel sizing without clipping or overflow');
   assert.deepEqual(errors,[]);report.errors=errors;report.browser=await browser.version();report.status='pass';
 }catch(e){report.status='fail';report.error=e.message;for(const p of browser.contexts().flatMap(c=>c.pages()))await p.screenshot({path:join(out,'failure.png'),fullPage:true}).catch(()=>{});throw e;}

@@ -9,20 +9,21 @@ function draw(canvas,size){
   const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=$('#palette').value==='night'?'#15263f':'#f7fafc';g.fillRect(0,0,b.width,b.height);
   const layout={cx:b.width*.44,cy:b.height-26-(size/3.3)*1.30,R:size/3.3,shadow:true};
   drawReferenceRainbow(g,study,layout);renderActor(g,study.actor,layout);drawReferenceSpout(g,study,layout);
-  const v=study.view;Object.assign(canvas.dataset,{rendered:'true',time:String(study.time),phase:v.phase,kind:v.kind,calm:String(study.actor.calm),size:String(size),radius:String(layout.R),jets:String(v.jets),landings:String(v.landings),drops:String(v.drops),pressure:String(v.pressure),actorTime:String(study.actor.time)});
+  const v=study.view;Object.assign(canvas.dataset,{rendered:'true',time:String(study.time),phase:v.phase,kind:v.kind,calm:String(study.actor.calm),size:String(size),radius:String(layout.R),jets:String(v.jets),landings:String(v.landings),drops:String(v.drops),pressure:String(v.pressure),rainbow:String(v.rainbow),actorTime:String(study.actor.time)});
 }
 function render(){
   if(!study)return;const normalSize=Math.min(300,$('#normal').getBoundingClientRect().width*.56);draw($('#normal'),normalSize);draw($('#actual'),actualSize);
   $('#normal-size').textContent=`角色大小 ${normalSize.toFixed(0)} px`;$('#actual-size').textContent=`宿主设置 ${actualSize} px · 原比例`;
-  for(const e of document.querySelectorAll('.phase'))e.textContent=phases[study.view.phase];
+  const v=study.view,label=v.kind==='celebrate'&&v.phase==='rest'&&v.rainbow>.005?'彩虹余光渐退':phases[v.phase];
+  for(const e of document.querySelectorAll('.phase'))e.textContent=label;
   $('#progress').max=String(Math.round(study.duration*1000));$('#progress').value=String(Math.round(study.time*1000));$('#clock').textContent=`${study.time.toFixed(2)} / ${study.duration.toFixed(2)} s`;
   $('#play').textContent=playing?'暂停':'播放';$('#play').setAttribute('aria-pressed',String(playing));
   $('#playback-status').textContent=study.time>=study.duration?'本段结束，可从头播放。':playing?'正常尺寸与实际尺寸同步播放。':'已暂停，可从头播放或定位关键节点。';
 }
 function configure(time=0){
   study=createReferenceCelebration({kind:$('#action').value,palette:$('#palette').value,calm:reduced.matches});study.seek(time);study.setVisible(!document.hidden);playing=false;last=null;
-  $('#score-description').textContent=$('#action').value==='celebrate'?'先轻收身体，跃起喷水；倾斜翻回，落散水花和彩虹渐退。单次播放，不自动循环。':'身体先轻轻压缩，先后喷出两口弹性水流，独立水滴自然升起、减速和下落。单次播放，不自动循环。';
-  $('#landmarks').replaceChildren();const shots=$('#action').value==='celebrate'?[[.10,'蓄力'],[.48,'跃起喷水'],[.95,'翻回'],[1.45,'回落水花'],[2.40,'余韵']]:[[.15,'蓄力'],[.55,'第一口喷水'],[1.30,'第二口喷水'],[1.85,'落散']];
+  $('#score-description').textContent=$('#action').value==='celebrate'?'跃起喷水带出彩虹，倾斜翻回、水花落散后，彩虹余光收起。单次播放，不自动循环。':'身体先轻轻压缩，先后喷出两口弹性水流，独立水滴自然升起、减速和下落。单次播放，不自动循环。';
+  $('#landmarks').replaceChildren();const shots=$('#action').value==='celebrate'?[[.10,'蓄力'],[.48,'跃起喷水'],[.72,'虹光展开'],[.95,'翻回'],[1.45,'回落水花'],[2.20,'虹光收尾'],[2.40,'余韵']]:[[.15,'蓄力'],[.55,'第一口喷水'],[1.30,'第二口喷水'],[1.85,'落散']];
   for(const [at,title] of shots){const b=document.createElement('button');b.textContent=title;b.dataset.at=String(at);b.onclick=()=>seek(at);$('#landmarks').append(b);}render();
 }
 function schedule(){if(playing&&!document.hidden&&raf===null)raf=requestAnimationFrame(tick);}
