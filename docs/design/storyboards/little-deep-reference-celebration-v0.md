@@ -43,6 +43,6 @@
 
 只提供样片的动作切换、播放、暂停、重播、定位、换色、实际大小和遮字。切换动作从头开始；换色与大小保留当前时间和姿态。隐藏时冻结时钟、压力与水滴，恢复不追赶。减少动态降低跃起和倾斜、减少水滴并关闭彩虹与星点，保留一次表演的起止。
 
-本轮未接入真正目标完成、新工作或 ?／!，没有安装插件或角色包。已通过的独立效果供后续完成主线复用，共享完成事实及打断／续接仍需在主线中复查。原 0.4.15 + 0.0.2 实机基线保持。
+独立页不消费真正目标完成或新工作／请求；其编排现由[主线分镜 v2](little-deep-completion-v2.md)复用，独立页的 634 个前后采样完全一致。主线提供模拟分类和打断／续接，产品宿主接入仍需单独验证，没有安装插件或角色包。原 0.4.15 + 0.0.2 实机基线保持。
 
 机制检查为 `node --test tests/little-deep-reference-celebration.mjs`；浏览器检查为 `tests/little-deep-reference-celebration-ui.mjs`，设置已核对的 CHROMIUM_PATH 和新的 DSH_TEST_ARTIFACTS。初版资料在 artifacts/little-deep-reference-celebration-20261030-csuja5kz/；当前水色／虹光修订使用新的 artifacts/little-deep-spray-rainbow-20261030-yju3aouz/，含前版快照、身体与水滴轨迹一致性、独立验证和 60 fps 视频；最终提交与文件摘要以本轮 verification.json 为准，初版报告不覆写。

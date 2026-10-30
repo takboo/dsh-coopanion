@@ -19,18 +19,19 @@ export function referencePhase(kind,t){
   return t<.20?'gather':t<.48?'launch':t<.88?'crest':t<1.20?'return':t<1.78?'splash':t<2.35?'settle':'rest';
 }
 
-export function createReferenceCelebration({kind='celebrate',palette='deep',calm=false}={}){
+// Reusable choreography: it writes targets on the caller's current Actor, never advances or replaces it.
+export function createReferenceScore({kind='celebrate'}={}){
   if(!REFERENCE_SCORES[kind])throw new Error('Unknown study action');
-  let actor,time=0,visible=true,rainbowOrigin=null;
-  const events=[];
-  const amp=calm?.25:1;
+  let rainbowOrigin=null,stopped=false,spoutOrigin=null;
+  const events=[],fired=new Set();
   function base(a){
     a.morph('rest',{squash:0,blink:false});a.scale.target=1;a.hover.target=.13;a.rootX.target=0;
     a.fx('hidden').target=0;a.fx('eyesOpacity').target=1;a.fx('belly').target=0;
     a.lookAt(-.4,-.2);
   }
-  function rest(a){base(a);a.express('neutral');a.lean.target=0;a.fx('tail').target=Math.sin(a.time*1.4)*.025*amp;a.fx('fin').target=.1*amp;a.fx('ripple').target=0;}
+  function rest(a){const amp=a.calm?.25:1;base(a);a.express('neutral');a.lean.target=0;a.fx('tail').target=Math.sin(a.time*1.4)*.025*amp;a.fx('fin').target=.1*amp;a.fx('ripple').target=0;}
   function jet(a,strength,at){
+    const calm=a.calm;
     events.push({type:'jet',at});a.fx('referenceSpray').snap(.2);a.fx('referenceSpray').target=1;
     const c=spoutAnchor(a),n=calm?3:Math.ceil(10*strength);
     if(kind==='celebrate'&&!calm&&!rainbowOrigin){rainbowOrigin={...c};a.fx('referenceRainbow').target=1;}
@@ -39,6 +40,7 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
       life:.98,size:.055,color:waterColor(a)});
   }
   function splash(a,at){
+    const calm=a.calm,amp=calm?.25:1;
     events.push({type:'landing',at});a.squish(6*amp);
     for(let i=0;i<(calm?4:12);i++){
       const side=i%2?1:-1;
@@ -47,8 +49,9 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
         life:.80,size:.055+a.rand()*.015,color:waterColor(a)});
     }
   }
-  function onceAt(t,dt,at,fn){if(t>=at&&t-dt<at)fn();}
+  function onceAt(t,dt,at,fn){if(t>=at&&!fired.has(at)){fired.add(at);fn();}}
   function animate(a,t,dt){
+    if(stopped)return;const calm=a.calm,amp=calm?.25:1;
     base(a);
     if(kind==='spout'){
       a.lean.target=(-.06*Math.sin(t*4))*amp;a.fx('fin').target=(.12+.2*Math.max(0,Math.sin(t*3)))*amp;
@@ -74,13 +77,38 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
       onceAt(t,dt,1.20,()=>splash(a,1.20));
     }
   }
+  return {
+    rest,tick:animate,
+    enter(a){
+      for(const [name,stiffness,damping] of [['referenceSpray',120,14],['referenceRainbow',90,19]]){
+        const spring=a.fx(name);spring.stiffness=stiffness;spring.damping=damping;spring.snap(0);
+      }
+      base(a);a.squish(6*(a.calm?.25:1));
+    },
+    update(a){
+      if(a.fx('referenceSpray').target===1&&a.fxValue('referenceSpray')>.95)a.fx('referenceSpray').target=0;
+      if(a.calm)a.fx('referenceRainbow').target=0;
+    },
+    cancel(a){stopped=true;spoutOrigin=spoutAnchor(a);a.fx('referenceSpray').target=0;a.fx('referenceRainbow').target=0;},
+    view(a,time,visible=true){return {time,kind,phase:referencePhase(kind,time),pressure:clamp(a.fxValue('referenceSpray')),
+      jets:events.filter(e=>e.type==='jet').length,landings:events.filter(e=>e.type==='landing').length,
+      launches:events.filter(e=>e.type==='launch').length,events:events.map(e=>({...e})),
+      drops:a.particles.filter(p=>p.kind==='drop').length,visible,
+      ...(spoutOrigin?{spoutOrigin:{...spoutOrigin}}:{}),
+      rainbowOrigin:rainbowOrigin?{...rainbowOrigin}:null,
+      rainbow:kind==='celebrate'&&!a.calm&&time<REFERENCE_SCORES[kind].duration&&a.fxValue('referenceRainbow')>=.005?clamp(a.fxValue('referenceRainbow')):0};},
+  };
+}
+
+export function createReferenceCelebration({kind='celebrate',palette='deep',calm=false}={}){
+  let actor,score,time=0,visible=true;
   function reset(){
-    time=0;events.length=0;rainbowOrigin=null;
+    time=0;score=createReferenceScore({kind});
     const definition={...character,effects:{...character.effects,
       referenceSpray:{rest:0,stiffness:120,damping:14},referenceRainbow:{rest:0,stiffness:90,damping:19}},
-      update(a,dt){character.update?.(a,dt);if(a.fx('referenceSpray').target===1&&a.fxValue('referenceSpray')>.95)a.fx('referenceSpray').target=0;},
-      actions:{...character.actions,'reference-rest':{kind:'loop',enter:rest,tick:rest},
-        'reference-action':{kind:'once',duration:REFERENCE_SCORES[kind].duration,enter(a){base(a);a.squish(6*amp);},tick:animate}}};
+      update(a,dt){character.update?.(a,dt);score.update(a);},
+      actions:{...character.actions,'reference-rest':{kind:'loop',enter:score.rest,tick:score.rest},
+        'reference-action':{kind:'once',duration:REFERENCE_SCORES[kind].duration,enter:score.enter,tick:score.tick}}};
     actor=new Actor(definition,{state:'reference-rest',palette,seed:42,fidget:false});actor.calm=calm;
     for(let i=0;i<132;i++)actor.advance(1/120);
     actor.play('reference-action');
@@ -92,12 +120,7 @@ export function createReferenceCelebration({kind='celebrate',palette='deep',calm
     while(time<target-1e-9){const dt=Math.min(1/120,target-time);actor.advance(dt);time+=dt;}time=target;
   }
   return {get actor(){return actor;},get time(){return time;},get duration(){return REFERENCE_SCORES[kind].duration;},
-    get view(){return {time,kind,phase:referencePhase(kind,time),pressure:clamp(actor.fxValue('referenceSpray')),
-      jets:events.filter(e=>e.type==='jet').length,landings:events.filter(e=>e.type==='landing').length,
-      launches:events.filter(e=>e.type==='launch').length,events:events.map(e=>({...e})),
-      drops:actor.particles.filter(p=>p.kind==='drop').length,visible,
-      rainbowOrigin:rainbowOrigin?{...rainbowOrigin}:null,
-      rainbow:kind==='celebrate'&&!calm&&time<REFERENCE_SCORES[kind].duration&&actor.fxValue('referenceRainbow')>=.005?clamp(actor.fxValue('referenceRainbow')):0};},
+    get view(){return score.view(actor,time,visible);},
     advance,seek(value){if(!Number.isFinite(value))throw new Error('Expected a finite seek time');const shown=visible;reset();visible=true;advance(Math.max(0,Math.min(REFERENCE_SCORES[kind].duration,value)));visible=shown;},
     setVisible(value){visible=Boolean(value);},
     setPalette(id){const p=character.palettes.find(p=>p.id===id);if(!p)throw new Error('Unknown palette');palette=id;actor.palette=p;
@@ -122,7 +145,7 @@ export function drawReferenceRainbow(g,study,layout){
 
 export function drawReferenceSpout(g,study,layout){
   const p=study.view.pressure;if(p<.03)return;
-  const c=spoutAnchor(study.actor),R=layout.R,h=R*(.35+p*.85)*(study.actor.calm?.65:1);
+  const c=study.view.spoutOrigin??spoutAnchor(study.actor),R=layout.R,h=R*(.35+p*.85)*(study.actor.calm?.65:1);
   const x=layout.cx+c.x*R,y=layout.cy+c.y*R;
   const colors=referenceWaterColors(study.actor);
   g.save();g.lineCap='round';

@@ -3,7 +3,6 @@ import test from 'node:test';
 globalThis.HTMLElement??=class {};
 const {createCompletionPerformance}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-performance.js');
 const {createCompletionFilm,COMPLETION_ROUTES}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-film.js');
-const {completionSpoutPose}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-spout.js');
 const outcome={category:'completed',goal:{id:'full-goal/id',revision:2,round:1}};
 const create=()=>createCompletionPerformance({sessionId:'s'});
 const result=(out=outcome)=>({active:false,outcome:out});
@@ -15,18 +14,18 @@ test('ordinary replies and intermediate goal rounds close quietly; complete requ
   assert.throws(()=>create().sync(result({category:'completed',goal:{id:'',revision:1}})));
 });
 test('same goal version plays once; even round changes do not replay, while a new revision can',()=>{
-  const p=create(),actor=p.actor;p.sync(result());p.advance(.9);assert.equal(p.view.spouts,1);const drops=p.actor.particles.filter(x=>x.kind==='drop');
-  assert(drops.length>=20);assert(drops.filter(x=>x.size>=.065).length>=12);assert(Math.max(...drops.map(x=>x.x))-Math.min(...drops.map(x=>x.x))>.6);
+  const p=create(),actor=p.actor;p.sync(result());p.advance(.55);assert.equal(p.view.spouts,1);const drops=p.actor.particles.filter(x=>x.kind==='drop');
+  assert.equal(drops.length,12);assert(drops.every(x=>x.studyKind==='jet'));assert(new Set(drops.map(x=>x.vx)).size>1);assert(drops.every(x=>x.ay===9));
   p.sync(result(structuredClone(outcome)));p.advance(4);p.sync(result({...outcome,goal:{...outcome.goal,round:2}}));p.advance(4);assert.equal(p.view.spouts,1);assert.equal(p.view.mode,'life');assert.equal(p.actor,actor);
-  p.sync(result({...outcome,goal:{...outcome.goal,revision:3}}));p.advance(.9);assert.equal(p.view.spouts,2);
+  p.sync(result({...outcome,goal:{...outcome.goal,revision:3}}));p.advance(.55);assert.equal(p.view.spouts,2);
 });
 test('new work cancels completion before the unplayed burst and preserves springs and one Actor',()=>{
-  const p=create();p.sync(result());p.advance(.5);const before=pose(p.actor),actor=p.actor;
+  const p=create();p.sync(result());p.advance(.1);const before=pose(p.actor),actor=p.actor;
   p.sync({active:true,workId:'new-work',stage:'tools'});assert.deepEqual(pose(p.actor),before);p.advance(2);assert.equal(p.view.spouts,0);assert.equal(p.actor,actor);assert.equal(p.view.mode,'work');assert.equal(p.view.work.id,'new-work');
   p.sync(result());p.advance(4);assert.equal(p.view.spouts,0);
 });
 for(const kind of ['question','approval'])test(kind+' interrupts before or after the burst, then exits to current life/work without replay',()=>{
-  for(const at of [.2,1.0,2.8])for(const active of [false,true]){
+  for(const at of [.1,.5,1.0,2.5])for(const active of [false,true]){
     const p=create();p.sync(result());p.advance(at);const before=pose(p.actor),spouts=p.view.spouts;
     p.sync({pending:[pending(kind)]});assert.deepEqual(pose(p.actor),before);p.advance(2);assert.equal(p.view.symbol.kind,kind);assert.equal(p.view.symbol.progress,1);
     if(active)p.sync({active:true,workId:'next-work',stage:'tools'});
@@ -38,23 +37,26 @@ test('pending set owns the body until all exact identities settle, including a l
   p.sync({pending:[pending('approval')]});p.advance(.3);assert.equal(p.view.symbol.kind,'approval');assert.equal(p.view.spouts,0);
   p.sync({pending:[],outcome});p.advance(5);assert.equal(p.view.spouts,0);assert.equal(p.view.mode,'life');
 });
-test('hide freezes the finish and burst clock; palette changes preserve pose; calm emits only two drops',()=>{
-  const p=create();p.setCalm(true);p.sync(result());p.advance(.5);const before=pose(p.actor),clock=p.view.finish.elapsed;
+test('hide freezes the finish and burst clock; palette changes preserve pose; calm keeps the accepted three-drop first jet without rainbow',()=>{
+  const p=create();p.setCalm(true);p.sync(result());p.advance(.1);const before=pose(p.actor),clock=p.view.finish.elapsed;
   p.setVisible(false);p.advance(100);assert.deepEqual(pose(p.actor),before);assert.equal(p.view.finish.elapsed,clock);
-  p.setPalette('night');assert.deepEqual(pose(p.actor),before);p.setVisible(true);p.advance(.4);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,2);
+  p.setPalette('night');assert.deepEqual(pose(p.actor),before);p.setVisible(true);p.advance(.4);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,3);
 });
-test('a request between pressure launch and the fan cancels unplayed droplets and freezes the fading jet geometry',()=>{
-  const p=create();p.sync(result());p.advance(.72);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.length,0);
-  const before=completionSpoutPose(p.view.spout),anchor=p.view.spout.anchor;p.sync({pending:[pending('approval')]});p.advance(.08);
-  const after=completionSpoutPose(p.view.spout);assert.equal(after.height,before.height);assert(after.opacity<before.opacity);assert.deepEqual(p.view.spout.anchor,anchor);
-  p.advance(2);assert.equal(p.view.spout,null);assert.equal(p.actor.particles.length,0);assert.equal(p.view.symbol.kind,'approval');
+test('interrupting released spray fades the light, preserves current particles and cancels the unplayed landing',()=>{
+  const p=create();p.sync(result());p.advance(.5);assert.equal(p.view.spouts,1);assert(p.view.celebration.rainbow>.5);
+  const drops=p.actor.particles.slice(),before=pose(p.actor);p.sync({pending:[pending('approval')]});assert.deepEqual(pose(p.actor),before);
+  assert(drops.every(x=>p.actor.particles.includes(x)));assert(p.view.celebration.spoutOrigin);
+  p.advance(1);assert.equal(p.view.celebration.landings,0);assert(p.view.celebration.rainbow<.05);assert(p.view.celebration.pressure<.03);
+  p.advance(2);assert.equal(p.actor.particles.length,0);assert.equal(p.view.symbol.kind,'approval');
+  p.sync({pending:[]});p.advance(3);assert.equal(p.view.celebration.landings,0);assert.equal(p.view.spouts,1);
 });
-test('water keeps a readable spread, falls around the face, and freezes with the animation clock',()=>{
-  const p=create();p.sync(result());p.advance(.95);const clock=p.view.spout.age,particles=p.actor.particles.map(x=>[x.x,x.y,x.age]);
-  p.setVisible(false);p.advance(50);assert.equal(p.view.spout.age,clock);assert.deepEqual(p.actor.particles.map(x=>[x.x,x.y,x.age]),particles);
-  p.setVisible(true);p.advance(.7);const big=p.actor.particles.filter(x=>x.size>=.065);assert(big.length>0);
-  assert(big.every(x=>Math.abs(x.x-p.actor.bodyCenter().x)>.8),'large drops should fall to the sides instead of covering the face');
-  p.advance(4);assert.equal(p.view.spout,null);assert(!p.actor.particles.some(x=>x.kind==='drop'));
+test('accepted water and light freeze with the actor; palette changes preserve their positions',()=>{
+  const p=create();p.sync(result());p.advance(.95);const effect=p.view.celebration,particles=structuredClone(p.actor.particles);
+  p.setVisible(false);p.advance(50);assert.equal(p.view.celebration.time,effect.time);assert.equal(p.view.celebration.pressure,effect.pressure);assert.equal(p.view.celebration.rainbow,effect.rainbow);assert.deepEqual(p.actor.particles,particles);
+  p.setPalette('night');assert.deepEqual(p.actor.particles.map(x=>[x.x,x.y,x.vx,x.vy,x.age]),particles.map(x=>[x.x,x.y,x.vx,x.vy,x.age]));
+  assert(p.actor.particles.filter(x=>x.kind==='drop').every(x=>x.color==='#c5d2e7'));
+  p.setVisible(true);p.advance(.7);assert.equal(p.view.celebration.landings,1);assert(p.actor.particles.some(x=>x.studyKind==='splash'));assert(p.view.celebration.rainbow>.95);
+  p.advance(4);assert.equal(p.view.celebration.rainbow,0);assert(!p.actor.particles.some(x=>x.kind==='drop'));
 });
 test('a request also cancels an unplayed life bubble; exit starts a fresh quiet plan',()=>{
   const p=create();p.sync(result({category:'reply'}));p.advance(13.6);assert(p.view.life.clock>12.5);assert(!p.actor.particles.some(x=>x.kind==='bubble'));
@@ -72,6 +74,6 @@ test('the same score drives paired keyframes and continuous playback; all interr
   }
 });
 test('manual ownership cancels future mock cues; hidden film never advances source score',()=>{
-  const f=createCompletionFilm({route:'approval'});f.seek(5.2);f.setVisible(false);f.advance(60);assert.equal(f.time,5.2);f.setVisible(true);
+  const f=createCompletionFilm({route:'approval'});f.seek(5.1);f.setVisible(false);f.advance(60);assert.equal(f.time,5.1);f.setVisible(true);
   const id=f.inject('question');f.advance(8);assert.equal(f.goal.view.requestId,id);assert.equal(f.goal.view.spouts,0);assert.throws(()=>f.settle('not-this-id'));f.startWork();f.settle(id);f.advance(2);assert.equal(f.goal.view.mode,'work');assert.equal(f.goal.view.spouts,0);
 });

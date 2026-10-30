@@ -3,7 +3,8 @@
 import {createCompletionPerformance} from './completion-performance.js';
 export const COMPLETION_ROUTES=['none','new-work','question','approval','question-work','approval-work'];
 export const COMPLETION_LANDMARKS=[{time:3,title:'同样在工具工作'},{time:4.7,title:'同样浮出汇报'},
-  {time:5.18,title:'从余势收起'},{time:5.85,title:'水柱起势'},{time:6.05,title:'普通收势／水花展开'},{time:7.1,title:'安静陪伴／自豪余韵'},{time:9.2,title:'退出后接最新意图'}];
+  {time:5.10,title:'轻收势／蓄力'},{time:5.48,title:'跃起喷水'},{time:5.72,title:'安静陪伴／虹光展开'},
+  {time:6.45,title:'回落水花'},{time:7.20,title:'虹光收尾'},{time:8.4,title:'回到生活'},{time:9.2,title:'退出后接最新意图'}];
 export function createCompletionFilm({route='none',palette='deep',calm=false,interruptAt=6}={}){
   if(!COMPLETION_ROUTES.includes(route))throw new Error('Unknown completion route');
   if(!Number.isFinite(interruptAt)||interruptAt<5||interruptAt>8.4)throw new Error('Invalid interruption time');

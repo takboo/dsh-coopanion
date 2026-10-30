@@ -2,7 +2,7 @@
 
 当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
 
-当前使用已获视觉确认的[参考版喷水与完成庆祝](reference-celebration-study.html)及[分镜](../../storyboards/little-deep-reference-celebration-v0.md)，确认范围以设计入口为准。用户选择 Bloop 的弹性喷流、自然水滴和整次庆祝为主，保留小湛原造型。[旧慢喷水](spout-motion-study.html)与[静态三帧](spout-shape-study.html)保留历史对照，旧六滴布局和停留不再约束当前表演；[目标完成双画面对照](completion-study.html)保留机制参考。实机仍为已通过的 0.4.15 + 0.0.2。
+当前使用已获视觉确认的[参考版喷水与完成庆祝](reference-celebration-study.html)及[分镜](../../storyboards/little-deep-reference-celebration-v0.md)，确认范围以设计入口为准。用户选择 Bloop 的弹性喷流、自然水滴和整次庆祝为主，保留小湛原造型。[旧慢喷水](spout-motion-study.html)与[静态三帧](spout-shape-study.html)保留历史对照，旧六滴布局和停留不再约束当前表演；[目标完成双画面对照](completion-study.html)已接回该表演，主线承接待用户复看。实机仍为已通过的 0.4.15 + 0.0.2。
 
 ## 模块与页面
 
@@ -10,7 +10,7 @@
 | --- | --- |
 | 当前喷水与庆祝 | [reference-celebration-study.html](reference-celebration-study.html) 与 [reference-celebration.js](reference-celebration.js)，正常／实际尺寸共用同一 Actor 和一次表演 |
 | 旧喷水对照 | [spout-motion-study.html](spout-motion-study.html)、[spout-shape-study.html](spout-shape-study.html)，旧布局和节奏已被本轮参考方向取代 |
-| 上一版完成样片 | [completion-study.html](completion-study.html)，普通回复／真正完成及新工作、?、! 打断机制保留，待接入已通过的喷水与庆祝 |
+| 当前完成样片 | [completion-study.html](completion-study.html)，已接回通过的喷水与虹光，见[分镜 v2](../../storyboards/little-deep-completion-v2.md)，提供五种打断路线和 300／150 px 切换 |
 | 上一版完成喷水 | [completion-spout.js](completion-spout.js) 保留水柱起势、扇形展开与落散机制；造型与节奏尚未通过 |
 | 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
 | 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
@@ -67,7 +67,7 @@
 
 ## 检查
 
-当前参考版先执行 `node --test tests/little-deep-reference-celebration.mjs`，浏览器检查为 `tests/little-deep-reference-celebration-ui.mjs`，设置 CHROMIUM_PATH 与新的 DSH_TEST_ARTIFACTS，并启动同源静态服务。已通过的独立短片不消费真实完成事实，接回完成主线时仍需测试打断与接入。旧慢喷水测试仅验证历史候选，需显式读取。
+当前参考版先执行 `node --test tests/little-deep-reference-celebration.mjs`，浏览器检查为 `tests/little-deep-reference-celebration-ui.mjs`，设置 CHROMIUM_PATH 与新的 DSH_TEST_ARTIFACTS，并启动同源静态服务。已通过的独立短片不消费真实完成事实，完成主线已复用同一编排，产品宿主接入仍需单独验证。旧慢喷水测试仅验证历史候选，需显式读取。
 
 当前完成候选先执行 `node --test tests/little-deep-completion.mjs tests/little-deep-work-life.mjs`。浏览器控件及真实画面检查为 `tests/little-deep-completion-ui.mjs`，设置已核对的 CHROMIUM_PATH 和新的 DSH_TEST_ARTIFACTS 目录，并先启动本地静态预览。
 
