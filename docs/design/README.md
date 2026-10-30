@@ -6,7 +6,7 @@
 
 **[当前观看：喷水三帧及实际尺寸对照](art-workflow/whale-little-deep-v3/spout-shape-study.html)**，配套[造型分镜](storyboards/little-deep-spout-shape-v0.md)。先确认蓄势、展开、落散的造型，用户确认后再做连续样片。
 
-用户反馈上一版水柱节奏偏快、柱身与画风不协调，已选择短束水流、圆润水冠和几颗大水滴的方向。本轮仅制作静帧，造型尚未确认；没有更新连续样片、实机插件或角色包。
+用户反馈长水柱节奏偏快、柱身与画风不协调；首轮连体三瓣水冠又被反馈“不像水花”。当前仅复做展开静帧：用短水束和向两侧分离的水滴形成展开感，取消连体水冠。蓄势、落散保留参考，造型尚未确认；没有更新连续样片、实机插件或角色包。
 
 此前的[回复结束／目标完成连续样片](art-workflow/whale-little-deep-v3/completion-study.html)及[分镜 v1](storyboards/little-deep-completion-v1.md)保留，用于追溯普通回复／真正完成与新工作、?、! 的打断机制，喷水造型已被本轮反馈要求复做。
 

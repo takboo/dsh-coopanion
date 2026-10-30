@@ -6,7 +6,7 @@ import {spoutAnchor} from './completion-spout.js';
 
 export const SPOUT_FRAMES=Object.freeze([
   {id:'gather',title:'蓄势',detail:'轻收身体，眼睛稍眯；水花尚未出现。',lean:.035,hover:.10,fin:.12,tail:-.025,squash:.035,eyes:{h:.76,topLid:.14}},
-  {id:'open',title:'展开',detail:'短束水流托起圆润水冠，三瓣错落展开。',lean:-.075,hover:.23,fin:.58,tail:.045,squash:-.015,eyes:'happy'},
+  {id:'open',title:'展开',detail:'短水束与分离水滴，向上、向两侧甩开。',lean:-.075,hover:.23,fin:.58,tail:.045,squash:-.015,eyes:'happy'},
   {id:'fall',title:'落散',detail:'水冠散成六颗大水滴，从两侧落下。',lean:-.025,hover:.15,fin:.22,tail:.015,squash:0,eyes:'proud'},
 ]);
 
@@ -38,20 +38,13 @@ export function drawSpoutFrameWater(g,actor,layout,id){
   g.fillStyle=night?'#a8c2ff':'#9bb8ff';g.strokeStyle=night?'#708fc7':'#5d7bdb';
   g.lineWidth=.026;g.lineJoin='round';g.lineCap='round';
   if(id==='open'){
-    // A short, broad connection and rounded water lobes share the whale's flat silhouette language.
-    g.beginPath();g.moveTo(-.055,.005);
-    g.bezierCurveTo(-.055,-.13,-.11,-.19,-.22,-.23);
-    g.bezierCurveTo(-.37,-.21,-.52,-.26,-.54,-.39);
-    g.bezierCurveTo(-.57,-.55,-.43,-.61,-.33,-.51);
-    g.bezierCurveTo(-.24,-.43,-.23,-.32,-.12,-.30);
-    g.bezierCurveTo(-.17,-.45,-.22,-.65,-.12,-.75);
-    g.bezierCurveTo(-.02,-.86,.12,-.76,.105,-.63);
-    g.bezierCurveTo(.10,-.51,.015,-.40,.045,-.32);
-    g.bezierCurveTo(.16,-.40,.25,-.57,.37,-.54);
-    g.bezierCurveTo(.54,-.51,.54,-.32,.39,-.27);
-    g.bezierCurveTo(.24,-.23,.095,-.19,.055,.005);
+    // Air gaps and outward-facing drop heads replace the solid, three-lobed crown.
+    g.beginPath();g.moveTo(-.035,.005);
+    g.bezierCurveTo(-.038,-.10,-.07,-.24,-.11,-.31);
+    g.quadraticCurveTo(-.06,-.36,-.02,-.32);
+    g.bezierCurveTo(.025,-.24,.045,-.10,.045,.005);
     g.closePath();g.fill();g.stroke();
-    drop(g,-.66,-.50,.060,-.52);drop(g,.58,-.71,.055,.46);
+    for(const p of [[-.06,-.58,.082,3.05],[-.33,-.67,.115,2.10],[.29,-.61,.105,-2.25],[-.68,-.39,.095,1.0],[.64,-.27,.12,-1.10],[.58,-.67,.065,-1.65]])drop(g,...p);
   }else{
     // Fixed positions for art review; falling motion is deliberately not implemented here.
     for(const p of [[-1.35,-.05,.12,-.48],[-.85,-.55,.10,-.30],[-.25,-.91,.115,-.10],[.40,-.83,.095,.26],[1.15,-.85,.135,.45],[1.9,-.15,.09,.62]])drop(g,...p);
