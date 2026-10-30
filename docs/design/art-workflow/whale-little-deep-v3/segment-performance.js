@@ -11,10 +11,11 @@ export function lifePhase(time) {
   return t<3?'stretch':t<7?'observe':t<12?'belly':t<16?'bubble':t<20?'rest':'return';
 }
 
-export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1',lifePerformance=null,interactionPerformance=null,workStyle='concentrated'}={}) {
+export function createSegmentPerformance({sessionId='segment-study',mode='work',palette='deep',calm=false,workId='work-1',lifePerformance=null,interactionPerformance=null,restPerformance=null,workStyle='concentrated'}={}) {
   if(lifePerformance&&(!['apply','advance'].every(key=>typeof lifePerformance[key]==='function')))
     throw new Error('Expected a local life performance with apply and advance');
   if(interactionPerformance&&!['apply','advance','active'].every(key=>typeof interactionPerformance[key]==='function'))throw new Error('Expected a local interaction performance');
+  if(restPerformance&&!['apply','advance'].every(key=>typeof restPerformance[key]==='function'))throw new Error('Expected a local rest performance');
   const context={mode:null,pending:[],eventTimeMs:0,lastFactMs:0,animationTime:0,visible:true,
     work:{id:workId,stage:'focus',group:'deep',clock:0,groupClock:0,tailPhase:0,tailSpeed:1,entries:0,
       initial:true,fromDepth:0,resumeClock:RESUME_DURATION,resumeFrom:0},
@@ -52,6 +53,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
   }
   function restPose(a) {
     if(interactionPerformance?.apply(a))return;
+    if(restPerformance?.apply(a))return;
     a.morph('rest',{squash:0,blink:false});a.fx('hidden').target=0;a.fx('eyesOpacity').target=1;
     a.scale.target=1;a.hover.target=.13;a.rootX.target=0;a.lean.target=0;
     a.fx('fin').target=.06;a.fx('belly').target=0;a.fx('ripple').target=0;
@@ -154,6 +156,7 @@ export function createSegmentPerformance({sessionId='segment-study',mode='work',
             const w=context.work;w.clock+=dt;w.groupClock+=dt;w.resumeClock=Math.min(RESUME_DURATION,w.resumeClock+dt);
             if(w.group==='deep'){w.tailSpeed+=((w.stage==='tools'?1.2:.8)-w.tailSpeed)*(1-Math.exp(-dt/.45));w.tailPhase+=dt*w.tailSpeed;}
           } else if(context.mode==='life'&&!lifePerformance?.advance(dt))context.life.clock+=dt;
+          else if(context.mode==='rest')restPerformance?.advance(dt);
         }
         engine.advance(dt);
         if(context.mode==='work'&&!context.pending.length)engine.actor.cues.tailClock=context.work.tailPhase;

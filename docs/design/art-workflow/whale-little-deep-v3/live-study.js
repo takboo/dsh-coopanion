@@ -1,3 +1,4 @@
+// Historical structural observer/replay; current scene: completion-study.html, current runtime: examples/little-deep.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {renderActor} from '../vendor/livelings/workspace/livelings.js';
 import {createWorkLoop} from './work-loop.js';

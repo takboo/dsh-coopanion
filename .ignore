@@ -14,3 +14,20 @@
 /docs/design/art-workflow/whale-little-deep-v3/work-performance.js
 /docs/design/art-workflow/whale-little-deep-v3/work-study.js
 /docs/design/art-workflow/whale-little-deep-v3/work-study.css
+
+# Dated integration summaries retain original bytes and links; enter via runtime-baseline.md.
+/docs/design/little-deep-api2-validation.md
+/docs/design/little-deep-feedback-validation.md
+/docs/design/little-deep-session-source-validation.md
+/docs/design/little-deep-real-session-acceptance.md
+/docs/design/session-observation.md
+# Historical structural replay is not the current completion or runtime implementation.
+/docs/design/art-workflow/whale-little-deep-v3/work-loop.js
+/docs/design/art-workflow/whale-little-deep-v3/work-activities.js
+/docs/design/art-workflow/whale-little-deep-v3/session-replay.js
+/docs/design/art-workflow/whale-little-deep-v3/live-study.*
+/tests/little-deep-completion-legacy.mjs
+/tests/little-deep-mainline.mjs
+/tests/little-deep-replay.mjs
+/tests/little-deep-work-rhythm.mjs
+/tests/little-deep-live.mjs

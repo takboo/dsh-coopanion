@@ -1,3 +1,4 @@
+// Historical structural observer/replay; current scene: completion-study.html, current runtime: examples/little-deep.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Surface work has three readable intentions; short facts do not change anatomy.
 import {workActivities} from './work-performance.js';

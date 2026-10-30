@@ -1,3 +1,4 @@
+// Historical structural observer/replay; current scene: completion-study.html, current runtime: examples/little-deep.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Facts are immediate. Readable surface phrases carry bursts of low-level events.
 import {createRequestPerformance} from './request-performance.js';

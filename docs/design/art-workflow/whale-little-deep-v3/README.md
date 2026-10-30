@@ -2,11 +2,14 @@
 
 当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
 
+当前新候选为 [目标完成双画面对照](completion-study.html)及[分镜 v1](../../storyboards/little-deep-completion-v1.md)。旧 work-life 页使用早期工具留尾巴映射；实机 0.0.2 及新完成页使用 readable 工具完整身体。
+
 ## 模块与页面
 
 | 范围 | 文件与入口 |
 | --- | --- |
-| 当前工作／生活段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为连续对照 |
+| 当前完成候选 | [completion-study.html](completion-study.html)，共用段落与同源关键帧，普通回复／真正完成及新工作、?、! 打断 |
+| 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
 | 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
 | 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |
 | 请求局部复查 | [出场](storyboard.html#preview)、[提问交接](request-study.html)、[审批交接](approval-study.html)，后两页共用手势脚本与样式 |
@@ -61,7 +64,9 @@
 
 ## 检查
 
-在仓库根目录执行：
+当前完成候选先执行 `node --test tests/little-deep-completion.mjs tests/little-deep-work-life.mjs`。浏览器控件及真实画面检查为 `tests/little-deep-completion-ui.mjs`，设置已核对的 CHROMIUM_PATH 和新的 DSH_TEST_ARTIFACTS 目录，并先启动本地静态预览。
+
+以下为扩展回归，包含明确保留的旧结构机制；不能用它们的旧表面动作替代当前样片。在仓库根目录执行：
 
 ```bash
 node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs tests/little-deep-mainline.mjs tests/little-deep-replay.mjs tests/little-deep-completion.mjs tests/little-deep-work-rhythm.mjs tests/little-deep-work-life.mjs tests/little-deep-life-touch.mjs
@@ -69,6 +74,8 @@ node --experimental-transform-types --test tests/little-deep-live.mjs
 ```
 
 检查覆盖真实引擎轮廓、请求身份与手势、旧机制回放、双时钟、当前段落续点／相位、最新意图、生活退让和持续抚摸／松手的取消语义。浏览器画面、用户体验、系统偏好实机及产品宿主各自验证；用户确认范围统一从设计入口读取。
+
+旧完成机制另可显式运行 `node --test tests/little-deep-completion-legacy.mjs`，它不是本轮完成样片。
 
 旧版固定证据见[证据索引](../../../evidence/2026-10-28-little-deep/README.md)；工作主线过程稿与当前本机验证位置见[本轮归档](../../../archive/2026-10-29-work-mainline/README.md)；眼型及早期造型见[历史索引](../../../archive/README.md)。原始证据和许可按来源保留字节。
 

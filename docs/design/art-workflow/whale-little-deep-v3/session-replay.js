@@ -1,3 +1,4 @@
+// Historical structural observer/replay; current scene: completion-study.html, current runtime: examples/little-deep.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Offline metadata replay. No tools, messages or requests are executed.
 import {createWorkLoop,GOAL_TIMING} from './work-loop.js';

@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "01e97fd27d332dc8476a90ad6f864681d1b302aa",
+  "files": [
+    {
+      "originalPath": "docs/design/README.md",
+      "snapshot": "snapshots/README.md",
+      "sha256": "cb9cf0be19827d2bc017d9245b7a9853e90c7961c545c7dff687a973db77a93c"
+    },
+    {
+      "originalPath": "docs/design/art-workflow/whale-little-deep-v3/README.md",
+      "snapshot": "snapshots/prototype-README.md",
+      "sha256": "63e6568384856776aa9e303446b6b00d7aeb766dc3ecea6640163e556cb9bd24"
+    },
+    {
+      "originalPath": "examples/little-deep/README.md",
+      "snapshot": "snapshots/package-README.md",
+      "sha256": "283d69c4f9f456ed258082631c954035ca5653d05b07c35a9e89167cdf0d6248"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-completion-v0.md",
+      "snapshot": "snapshots/little-deep-completion-v0.md",
+      "sha256": "7d9232e12fafd4ed5f977b0fa43a09c4007d867b4f06c4ac00afecf9e69d25d4"
+    },
+    {
+      "originalPath": "tests/little-deep-completion.mjs",
+      "snapshot": "snapshots/little-deep-completion.mjs",
+      "sha256": "bbc3d3da74fc65e0e2a1b9cb42edd0947b452f9e4023798d01ed0f510851160b"
+    }
+  ]
+}

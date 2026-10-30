@@ -1,47 +1,62 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {readFileSync} from 'node:fs';
 globalThis.HTMLElement??=class {};
-const {createSessionReplay}=await import('../docs/design/art-workflow/whale-little-deep-v3/session-replay.js');
-const {createWorkLoop,GOAL_TIMING}=await import('../docs/design/art-workflow/whale-little-deep-v3/work-loop.js');
-const data=JSON.parse(readFileSync(new URL('../docs/design/art-workflow/whale-little-deep-v3/fixtures/session-d1e0a596.structure.json',import.meta.url),'utf8'));
-const done={sessionId:'goal-test',mood:'happy',active:false,tools:0,pending:[],completion:{category:'completed',goal:{id:'goal/full',revision:2,round:0}}};
-
-test('the actual mid-turn goal event does not celebrate; shared completed at the end starts one continuous finish',()=>{
-  const replay=createSessionReplay(data,{completionBranch:true}),actor=replay.actor,plays=[];actor.on(e=>{if(e.type==='play')plays.push(e.id);});
-  replay.advance(replay.landmarks.find(l=>l.seq===338).time+1);assert(!plays.includes('done'));
-  replay.advance(replay.landmarks.find(l=>l.seq===654).time-replay.time);
-  assert.equal(replay.view.finishPhase,'prepare');assert.equal(replay.actor,actor);
-  replay.advance(.8);assert.equal(replay.view.finishPhase,'celebrate');assert(actor.particles.some(p=>p.kind==='drop'));
-  replay.advance(replay.duration);assert.equal(replay.actor,actor);assert.equal(actor.state,'idle');
-  assert.equal(plays.filter(id=>id==='done').length,1);assert.equal(replay.view.completion.category,'completed');
+const {createCompletionPerformance}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-performance.js');
+const {createCompletionFilm,COMPLETION_ROUTES}=await import('../docs/design/art-workflow/whale-little-deep-v3/completion-film.js');
+const outcome={category:'completed',goal:{id:'full-goal/id',revision:2,round:1}};
+const create=()=>createCompletionPerformance({sessionId:'s'});
+const result=(out=outcome)=>({active:false,outcome:out});
+const pending=kind=>({id:'full-'+kind,sessionId:'s',kind,state:'open'});
+const pose=a=>[a.rootX.value,a.rootX.velocity,a.lean.value,a.lean.velocity,a.scale.value,a.hover.value,...a.base.flatMap(p=>[p.x,p.y])];
+test('ordinary replies and intermediate goal rounds close quietly; complete requires actual classification and full identity',()=>{
+  for(const category of ['reply','goal-progress','blocked','stopped']){const p=create();p.advance(3);p.sync(result({category}));p.advance(4);assert.equal(p.view.spouts,0);assert(!p.actor.particles.some(x=>x.kind==='drop'));}
+  assert.throws(()=>create().sync(result({category:'completed'})));
+  assert.throws(()=>create().sync(result({category:'completed',goal:{id:'',revision:1}})));
 });
-
-test('only a confirmed complete goal identity can celebrate, and repeated snapshots never replay it',()=>{
-  for(const category of ['reply','goal-progress']) {
-    const loop=createWorkLoop({sessionId:'goal-test',completionBranch:true});loop.sync({...done,completion:{...done.completion,category}});loop.advance(5);
-    assert.equal(loop.actor.onceId,null);assert(!loop.actor.particles.some(p=>p.kind==='drop'));
-  }
-  const loop=createWorkLoop({sessionId:'goal-test',completionBranch:true}),plays=[];loop.actor.on(e=>{if(e.type==='play')plays.push(e.id);});
-  loop.sync(done);loop.advance(.5);loop.sync(structuredClone(done));loop.advance(5);loop.sync(done);loop.advance(1);
-  assert.equal(plays.filter(id=>id==='done').length,1);assert.equal(loop.actor.state,'idle');
-  loop.sync({...done,completion:{...done.completion,goal:{...done.completion.goal,revision:3}}});loop.advance(.5);
-  assert.equal(plays.filter(id=>id==='done').length,2,'A newly confirmed goal version has its own finish');
+test('same goal version plays once; even round changes do not replay, while a new revision can',()=>{
+  const p=create(),actor=p.actor;p.sync(result());p.advance(.9);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,8);
+  p.sync(result(structuredClone(outcome)));p.advance(4);p.sync(result({...outcome,goal:{...outcome.goal,round:2}}));p.advance(4);assert.equal(p.view.spouts,1);assert.equal(p.view.mode,'life');assert.equal(p.actor,actor);
+  p.sync(result({...outcome,goal:{...outcome.goal,revision:3}}));p.advance(.9);assert.equal(p.view.spouts,2);
 });
-
-test('new work or a request cancels unplayed finish cues, and the old goal cannot return later',()=>{
-  for(const pending of [[],[{id:'new-question',sessionId:'goal-test',kind:'question',state:'open'}]]) {
-    const loop=createWorkLoop({sessionId:'goal-test',completionBranch:true});loop.sync(done);loop.advance(.4);
-    loop.sync({sessionId:'goal-test',mood:'working',active:true,tools:1,pending});loop.advance(2);
-    assert(!loop.actor.particles.some(p=>p.kind==='drop'));assert.equal(loop.actor.state,pending.length?'request-study':'doing');
-    loop.sync({...done,pending:[]});loop.advance(4);assert.equal(loop.actor.state,'idle');
+test('new work cancels completion before the unplayed burst and preserves springs and one Actor',()=>{
+  const p=create();p.sync(result());p.advance(.5);const before=pose(p.actor),actor=p.actor;
+  p.sync({active:true,workId:'new-work',stage:'tools'});assert.deepEqual(pose(p.actor),before);p.advance(2);assert.equal(p.view.spouts,0);assert.equal(p.actor,actor);assert.equal(p.view.mode,'work');assert.equal(p.view.work.id,'new-work');
+  p.sync(result());p.advance(4);assert.equal(p.view.spouts,0);
+});
+for(const kind of ['question','approval'])test(kind+' interrupts before or after the burst, then exits to current life/work without replay',()=>{
+  for(const at of [.2,1.0,2.8])for(const active of [false,true]){
+    const p=create();p.sync(result());p.advance(at);const before=pose(p.actor),spouts=p.view.spouts;
+    p.sync({pending:[pending(kind)]});assert.deepEqual(pose(p.actor),before);p.advance(2);assert.equal(p.view.symbol.kind,kind);assert.equal(p.view.symbol.progress,1);
+    if(active)p.sync({active:true,workId:'next-work',stage:'tools'});
+    p.sync({pending:[]});p.advance(2);assert.equal(p.view.spouts,spouts);assert.equal(p.view.symbols.length,0);assert.equal(p.view.mode,active?'work':'life');
   }
 });
-
-test('hidden finish freezes its exact one-shot progress and calm keeps the finish without jumping',()=>{
-  const loop=createWorkLoop({sessionId:'goal-test',completionBranch:true,calm:true});loop.sync(done);loop.advance(GOAL_TIMING.prepare+.15);
-  const elapsed=loop.actor.onceT,time=loop.view.time;loop.setVisible(false);loop.advance(60);assert.equal(loop.actor.onceT,elapsed);assert.equal(loop.view.time,time);
-  loop.setVisible(true);assert.equal(loop.actor.onceId,'done');assert.equal(loop.actor.onceT,elapsed);
-  loop.advance(.5);assert.equal(loop.actor.particles.filter(p=>p.kind==='drop').length,2);
-  loop.advance(5);assert.equal(loop.actor.state,'idle');assert.equal(loop.actor.airborne,false);
+test('pending set owns the body until all exact identities settle, including a late completed fact',()=>{
+  const p=create();p.sync({pending:[pending('question'),pending('approval')],active:false,outcome});p.advance(2);
+  p.sync({pending:[pending('approval')]});p.advance(.3);assert.equal(p.view.symbol.kind,'approval');assert.equal(p.view.spouts,0);
+  p.sync({pending:[],outcome});p.advance(5);assert.equal(p.view.spouts,0);assert.equal(p.view.mode,'life');
+});
+test('hide freezes the finish and burst clock; palette changes preserve pose; calm emits only two drops',()=>{
+  const p=create();p.setCalm(true);p.sync(result());p.advance(.5);const before=pose(p.actor),clock=p.view.finish.elapsed;
+  p.setVisible(false);p.advance(100);assert.deepEqual(pose(p.actor),before);assert.equal(p.view.finish.elapsed,clock);
+  p.setPalette('night');assert.deepEqual(pose(p.actor),before);p.setVisible(true);p.advance(.3);assert.equal(p.view.spouts,1);assert.equal(p.actor.particles.filter(x=>x.kind==='drop').length,2);
+});
+test('a request also cancels an unplayed life bubble; exit starts a fresh quiet plan',()=>{
+  const p=create();p.sync(result({category:'reply'}));p.advance(13.6);assert(p.view.life.clock>12.5);assert(!p.actor.particles.some(x=>x.kind==='bubble'));
+  p.sync({pending:[pending('question')]});p.advance(2);p.sync({pending:[]});p.advance(.3);
+  assert(p.view.life.clock<.31);assert(!p.actor.particles.some(x=>x.kind==='bubble'));assert.equal(p.view.spouts,0);
+});
+test('the same score drives paired keyframes and continuous playback; all interruption routes keep actors and consume old celebration',()=>{
+  for(const route of COMPLETION_ROUTES){const film=createCompletionFilm({route}),actors=[film.reply.actor,film.goal.actor];
+    for(const t of [3,4.7,5.18,5.85,7.1,9.2,12,16]){
+      film.advance(t-film.time);const sample=createCompletionFilm({route});sample.seek(t);
+      for(const lane of ['reply','goal']){assert.deepEqual(pose(film[lane].actor),pose(sample[lane].actor));assert.equal(film[lane].view.spouts,sample[lane].view.spouts);}
+    }
+    assert.equal(film.reply.actor,actors[0]);assert.equal(film.goal.actor,actors[1]);assert.equal(film.reply.view.spouts,0);assert.equal(film.goal.view.spouts,1);
+    assert.equal(film.goal.view.mode,route.includes('work')?'work':'life');
+  }
+});
+test('manual ownership cancels future mock cues; hidden film never advances source score',()=>{
+  const f=createCompletionFilm({route:'approval'});f.seek(5.2);f.setVisible(false);f.advance(60);assert.equal(f.time,5.2);f.setVisible(true);
+  const id=f.inject('question');f.advance(8);assert.equal(f.goal.view.requestId,id);assert.equal(f.goal.view.spouts,0);assert.throws(()=>f.settle('not-this-id'));f.startWork();f.settle(id);f.advance(2);assert.equal(f.goal.view.mode,'work');assert.equal(f.goal.view.spouts,0);
 });

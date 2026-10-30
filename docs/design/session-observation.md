@@ -25,7 +25,7 @@ node --experimental-transform-types scripts/prepare-little-deep-session.mjs \
   --output /new/path/structure.json
 ```
 
-回放可以暂停、定位、切换 1／8／16／32 倍速。附加模拟请求与历史请求独立；定位清理附加模拟，历史审批只按原决定退出。默认在共享 completed 边界停止；选择“加入目标完成候选”才观看[未确认的完成段](storyboards/little-deep-completion-v0.md)。
+回放可以暂停、定位、切换 1／8／16／32 倍速。附加模拟请求与历史请求独立；定位清理附加模拟，历史审批只按原决定退出。默认在共享 completed 边界停止；选择“加入目标完成候选”才观看[未确认的完成段](../archive/2026-10-30-completion-handoff/snapshots/little-deep-completion-v0.md)。
 
 ## 进行中只读观察
 
