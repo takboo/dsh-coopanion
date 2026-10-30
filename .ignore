@@ -35,5 +35,14 @@
 # Superseded six-drop slow-spout study; the current direction is reference-celebration.
 /docs/design/art-workflow/whale-little-deep-v3/spout-motion.js
 /docs/design/art-workflow/whale-little-deep-v3/spout-motion-study.*
-/docs/design/storyboards/little-deep-spout-motion-v0.md
 /tests/little-deep-spout-motion*.mjs
+
+# Superseded shape studies and structural viewer remain available through the archive.
+# spout-shape-study.css is shared by the accepted reference viewer and stays searchable.
+/docs/design/art-workflow/whale-little-deep-v3/spout-shape-study.html
+/docs/design/art-workflow/whale-little-deep-v3/spout-shape-study.js
+/docs/design/art-workflow/whale-little-deep-v3/spout-shape-frames.js
+/docs/design/art-workflow/whale-little-deep-v3/work-study.html
+/docs/design/art-workflow/whale-little-deep-v3/session-study.js
+/docs/design/art-workflow/whale-little-deep-v3/session-study.css
+/docs/design/art-workflow/whale-little-deep-v3/fixtures/session-d1e0a596.structure.json

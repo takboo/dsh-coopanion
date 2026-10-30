@@ -1,0 +1,42 @@
+{
+  "sourceCommit": "055988575c4a5c317e18792cf31c589d087e57d8",
+  "scope": "Documentation consolidation after approved independent spray and completion-v2 sample; original reports and runtime code preserved",
+  "files": [
+    {
+      "originalPath": "docs/design/README.md",
+      "snapshot": "snapshots/design-README.md",
+      "sha256": "ab30f53fae5b44f39afca24522af7241b3bee8e79284d0038fa9ae8e63dfa2a9",
+      "action": "replaced-current-summary"
+    },
+    {
+      "originalPath": "docs/design/art-workflow/whale-little-deep-v3/README.md",
+      "snapshot": "snapshots/prototype-README.md",
+      "sha256": "84ec3d55281ab59cdc2091e9d1669361953b79d9cd295faadd8955601e0e65c0",
+      "action": "replaced-module-index"
+    },
+    {
+      "originalPath": "docs/design/workspace-maintenance.md",
+      "snapshot": "snapshots/workspace-maintenance.md",
+      "sha256": "3cc505410be5f5382e1aa06c0cfae524a55d04268b9f13e82d1b6ecd027d868c",
+      "action": "replaced-chronological-log"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-completion-v1.md",
+      "snapshot": "snapshots/little-deep-completion-v1.md",
+      "sha256": "7c078b7cbd018b8c304cc6dfeabb7b49275646eeef75dbf385495778528bf1ce",
+      "action": "moved-superseded-storyboard"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-spout-shape-v0.md",
+      "snapshot": "snapshots/little-deep-spout-shape-v0.md",
+      "sha256": "389d7985b942c5d2de831b378db5731ba5c8f71c1909f5e9678cda7c4d235995",
+      "action": "moved-superseded-storyboard"
+    },
+    {
+      "originalPath": "docs/design/storyboards/little-deep-spout-motion-v0.md",
+      "snapshot": "snapshots/little-deep-spout-motion-v0.md",
+      "sha256": "318e363ec1bf7806a53bae6bffce92435225fc425c60532ea045b6ca98eb6e97",
+      "action": "moved-superseded-storyboard"
+    }
+  ]
+}

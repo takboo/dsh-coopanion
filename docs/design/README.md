@@ -1,62 +1,43 @@
 # 小湛当前设计与接手
 
-更新于 2026-10-30。当前分支 `codex/little-deep-api2`；产品契约从 [docs 索引](../README.md)读取。这里是唯一当前设计入口，历史记录里的“当前／下一步”不作为执行指令。
+更新于 2026-10-30，分支 `codex/little-deep-api2`。本页维护当前任务与用户确认范围；产品契约从 [docs 索引](../README.md)读取，历史快照里的“当前／下一步”按当时版本解释。
 
-## 当前任务：目标完成分支
+## 当前任务：目标完成主线待复看
 
-**[当前观看：回复结束／目标完成连续对照](art-workflow/whale-little-deep-v3/completion-study.html)**，配套[分镜 v2](storyboards/little-deep-completion-v2.md)。16 秒主线提供普通回复与真正完成的并列对照、300／150 px 大小切换和五种打断路线。独立[喷水与虹光短片](art-workflow/whale-little-deep-v3/reference-celebration-study.html)保留为已确认的效果基准。
+**[当前观看：回复结束／目标完成连续对照](art-workflow/whale-little-deep-v3/completion-study.html)**，配套[分镜 v2](storyboards/little-deep-completion-v2.md)。提交 `0559885` 将已通过的喷水与虹光接回 16 秒主线：普通回复轻收势，真正完成才跃起喷水；提供 300／150 px 大小切换与五条新工作、?、! 打断路线。
 
-用户选择 Bloop 演示的喷水与庆祝作为主要表演参考，要求保留小湛原造型重新制作。当前采用弹性细喷流、自然升落的水滴、跃起与倾斜、彩虹和回落水花；不再以旧六滴位置与 0.6 秒停留约束动作。原 character.js、物理参数、尾鳍及方向保持，正常 300 px／实际 150 px 同步，单次结束不循环。
+30 项机制、7 组浏览器检查通过；抽取前后 634 个采样确认独立效果的身体、水滴与虹光数值一致。**当前待用户复看主线区分、打断和续接**，尚未接入宿主或更新实机包。完成来源在宿主空闲时的切换仍是产品接入需要核对的边界，见分镜 v2。
 
-2026-10-30，用户对提交 `3c2f1ad` 的独立样片反馈“这版效果可以了”。本轮水色、彩虹造型与出退节奏的视觉评审通过：灰蓝水缘、偏白水芯；彩虹由本地喷发触发，持续到水花散去后收尾，外半径约增 36%，末端透明收散。身体动作和水滴轨迹保留。该版作为后续完成主线的表演基准；固定验证报告保留当时的待评审状态，本次用户确认由这里记录。
+## 已确认范围
 
-已将通过的表演接回目标完成分镜及连续样片，普通回复轻收势、真正完成才跃起喷水并带出虹光；新工作、?、! 可在喷水前、庆祝中及收尾时接管。30 项机制、7 组浏览器检查通过，独立效果抽取前后 634 个采样完全一致。本轮等待用户复看主线承接；尚未接入宿主或更新实机插件和角色包。
-
-此前的[静帧](art-workflow/whale-little-deep-v3/spout-shape-study.html)与[慢喷水短片](art-workflow/whale-little-deep-v3/spout-motion-study.html)保留作已被本轮方向取代的历史对照。用户曾确认六滴静态轮廓，不能把这个旧确认扩大为当前动作约束或连续节奏通过。
-
-[旧分镜 v1](storyboards/little-deep-completion-v1.md)保留历史机制与水柱参数，运行页已采用 v2。旧喷水模块只保留历史效果及共用喷孔定位，不能把旧时间表作为当前表演。
-
-## 已通过的实机基线
-
-插件为 rebase 后的 **0.4.15**，角色为 **0.0.2**，宿主 DSH Desktop 0.2.1-rc.3。用户已反馈工作流程测试通过。版本与产物摘要、已确认范围和旧验证入口统一见[基线与验证索引](runtime-baseline.md)。
-
-- 初次集中工作潜入；工具执行／复核保持完整专注身体，以视线、前倾、划鳍区分，避免频繁潜浮。不用沉默秒数判断长考。
-- 表演来源可跟随新工作的 session，聊天发送目标保持独立。
-- ?、! 的出场、结算退场及工作续接已通过；拖拽释放使用全角色共享语义。
-- 生活保持完整鲸鱼的舒展、探看与休息。更完整的生活抚摸、藏身／隐身及异常／停止仍需各自分镜和确认。
-
-[早期工作／生活样片](art-workflow/whale-little-deep-v3/work-life-study.html)保留已确认的视觉方向；其工具段一直留尾巴，属于旧映射，不能覆盖实机 0.0.2。新的完成样片采用 readable 工作段，与当前工具段保持一致。
-
-## 场景状态
-
-| 范围 | 当前状态 |
+| 范围 | 确认与边界 |
 | --- | --- |
-| 工作主线与 ?／! | 0.4.15 + 0.0.2 实机工作流程通过；[工作反馈分镜](storyboards/little-deep-api2-feedback-v1.md)记录当前工具身体 |
-| 目标完成 | 独立喷水与虹光视觉效果通过；已接回[主线分镜 v2](storyboards/little-deep-completion-v2.md)，打断／续接待用户复看 |
-| 生活交互 | [生活分镜](storyboards/little-deep-life-touch-v0.md)与[样片](art-workflow/whale-little-deep-v3/life-touch-study.html)已制作，待单独反馈 |
-| 异常／停止、藏身／隐身 | 待分镜；素材库已有动作不代表新场景通过 |
-| 角色 UI 皮肤、其他交互细节 | 实现与机制验证已有记录，不把工作流程测试扩大为全部审美验收 |
-| NPC 自主策略 | 本轮未接入；生活表演不自动启用日常调度 |
+| 工作主线与 ?／! | rebase 后插件 0.4.15 + Little Deep 0.0.2，宿主 DSH Desktop 0.2.1-rc.3，用户反馈工作流程测试通过；固定包与证据见[实机基线](runtime-baseline.md) |
+| 工作身体 | 集中开场潜水；工具／复核保持完整的专注身体，以眼神、前倾和划鳍区分；不按沉默秒数判断长考，不为每次工具往返潜浮。见[工作反馈分镜](storyboards/little-deep-api2-feedback-v1.md) |
+| 独立喷水与庆祝 | 用户对 `3c2f1ad` 的[独立样片](art-workflow/whale-little-deep-v3/reference-celebration-study.html)反馈“这版效果可以了”；水色、虹光造型与出退节奏通过，见[效果分镜](storyboards/little-deep-reference-celebration-v0.md) |
+| 工作／生活视觉方向 | 工作有明确任务与专注姿态；生活保持完整鲸鱼，舒展、探看和休息。早期工作／生活样片的工具段一直留尾巴，属于旧映射，不能覆盖当前 readable 策略 |
+| 拖拽与请求 | 实机工作流程包括请求结算后的续接；拖拽释放采用全角色共享语义。其他交互／皮肤细节不由工作流程测试一并结算 |
+
+独立效果采用用户选择的 Bloop 动作参考：弹性细喷流、自由水滴、跃起翻回与回落水花，保留小湛造型。水为灰蓝边缘、偏白水芯；虹光由喷发带出，落散后淡退，末端透明收散。旧六滴布局、固定停留和水柱参数已被取代，历史过程从[评审归档](../archive/2026-10-30-spray-completion-review/README.md)读取。
+
+## 待评审与后续范围
+
+| 范围 | 状态 |
+| --- | --- |
+| 目标完成主线 | v2 分镜与连续样片已实现，等待本轮主线承接反馈；共享完成判断和真实来源送达在产品接入时验证 |
+| 生活交互 | [分镜](storyboards/little-deep-life-touch-v0.md)及[样片](art-workflow/whale-little-deep-v3/life-touch-study.html)已制作，待单独反馈 |
+| 异常／停止、藏身／隐身 | 待分镜；素材库已有动作不代表对应场景通过 |
+| 角色 UI 皮肤及其他交互 | 已有实现与机制记录，审美和操作反馈分别确认 |
+| NPC 自主策略 | 本轮表演未接入；生活表演不自动启用日常调度 |
 
 ## 固定造型与制作流程
 
-蓝色、白腹、额顶缺口、B 大小眼与原生眨眼保留；完整鲸鱼和思考尾巴共用实心尾鳍及短弯尾柄。侧倾作用于整只鲸鱼，没有独立头关节或全方向造型。额外腹鳍、尾柄旁新增小头及弯弯白斑眼型已舍弃。
+保留蓝色、白腹、额顶缺口、B 大小眼和原生眨眼；完整鲸鱼与思考尾巴共用实心尾鳍、短弯尾柄。侧倾作用于整只鲸鱼，没有独立头关节或全方向造型。额外腹鳍、尾柄旁的小头和弯弯白斑眼型已舍弃。
 
-按[角色产出工作流](character-production-workflow.md)执行：能力核对 → 分镜及同源关键帧 → 连续样片 → 用户反馈 → 产品接入。普通回复与真正目标完成由共享判断区分；符号、触碰或动画均不能结算真实请求。
-
-| 当前实现 | 入口 |
-| --- | --- |
-| 工作／生活段落 | [segment-performance.js](art-workflow/whale-little-deep-v3/segment-performance.js)；实机使用 readable 策略 |
-| 当前喷水与庆祝短片 | [reference-celebration.js](art-workflow/whale-little-deep-v3/reference-celebration.js) 编排压力喷流、自由水滴与整次庆祝；[查看页](art-workflow/whale-little-deep-v3/reference-celebration-study.html)提供同步尺寸 |
-| 动作参考来源 | [Bloop 来源记录](art-workflow/whale-little-deep-v3/reference/bloop-20261030-source.json)，用户提供的原文与实际观看范围 |
-| 上一版喷水 | [completion-spout.js](art-workflow/whale-little-deep-v3/completion-spout.js)，保留历史效果与共用喷孔定位；当前主线使用已通过的参考编排 |
-| 完成消费、收势与取消 | [completion-performance.js](art-workflow/whale-little-deep-v3/completion-performance.js) |
-| 完成样片与同源关键帧 | [completion-film.js](art-workflow/whale-little-deep-v3/completion-film.js)、[completion-study.js](art-workflow/whale-little-deep-v3/completion-study.js) |
-| 请求身体、完整身份与笔画 | [request-performance.js](art-workflow/whale-little-deep-v3/request-performance.js)、[storyboard-performance.js](art-workflow/whale-little-deep-v3/storyboard-performance.js)、[storyboard-symbol.js](art-workflow/whale-little-deep-v3/storyboard-symbol.js) |
-| API 2、能力、来源和检查 | [角色包说明](../../examples/little-deep/README.md)、[原型模块说明](art-workflow/whale-little-deep-v3/README.md) |
+按[角色产出工作流](character-production-workflow.md)执行：能力核对 → 同源分镜／关键帧 → 连续样片 → 用户反馈 → 产品接入。普通回复与真正目标完成由 [src/completion.ts](../../src/completion.ts) 共享判断；符号和动画不结算真实请求。源码与检查入口集中在[原型模块说明](art-workflow/whale-little-deep-v3/README.md)，角色构建与兼容边界见[API 2 包说明](../../examples/little-deep/README.md)。
 
 ## 本地预览与追溯
 
-仓库根目录运行 `python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow`，已有同源服务时复用。当前页为 `http://127.0.0.1:4187/whale-little-deep-v3/reference-celebration-study.html`。
+仓库根目录运行 `python3 -m http.server 4187 --bind 127.0.0.1 --directory docs/design/art-workflow`，已有同源服务时复用。当前主线地址为 `http://127.0.0.1:4187/whale-little-deep-v3/completion-study.html`；独立效果页作为已确认基准保留。
 
-[本轮整理与验证](workspace-maintenance.md)说明生成物、证据、备份和环境的处理；历史方案从[归档索引](../archive/README.md)显式进入。旧验证摘要保留原路径并屏蔽普通搜索，以保持历史相对链接与原字节；只由[验证索引](runtime-baseline.md)读取。固定报告、原始证据及第三方许可不改写。
+[本机资料与保留规则](workspace-maintenance.md)列出当前报告及不可误删的资料。历史方案从[归档索引](../archive/README.md)显式进入；日期性验证保持原路径与原字节，从[基线索引](runtime-baseline.md)读取。测试、视觉确认、安装、实机和正式发布分别记录。

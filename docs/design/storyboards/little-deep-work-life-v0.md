@@ -1,6 +1,6 @@
 # 小湛集中工作段／生活段分镜 v0
 
-2026-10-29，当前整体样片观感已获用户确认。用户要求按表演分层方向制作两段同机位分镜与[连续样片](../art-workflow/whale-little-deep-v3/work-life-study.html)，恢复工作潜水，重点评审一眼区分与 ?／! 打断后的工作续接。基础约束见[设计入口](../README.md)及[段落制作流程](../character-production-workflow.md)。本轮是独立分镜，不连接真实 Harness、NPC 或原生窗口。
+2026-10-29 的早期视觉方向，整体样片观感曾获用户确认。下文工具段持续留尾巴属于旧映射；当前实机及完成主线采用[readable 工作反馈](little-deep-api2-feedback-v1.md)，工具／复核保持完整身体。用户要求按表演分层方向制作两段同机位分镜与[连续样片](../art-workflow/whale-little-deep-v3/work-life-study.html)，恢复工作潜水，重点评审一眼区分与 ?／! 打断后的工作续接。基础约束见[设计入口](../README.md)及[段落制作流程](../character-production-workflow.md)。本轮是独立分镜，不连接真实 Harness、NPC 或原生窗口。
 
 ## 意图与固定项
 

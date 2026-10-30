@@ -1,6 +1,6 @@
 # 角色产出工作流 v0
 
-本流程供角色分镜、连续样片和产品接入复用。角色约束、已通过范围和下一步统一从[设计入口](README.md)读取；完整实例见[工作／生活分镜](storyboards/little-deep-work-life-v0.md)，局部复做见[提问](storyboards/little-deep-work-v0.md)和[审批](storyboards/little-deep-approval-v0.md)。
+本流程供角色分镜、连续样片和产品接入复用。角色约束、已通过范围和下一步统一从[设计入口](README.md)读取；当前连续实例见[完成主线分镜 v2](storyboards/little-deep-completion-v2.md)，局部复做见[提问](storyboards/little-deep-work-v0.md)和[审批](storyboards/little-deep-approval-v0.md)。
 
 事件先折叠为行为意图，再编排可持续的段落。普通工具往返共用工作段，公开汇报或待回应请求形成出口。源事件计时与动作计时独立，潜水表达集中工作；计时不确认模型长考。接入前的真实结构核对按[会话观察说明](session-observation.md)执行。
 

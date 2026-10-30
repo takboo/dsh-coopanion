@@ -2,7 +2,7 @@
 
 2026-10-30。当前任务见[设计入口](README.md)。本页区分已安装事实、用户体验与历史验证，不替代 package.json 的源码版本。
 
-## 当前已安装及用户确认
+## 已确认的固定实机基线
 
 | 项目 | 固定身份 |
 | --- | --- |
@@ -30,4 +30,4 @@
 | [指定真实 session 体验](little-deep-real-session-acceptance.md) | session-65a3… 的两次问答与 allowed-once 审批；属于 rebase 前固定包 |
 | [旧会话观察工具](session-observation.md) | 历史结构／双时钟观察，用旧表面动作，不承担新样片或实机接入 |
 
-历史原始证据与许可分别按[证据说明](../evidence/README.md)和[归档索引](../archive/README.md)进入。测试、安装成功、用户体验及正式发布互不代替；本开发版未推送或发布。
+历史原始证据与许可分别按[证据说明](../evidence/README.md)和[归档索引](../archive/README.md)进入。测试、安装成功、用户体验及正式发布互不代替。开发分支同步以实际 Git 远程记录为准，npm／Release 发布单独核验。

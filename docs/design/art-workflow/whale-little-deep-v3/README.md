@@ -1,98 +1,32 @@
 # 小湛原型模块与检查
 
-当前观看入口、已通过范围和下一步统一见[设计入口](../../README.md)，具体表演见[工作／生活分镜](../../storyboards/little-deep-work-life-v0.md)。本目录为纯代码表演原型；已通过的工作／请求控制器另由[实验性 API 2 适配器](../../../../examples/little-deep/README.md)复用。
+当前任务、用户确认范围和下一步统一见[设计入口](../../README.md)。本目录是代码表演原型；已通过的工作／请求控制器由[实验性 API 2 包](../../../../examples/little-deep/README.md)复用，当前完成庆祝尚未进入实机包。
 
-当前使用已获视觉确认的[参考版喷水与完成庆祝](reference-celebration-study.html)及[分镜](../../storyboards/little-deep-reference-celebration-v0.md)，确认范围以设计入口为准。用户选择 Bloop 的弹性喷流、自然水滴和整次庆祝为主，保留小湛原造型。[旧慢喷水](spout-motion-study.html)与[静态三帧](spout-shape-study.html)保留历史对照，旧六滴布局和停留不再约束当前表演；[目标完成双画面对照](completion-study.html)已接回该表演，主线承接待用户复看。实机仍为已通过的 0.4.15 + 0.0.2。
+## 当前模块
 
-## 模块与页面
-
-| 范围 | 文件与入口 |
+| 范围 | 入口与边界 |
 | --- | --- |
-| 当前喷水与庆祝 | [reference-celebration-study.html](reference-celebration-study.html) 与 [reference-celebration.js](reference-celebration.js)，正常／实际尺寸共用同一 Actor 和一次表演 |
-| 旧喷水对照 | [spout-motion-study.html](spout-motion-study.html)、[spout-shape-study.html](spout-shape-study.html)，旧布局和节奏已被本轮参考方向取代 |
-| 当前完成样片 | [completion-study.html](completion-study.html)，已接回通过的喷水与虹光，见[分镜 v2](../../storyboards/little-deep-completion-v2.md)，提供五种打断路线和 300／150 px 切换 |
-| 上一版完成喷水 | [completion-spout.js](completion-spout.js) 保留水柱起势、扇形展开与落散机制；造型与节奏尚未通过 |
-| 工作／生活共用段落 | [segment-performance.js](segment-performance.js) 编排持续段和请求续点；[work-life-performance.js](work-life-performance.js) 提供模拟 cue；[work-life-study.html](work-life-study.html) 为早期连续对照 |
-| 生活交互候选 | [life-touch-study.html](life-touch-study.html) 与 [分镜](../../storyboards/little-deep-life-touch-v0.md)；控制器接管可选生活表演，松手后重排生活，待观看反馈 |
-| 已确认的请求 | [request-performance.js](request-performance.js) 处理完整身份与交接；[storyboard-performance.js](storyboard-performance.js) 处理身体时序；[storyboard-symbol.js](storyboard-symbol.js) 绘笔画 |
-| 请求局部复查 | [出场](storyboard.html#preview)、[提问交接](request-study.html)、[审批交接](approval-study.html)，后两页共用手势脚本与样式 |
-| 会话机制对照 | [会话观察说明](../../session-observation.md) 说明固定结构回放、进行中只读观察及旧固定分镜；这些页未采用当前段落策略 |
-| 造型与动作素材 | [character.js](character.js)、[harness-tail.js](harness-tail.js)；[原动作页](index.html) 与 [app.js](app.js) 供能力查阅；[小尺寸对照](size-sheet.html) 供轮廓比较 |
+| 完成主线与分镜 | [completion-study.html](completion-study.html)、[分镜 v2](../../storyboards/little-deep-completion-v2.md)；16 秒、五条打断路线、300／150 px 切换，主线承接待复看 |
+| 已确认的独立效果 | [reference-celebration-study.html](reference-celebration-study.html)、[分镜](../../storyboards/little-deep-reference-celebration-v0.md)；水色、虹光造型与出退节奏通过 |
+| 共用庆祝编排 | [reference-celebration.js](reference-celebration.js) 的 createReferenceScore 只控制调用方当前 Actor；独立页和完成主线共用 |
+| 完成消费与取消 | [completion-performance.js](completion-performance.js) 消费明确分类和完整目标身份；[completion-film.js](completion-film.js) 提供模拟 cue |
+| 工作／生活段落 | [segment-performance.js](segment-performance.js)；实机及完成样片选 readable，工具段保持完整身体；早期集中段样片只作视觉参考 |
+| 请求与笔画 | [request-performance.js](request-performance.js)、[storyboard-performance.js](storyboard-performance.js)、[storyboard-symbol.js](storyboard-symbol.js)；已确认身体与完整身份交接 |
+| 生活交互候选 | [life-touch-study.html](life-touch-study.html)、[分镜](../../storyboards/little-deep-life-touch-v0.md)；独立交互样片待单独反馈 |
+| 角色与来源 | [character.js](character.js)、[harness-tail.js](harness-tail.js)、[来源记录](reference/bloop-20261030-source.json)；原造型与固定引擎保留 |
 
-运行命令集中在[本地预览](../../README.md#本地预览)。切换配色和尺寸保留 Actor；原动作页的“完整体验”仅遍历素材库，不等于完整工作流程。声音默认关闭，手动开启后使用低音量合成音。系统减少动态偏好交给引擎 calm。
+本地启动命令见[本地预览与追溯](../../README.md#本地预览与追溯)。配色和尺寸切换保留当前进度；隐藏冻结表演，减少动态遵循 calm。页面按钮只操作模拟事实，不提交真实提问或审批。
 
-## 状态与动作
+## 按改动验证
 
-| 类型 | 动作 | 表现 |
-| --- | --- | --- |
-| 持续 | idle | 安静漂浮、原生眨眼、低幅摆尾 |
-| 持续 | thinking | 身体变为实心尾巴，三秒一轮明显左右扫摆、展开／侧转收窄，偶发泡泡 |
-| 持续 | working | 身体探出来，认真划动 |
-| 持续 | waiting | 安静停留，减少动作 |
-| 持续 | blocked | 收尾、担忧神态，等用户帮助 |
-| 持续 | listening | 柔和神态，身体轻轻晃动 |
-| 持续 | sleep | 闭眼、降低漂浮、尾巴慢下来 |
-| 一次 | done / error | 开心喷水并落定／缓一缓，吐一粒泡泡 |
-| 招牌 | peek-tail | 看你、缩身收鳍、藏下去、停尾观察，再舒展开 |
-| 招牌 | spout / tail-wave | 抬头喷水／看你后摆尾招呼 |
-| 招牌 | dive | 潜下去，带泡泡回来 |
-| 招牌 | belly-show / bubble-ring | 侧身展开白腹／吹泡泡圈 |
-| 补充 | blink-soft / pet-soft | 双眨／一次性舒服眯眼 |
-| 补充 | peek-out / tail-settle | 缩身试探后返回原状态／轻轻收尾 |
+完成主线及已确认效果使用 `node --test tests/little-deep-completion.mjs tests/little-deep-reference-celebration.mjs tests/little-deep-work-life.mjs`。浏览器分别运行 `tests/little-deep-completion-ui.mjs`、`tests/little-deep-reference-celebration-ui.mjs`，设置已核对的 CHROMIUM_PATH、新的 DSH_TEST_ARTIFACTS，并复用同源静态服务。
 
-## 藏尾巴与试探回应
+请求控制器的改动另跑 `node --test tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs`；角色形体／素材改动另跑 `node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs`；生活交互候选使用 `tests/little-deep-life-touch.mjs`。产品接入和原生验证从[开发指南](../../../development.md)选择对应检查，浏览器通过不代替实机或用户观感。
 
-`peek-tail` 约 6.2 秒：先看你 → 缩身收鳍 → 藏下去 → 留尾巴摆动 → 停尾 → 缩着身子观察 → 放心舒展开。观察阶段复用原本鲸鱼轮廓、白腹和眼睛位置，保持约 82% 大小及收鳍姿态；不生成单独头部。
+## 历史与素材能力
 
-藏着时轻戳或点“出来看看”，触发约 4.2 秒的回应：先停尾，再缩身探出来。原来在思考时会缩回去继续想，其他持续状态则舒展开并返回原状态。连续触碰不会重播开场，准备阶段也不会因每次轻戳而重置。眼睛在身体与五官位置稳定后再显现。切状态立即打断，不使用延迟回调补播旧动作。
+被取代的水柱、静帧、六滴慢喷水及旧模块长版见[评审归档](../../../archive/2026-10-30-spray-completion-review/README.md)。旧完成机制、会话结构回放及观察器从[基线与历史验证索引](../../runtime-baseline.md)显式进入，不作为默认回归路线。
 
-这是旧动作素材，未被当前工作／生活样片的整体确认覆盖；生活交互与藏身需按新分镜验证。
+[原动作页](index.html)与 [app.js](app.js)展示素材能力；其“完整体验”、直接手势、done 和藏尾动作不代表当前产品工作流。产品拖放／投掷、宿主 step 时钟和真实状态以 API 2 包及共享宿主契约为准。更完整的生活交互、隐身、异常／停止分别评审。
 
-## 直接互动与交接
-
-- 靠近驱动视线。轻戳吐泡泡，连续两次双眨，三次藏尾巴；藏着时优先试探回应。按下睡眠中的角色会唤醒。
-- 按住约 420 毫秒触发原生 purr，经角色适配为一次性舒服眯眼；藏着时改为试探回应。没有原生毛绒 `petting` 效果。按钮提供相同动作，便于触屏与键盘。
-- 拉动只拉伸当前轮廓，松手无抛掷，恢复原持续状态；不代表产品位置拖放。取消指针不算轻戳。
-- 手动切状态取消按住／拉伸和演示，不重置弹簧位置。一次动作结束回原持续状态，完成／出错则回待机。
-
-主体验的 `interactive:false` 关闭引擎默认手势，由 `app.js` 适配鲸鱼手势。直接嵌入原生组件时，其默认手势包含抛掷与按住毛绒效果，不能推断与主体验相同。
-
-## 轮廓与来源
-
-`whaleBody()` 的身体与 `harness-tail.js` 共用 48 个尾巴轮廓点，身体另分配采样点，避免重采样磨圆尾鳍。完整鲸鱼只弯尾柄，尾鳍整体旋转；思考时的侧转收窄属于有意动作。静止轮廓或测试对齐不代表用户已认可比例与连接。
-
-官方卷起双叶来自固定提交的 `FishLogo.tsx`，配本地短弯尾柄。`RunningWhaleTail.tsx` 和 APNG 仅作动作参考；当前矢量运动是本地适配，并非 GIF 逐帧复刻。[源码、MIT 与来源摘要](reference/harness/source.json)、[官方 logo 参考](reference/deepseek-logo-20261028-source.json)和[早期用户参考](reference/source.json)保留。参考图不由运行页加载。
-
-引擎与工作台保留 [Livelings 原始字节与许可](../vendor/livelings/README.md)，页面署名 Livelings by MakerJackie；不修改第三方源码。默认眨眼与偶发双眨沿用原生机制。
-
-## 检查
-
-当前参考版先执行 `node --test tests/little-deep-reference-celebration.mjs`，浏览器检查为 `tests/little-deep-reference-celebration-ui.mjs`，设置 CHROMIUM_PATH 与新的 DSH_TEST_ARTIFACTS，并启动同源静态服务。已通过的独立短片不消费真实完成事实，完成主线已复用同一编排，产品宿主接入仍需单独验证。旧慢喷水测试仅验证历史候选，需显式读取。
-
-当前完成候选先执行 `node --test tests/little-deep-completion.mjs tests/little-deep-work-life.mjs`。浏览器控件及真实画面检查为 `tests/little-deep-completion-ui.mjs`，设置已核对的 CHROMIUM_PATH 和新的 DSH_TEST_ARTIFACTS 目录，并先启动本地静态预览。
-
-以下为扩展回归，包含明确保留的旧结构机制；不能用它们的旧表面动作替代当前样片。在仓库根目录执行：
-
-```bash
-node --test tests/little-deep-tail.mjs tests/little-deep-performance.mjs tests/little-deep-storyboard.mjs tests/little-deep-requests.mjs tests/little-deep-approval.mjs tests/little-deep-mainline.mjs tests/little-deep-replay.mjs tests/little-deep-completion.mjs tests/little-deep-work-rhythm.mjs tests/little-deep-work-life.mjs tests/little-deep-life-touch.mjs
-node --experimental-transform-types --test tests/little-deep-live.mjs
-```
-
-检查覆盖真实引擎轮廓、请求身份与手势、旧机制回放、双时钟、当前段落续点／相位、最新意图、生活退让和持续抚摸／松手的取消语义。浏览器画面、用户体验、系统偏好实机及产品宿主各自验证；用户确认范围统一从设计入口读取。
-
-旧完成机制另可显式运行 `node --test tests/little-deep-completion-legacy.mjs`，它不是本轮完成样片。
-
-旧版固定证据见[证据索引](../../../evidence/2026-10-28-little-deep/README.md)；工作主线过程稿与当前本机验证位置见[本轮归档](../../../archive/2026-10-29-work-mainline/README.md)；眼型及早期造型见[历史索引](../../../archive/README.md)。原始证据和许可按来源保留字节。
-
-## 网页嵌入
-
-```html
-<script type="module">
-  import {registerCharacter} from '../vendor/livelings/workspace/livelings.js';
-  import littleDeep from './character.js';
-  registerCharacter(littleDeep);
-</script>
-<live-ling character="little-deep-v3" state="idle" style="width:240px;height:240px"></live-ling>
-```
-
-这是网页嵌入示例，不是 Coopanion API 2 角色包。需要主体验的无抛掷、无毛绒和演示交接时，保留 `app.js` 的适配。
+官方尾巴及 logo 来源见 [Harness 来源](reference/harness/source.json)、[logo 记录](reference/deepseek-logo-20261028-source.json)。[Livelings 上游原文与许可](../vendor/livelings/README.md)保持原字节，按需显式读取。眼型与早期造型从[历史索引](../../../archive/README.md)追溯。
