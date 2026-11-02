@@ -216,10 +216,17 @@ app.whenReady().then(async () => {
     return characters.import(new Uint8Array(value));
   });
   win = new BrowserWindow({ ...screen.getPrimaryDisplay().workArea, transparent: true, frame: false, resizable: false, skipTaskbar: true, hasShadow: false, show: false, alwaysOnTop: true, backgroundColor: '#00000000', webPreferences: { additionalArguments: displayTest ? ['--dsh-pet-display-test'] : [], preload: join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
-  win.setAlwaysOnTop(true, 'floating');
+  win.setAlwaysOnTop(true, 'screen-saver');
   win.on('show', visibility); win.on('hide', visibility);
   win.webContents.on('render-process-gone', () => app.exit(1));
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  // [fix] Windows: 'floating' level does not map to WS_EX_TOPMOST and even clears it; use 'screen-saver' and re-assert.
+  const keepTop = () => {
+    if (!win || win.isDestroyed() || !win.isVisible()) return;
+    win.setAlwaysOnTop(true, 'screen-saver');
+  };
+  const topTimer = setInterval(keepTop, 3000); topTimer.unref?.();
+  for (const ev of ['show', 'restore', 'focus', 'blur']) win.on(ev, () => setImmediate(keepTop));
   if (process.platform === 'darwin') app.dock?.hide();
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
