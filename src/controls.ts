@@ -5,6 +5,15 @@ export { NativeStartError, type NativeLifecycle, type StartLifetime } from './de
 
 export type PetCommand = 'start' | 'show' | 'hide' | 'restart' | 'stop' | 'characters';
 export type PetStatus = NotificationRuntime;
+/** A host-authored hint. Views render it as a transient toast; it never carries task state or delivery claims. */
+export interface PetHint {
+  /** One-line headline. Blank headlines are dropped. */
+  title: string;
+  /** Optional supporting line; the view keeps it to two visible lines. */
+  body?: string;
+  /** Optional Harness session the hint belongs to. It is passed through verbatim; invalid ids reject the hint. */
+  sessionId?: string;
+}
 export interface ControlLimits { startTimeoutMs?: number; cleanupTimeoutMs?: number; retryDelaysMs?: readonly [number, number, number]; stableMs?: number; }
 
 /** Commands own a cancellable native generation. Lifecycle acknowledgements alone establish visibility. */
@@ -44,6 +53,24 @@ export class PetControls {
     this.listeners.add(listener); try { listener(this.status()); } catch { /* A view is optional. */ } return () => this.listeners.delete(listener);
   }
   configure(): void { this.bridge.configure?.(this.options()); }
+  /**
+   * Relay a host-authored hint to the pet as a toast. Delivery is best-effort:
+   * it needs a running, visible, awake pet with notices enabled. The result is
+   * whether the Host handed the message to the native IPC channel after its own
+   * generation/visibility check; the native window re-checks and may still drop
+   * it, so true never means the user saw it. Task notices, session replies and
+   * delivery claims stay owned by the broker; a hint can never fabricate them.
+   * Session ids are navigation identity: they are validated but never rewritten.
+   */
+  hint(value: PetHint): boolean {
+    if (this.disposed || !this.options().notifications) return false;
+    if (this.state.phase !== 'running' || !this.state.visible || this.state.suspended) return false;
+    const title = hintText(value.title, 256), body = hintText(value.body, 2048);
+    if (!title) return false;
+    const sessionId = hintSessionId(value.sessionId);
+    if (sessionId === false) return false;
+    return this.bridge.notify({ title, body, sessionId: sessionId ?? '', kind: 'message' }, this.status());
+  }
   command(command: PetCommand): Promise<PetStatus> {
     // Intent and cancellation take effect before queued work, including queued starts.
     if (command === 'hide') this.set({ ...this.state, desiredVisible: false });
@@ -157,4 +184,15 @@ export class PetControls {
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const pending = this.queue.then(operation); this.queue = pending.catch(() => undefined); return pending;
   }
+}
+
+/** Collapse layout-breaking whitespace in display copy; identities must not use this. */
+function hintText(value: unknown, limit: number): string {
+  return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, limit);
+}
+/** Validate a session id without changing it: undefined means "no session", false rejects the hint. */
+function hintSessionId(value: unknown): string | undefined | false {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string' || value.length > 2048 || !value.trim()) return false;
+  return value;
 }

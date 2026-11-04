@@ -24,7 +24,7 @@ const companionInvitation = $('companion-invitation'), companionFeedback = $('co
 const panels = [conversations, chat, menu, characters, reader, requests];
 const noticeQueue = createNoticeQueue();
 let notificationState, currentNotice, interactionExpires = 0;
-let toastNotice;
+let toastNotice, toastGeneration;
 const snoozing = new Map();
 const notificationLocale = () => options.locale ? petLanguage(options.locale) : automaticPetLanguage(navigator.languages ?? [navigator.language]);
 const uiCopy = () => petCopy(notificationLocale());
@@ -615,6 +615,10 @@ function receive(message) {
       if (!value || value.protocol !== 1 || !Array.isArray(value.interactions)) break;
       if (notificationState && value.runtime.generation !== notificationState.runtime.generation) { noticeQueue.clear(); interaction.hidden = true; currentNotice = undefined; snoozing.clear(); }
       if (notificationState && value.runtime.generation === notificationState.runtime.generation && pendingInteractions(value).some(item => !pendingRequests().some(old => old.id === item.id))) attentionToWork();
+      // A hint is bound to the native generation that accepted it: a newer one
+      // retires it, while a stale re-sent snapshot must not withdraw it.
+      if (toastGeneration !== undefined && value.runtime.generation > toastGeneration) hideToast();
+      else if ((toastGeneration === undefined || value.runtime.generation === toastGeneration) && (value.runtime.phase !== 'running' || !value.runtime.visible || value.runtime.suspended)) hideToast();
       notificationState = value;
       for (const [id, pending] of snoozing) { const item = value.interactions.find(item => item.id === id); if (!item || item.state === 'settled' || item.dueAt !== pending.dueAt) snoozing.delete(id); }
       if (currentNotice?.requestIds.length && !currentNotice.requestIds.some(id => pendingRequests().some(item => item.id === id))) { interaction.hidden = true; currentNotice = undefined; }
@@ -635,13 +639,17 @@ function receive(message) {
       }
       // Task notices are expressed by the body and inbox, not another status card.
       if (message.notice.kind === 'task') { body?.cue('perk'); break; }
+      // The runtime is authoritative; a hint forwarded just before a hide/lock
+      // must not appear while the pet is no longer eligible for delivery.
+      if (notificationState && (notificationState.runtime.phase !== 'running' || !notificationState.runtime.visible || notificationState.runtime.suspended)) break;
       noticeSession = message.notice.sessionId;
       toastNotice = message.notice;
+      toastGeneration = message.generation;
       const toast = appNoticeCopy(message.notice, notificationLocale());
       $('toast-title').textContent = toast.title;
       $('toast-body').textContent = toast.body;
       $('toast').hidden = false; clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { $('toast').hidden = true; }, options.bubbleDurationMs); break;
+      toastTimer = setTimeout(hideToast, options.bubbleDurationMs); break;
     }
     case 'hit-state': pet.dataset.nativeHit = String(message.active); break;
     case 'cursor': {
@@ -786,6 +794,13 @@ function openSession(id) {
   }
   send({ type: 'open-session', sessionId: id }); bubble.hidden = true; closePanels();
 }
+function hideToast() {
+  clearTimeout(toastTimer);
+  $('toast').hidden = true;
+  toastNotice = undefined;
+  toastGeneration = undefined;
+  noticeSession = undefined;
+}
 $('conversation-open').onclick = () => openSession(snapshot.sessionId);
 $('chat-session').onclick = () => openSession(snapshot.sessionId);
 $('bubble-session').onclick = () => { acknowledge(bubbleResult); openSession(bubbleSession); };
@@ -815,7 +830,7 @@ $('toggle-roam').onclick = () => preference('roam');
 $('toggle-sleep').onclick = () => { if ($('toggle-sleep').disabled) return; asleep = !asleep; if (!asleep) react('happy'); menu.hidden = true; bubble.hidden = true; updateMood(); };
 $('toggle-notices').onclick = () => preference('notifications');
 $('hide').onclick = () => { if (native) send({ type: 'hide' }); else closePanels(); };
-$('toast').onclick = () => { $('toast').hidden = true; openSession(noticeSession); };
+$('toast').onclick = () => { openSession(noticeSession); hideToast(); };
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closePanels(); });
 $('message').onkeydown = event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); $('chat-form').requestSubmit(); } };
 document.querySelectorAll('[data-gesture]').forEach(button => { button.onclick = () => {

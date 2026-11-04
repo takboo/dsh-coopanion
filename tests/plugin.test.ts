@@ -12,11 +12,11 @@ function nativeBridge(): PetBridge {
   const listeners = new Set<(state: NativeLifecycle) => void>(); let generation = 0, revision = 0;
   const bridge: PetBridge = {
     start: vi.fn(async (_options, lifetime) => { generation = lifetime?.generation ?? generation + 1; revision = 1; for (const fn of listeners) fn({ running: true, visible: true, generation, visibilityRevision: revision, suspended: false }); }),
-    update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(), dispose: vi.fn(async () => {}), onAction: vi.fn(), removeAction: vi.fn(),
+    update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(() => true), dispose: vi.fn(async () => {}), onAction: vi.fn(), removeAction: vi.fn(),
     onLifecycle: fn => { listeners.add(fn); }, removeLifecycle: fn => { listeners.delete(fn); },
     control: vi.fn(command => { for (const fn of listeners) fn({ running: true, visible: command !== 'hide', generation, visibilityRevision: ++revision, suspended: false }); }),
     notificationState: vi.fn(), snoozeResult: vi.fn(),
-    presentRole: vi.fn((notice, runtime) => { if (!runtime.visible || runtime.generation !== generation) return false; bridge.notify(notice); return true; }),
+    presentRole: vi.fn((notice, runtime) => { if (!runtime.visible || runtime.generation !== generation) return false; return bridge.notify(notice); }),
   };
   return bridge;
 }
@@ -91,7 +91,7 @@ it('rejects invalid configuration before starting a desktop process', () => {
 
 it('keeps the plugin mounted when launch fails, and honors disabled auto-start', async () => {
   const ctx = new Context(); ctx.provide('agents', { list: () => [] });
-  const bridge: PetBridge = { start: vi.fn(async () => { throw new Error('test: no display'); }), update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(), onAction: vi.fn(), removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  const bridge: PetBridge = { start: vi.fn(async () => { throw new Error('test: no display'); }), update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(() => true), onAction: vi.fn(), removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
   const fiber = ctx.plugin(async scope => mountPet(scope, Config({ autoStart: false }), bridge));
   await fiber.await(); expect(bridge.start).not.toHaveBeenCalled();
   expect(ctx.coopanion.status().phase).toBe('stopped');
@@ -103,7 +103,7 @@ it('keeps the plugin mounted when launch fails, and honors disabled auto-start',
 it('acknowledges desktop preference changes through the shared host configuration', async () => {
   const ctx = new Context(); ctx.provide('agents', { list: () => [] });
   let action: ((value: unknown) => void) | undefined;
-  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(), configure: vi.fn(), onAction: fn => { action = fn; }, removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
+  const bridge: PetBridge = { start: vi.fn(async () => {}), update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(() => true), configure: vi.fn(), onAction: fn => { action = fn; }, removeAction: vi.fn(), dispose: vi.fn(async () => {}) };
   const fiber = ctx.plugin(scope => mountPet(scope, Config({ autoStart: false }), bridge)); await fiber.await();
   action?.({ type: 'preference', field: 'roam', value: false });
   await vi.waitFor(() => expect(bridge.configure).toHaveBeenLastCalledWith(expect.objectContaining({ roam: false, notifications: true })));
@@ -118,7 +118,9 @@ it('registers and disposes exact authenticated Connection routes without taking 
   const ctx = new Context(); ctx.provide('agents', { list: () => [] });
   const routes = new Map<string, { fetch: (request: Request) => Promise<Response> }>();
   const session = { id: SessionId('existing'), header: { id: SessionId('existing'), cwd: '/existing' } } as Session;
-  ctx.provide('sessions', { list: () => [session] } as never);
+  // Two real identities differing only by whitespace: open-session must not normalize one into the other.
+  const twin = { id: SessionId('existing  exact'), header: { id: SessionId('existing  exact'), cwd: '/existing-exact' } } as Session;
+  ctx.provide('sessions', { list: () => [session, twin], get: (id: string) => [session, twin].find(item => item.id === id) } as never);
   ctx.provide('connection', { fetch: { register: (route: { path: string; fetch: (request: Request) => Promise<Response> }) => { routes.set(route.path, route); return () => { routes.delete(route.path); }; } } } as never);
   let action: ((value: unknown) => void) | undefined;
   const bridge: PetBridge = { ...nativeBridge(), onAction: listener => { action = listener; }, focusHarness: vi.fn() };
@@ -150,6 +152,13 @@ it('registers and disposes exact authenticated Connection routes without taking 
   expect((await navigation()).result.value).toEqual({ sessionId: 'existing' });
   expect((await navigation()).result.value).toBeNull(); // Claimed only once.
   expect(bridge.focusHarness).toHaveBeenCalledOnce();
+  expect(ctx.coopanion.hint({ title: 'hint', sessionId: 'existing  exact' })).toBe(true);
+  const forwarded = vi.mocked(bridge.notify).mock.calls.at(-1)![0] as { sessionId: string };
+  expect(forwarded.sessionId).toBe('existing  exact');
+  action?.({ type: 'open-session', sessionId: forwarded.sessionId });
+  expect((await navigation()).result.value).toEqual({ sessionId: 'existing  exact' });
+  expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'existing  exact' }));
+  expect(bridge.focusHarness).toHaveBeenCalledTimes(2);
   await fiber.dispose(); expect(routes.size).toBe(0); await ctx.fiber.dispose();
 });
 

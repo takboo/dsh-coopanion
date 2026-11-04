@@ -10,7 +10,7 @@
 
 ### 在 Harness 中从 npm 安装
 
-打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.17`**，点击安装，再启用 `dsh-coopanion`。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
+打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.18`**，点击安装，再启用 `dsh-coopanion`。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
 
 ### 安装版本与发布时间保护
 
@@ -23,7 +23,7 @@ pnpm 11 的 `minimumReleaseAge` 默认为 1440 分钟（24 小时）。详情页
 **Desktop：** 使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，再执行：
 
 ```bash
-dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.17
+dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.18
 ```
 
 npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到 Desktop 的命令，先在 Desktop 的菜单栏中使用 **Manage dsh command／管理 dsh 命令** 安装命令入口。
@@ -31,7 +31,7 @@ npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到
 **本机 Web profile：** 使用 npm 安装的 dsh 时，向实际使用的 profile 安装。例如默认 `web` profile：
 
 ```bash
-dsh plugin --profile web add @takboo/dsh-coopanion@0.4.17
+dsh plugin --profile web add @takboo/dsh-coopanion@0.4.18
 dsh --profile web
 ```
 
@@ -130,6 +130,22 @@ node "$env:DSH_HOME\profiles\desktop\node_modules\electron\install.js"
 系统通知默认关闭。在 **Settings → 桌宠 → 提醒与通知** 开启后，点击 **申请／刷新权限**，隐藏运行中的角色，再发送 **测试系统通知**。Desktop 使用 DeepSeek Harness 的应用身份，本机 `dsh web` 使用浏览器身份；点击通知请求打开源会话。角色关闭、启动中、失败或锁屏／休眠期间暂停主动投递。
 
 网页权限“允许”、已请求和收到显示回执分别表示不同步骤；系统送达需在通知中心核对，并点击检查源会话。macOS 在 **系统设置 → 通知 → DeepSeek Harness** 管理授权；Windows 在 **设置 → 系统 → 通知**，Linux 在桌面通知设置中管理。权限或客户端不可用时，待处理入口仍保留；恢复显示不会补发旧系统通知。
+
+## 其他插件递一句话
+
+角色运行时，同进程的其他 DSH 插件可以请她显示一条一次性提示。插件暴露的服务名为 `coopanion`：
+
+```js
+ctx.get('coopanion')?.hint({ title: '电话接通了', body: '挂件正在听你说话', sessionId: 'session-…' });
+```
+
+`title` 必填，`body` 与 `sessionId` 可选；标题截到 256 字、正文 2048 字，连续空白压成一行。`sessionId` 是导航身份，**原样传递**，不压平空白也不截断；非字符串、空白或超过 2048 字会让整条提示被拒绝。它只做格式校验，不验证会话是否仍存在，因此不保证一定跳转成功，但不会悄悄切换到另一个会话。
+
+返回 `true` 表示 Host 已将提示提交到当前原生 IPC 通道；通道出现背压、消息仍在队列中时也返回 `true`，调用方不应据此重试。异步发送仍可能失败，原生窗口也会按当前显示代次复核并可能丢弃，因此 `true` **不表示窗口已接收或用户已看见**。Host 判定角色未运行、不可见、锁屏／休眠、提醒关闭、身份无效，或 IPC 已断开／关闭、同步发送抛错时返回 `false`，不提交提示。
+
+已显示的提示会在角色失去显示资格（隐藏、锁屏、休眠或新一次启动）时立即撤下；恢复显示不会补发旧提示。停留时长取设置的 `bubbleDurationMs`。
+
+这条通道只画临时气泡：不创建任务通知、不写未读、不产生送达回执，也不改变会话状态；完成、审批和提问仍由[提醒契约](notification-contract.md)统一结算。
 
 ## 本地诊断与可选采样
 

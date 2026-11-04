@@ -16,7 +16,7 @@ export interface PetBridge {
   start(options: DesktopOptions, lifetime?: StartLifetime): Promise<void>;
   update(snapshot: PetSnapshot): void;
   chatResult?(receipt: ChatReceipt): void;
-  notify(notice: PetNotice | TaskNotice): void;
+  notify(notice: PetNotice | TaskNotice, runtime?: NotificationRuntime): boolean;
   notificationState?(snapshot: NotificationSnapshot): void;
   snoozeResult?(interactionId: string, ok: boolean, error?: string): void;
   presentRole?(notice: TaskNotice, runtime: NotificationRuntime): boolean;
@@ -135,13 +135,14 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
     this.send({ type: 'snapshot', snapshot: desktopSnapshot(snapshot, key !== this.resultKey) });
     this.resultKey = key;
   }
-  notify(notice: PetNotice | TaskNotice): void { this.send({ type: 'notice', notice }); }
+  notify(notice: PetNotice | TaskNotice, runtime?: NotificationRuntime): boolean {
+    if (!this.child?.connected || this.closing) return false;
+    if (runtime && (!this.nativeVisible || this.suspended || runtime.generation !== this.generation || runtime.visibilityRevision !== this.visibilityRevision || !runtime.visible)) return false;
+    return this.send({ type: 'notice', notice, ...(runtime ? { generation: runtime.generation, visibilityRevision: runtime.visibilityRevision } : {}) });
+  }
   notificationState(snapshot: NotificationSnapshot): void { this.lastNotificationState = structuredClone(snapshot); this.send({ type: 'notification-state', snapshot }); }
   snoozeResult(interactionId: string, ok: boolean, error?: string): void { this.send({ type: 'notification-snooze-result', interactionId, ok, ...(error ? { error: error.slice(0, 600) } : {}) }); }
-  presentRole(notice: TaskNotice, runtime: NotificationRuntime): boolean {
-    if (!this.child?.connected || this.closing || !this.nativeVisible || this.suspended || runtime.generation !== this.generation || runtime.visibilityRevision !== this.visibilityRevision || !runtime.visible) return false;
-    this.send({ type: 'notice', notice, generation: runtime.generation, visibilityRevision: runtime.visibilityRevision }); return true;
-  }
+  presentRole(notice: TaskNotice, runtime: NotificationRuntime): boolean { return this.notify(notice, runtime); }
   chatResult(receipt: ChatReceipt): void { this.send(receipt); }
   onAction(listener: (action: unknown) => void): void { this.on('action', listener); }
   removeAction(listener: (action: unknown) => void): void { this.off('action', listener); }
@@ -153,9 +154,15 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   focusHarness(): void { this.send({ type: 'control', command: 'focus-harness' }); }
   onLifecycle(listener: (state: NativeLifecycle) => void): void { this.on('lifecycle', listener); }
   removeLifecycle(listener: (state: NativeLifecycle) => void): void { this.off('lifecycle', listener); }
-  private send(message: object): void {
+  private send(message: object): boolean {
     const child = this.child;
-    if (child?.connected && !this.closing) child.send(message, error => { if (error && this.child === child && !this.closing) this.emit('failure', error); });
+    if (!child?.connected || this.closing) return false;
+    try {
+      // A false Node return can mean backpressure after enqueueing. Reporting
+      // rejection here would let callers send the same accepted notice again.
+      child.send(message, error => { if (error && this.child === child && !this.closing) this.emit('failure', error); });
+      return true;
+    } catch { return false; }
   }
 
   async dispose(): Promise<void> {

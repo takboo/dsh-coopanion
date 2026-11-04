@@ -95,6 +95,58 @@ try {
   await page.locator('#bubble-session').click();
   for (let n = 0; n < 30 && !actions.some(a => a.type === 'open-session'); n++) await pause(50);
   assert.deepEqual(actions.find(a => a.type === 'open-session'), { type: 'open-session', sessionId: 'native-test' });
+  const hintTitle = '原生提示';
+  const hint = { title: hintTitle, body: '通过真实 IPC 送达。', sessionId: 'native-hint', kind: 'message' };
+  const latestVisible = () => {
+    const last = [...lifecycles].reverse().find(state => state.visible);
+    assert.ok(last, 'native window reported a visible lifecycle');
+    return last;
+  };
+  const currentRuntime = () => {
+    const last = latestVisible();
+    return { phase: 'running', generation: last.generation, visibilityRevision: last.visibilityRevision, visible: true, suspended: false };
+  };
+  assert.equal(bridge.notify(hint, currentRuntime()), true, 'host accepts a hint while the native window is visible');
+  await page.waitForFunction(() => !document.getElementById('toast').hidden);
+  assert.equal(await page.locator('#toast-title').innerText(), hintTitle);
+  assert.equal(await page.locator('#toast-body').innerText(), '通过真实 IPC 送达。');
+  await page.locator('#toast').click();
+  for (let n = 0; n < 30 && !actions.some(action => action.type === 'open-session' && action.sessionId === 'native-hint'); n++) await pause(50);
+  assert.deepEqual(actions.find(action => action.type === 'open-session' && action.sessionId === 'native-hint'), { type: 'open-session', sessionId: 'native-hint' });
+  assert.equal(await page.locator('#toast').isVisible(), false, 'clicking a hint navigates and dismisses it');
+
+  assert.equal(bridge.notify(hint, currentRuntime()), true);
+  await page.waitForFunction(() => !document.getElementById('toast').hidden);
+  const beforeHide = latestVisible();
+  bridge.control('hide');
+  await waitLifecycle(state => !state.visible && state.visibilityRevision > beforeHide.visibilityRevision);
+  const hiddenLifecycle = lifecycles.at(-1);
+  bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: hiddenLifecycle.generation, visibilityRevision: hiddenLifecycle.visibilityRevision, visible: false, suspended: false }, interactions: [] });
+  await page.waitForFunction(() => document.getElementById('toast').hidden, undefined, { timeout: 3000 });
+  assert.equal(await page.locator('#toast').isVisible(), false, 'losing native visibility withdraws the hint');
+  bridge.control('show');
+  await waitLifecycle(state => state.visible && state.visibilityRevision > beforeHide.visibilityRevision);
+  const shownLifecycle = lifecycles.at(-1);
+  bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: shownLifecycle.generation, visibilityRevision: shownLifecycle.visibilityRevision, visible: true, suspended: false }, interactions: [] });
+  await pause(100);
+  assert.equal(await page.locator('#toast').isVisible(), false, 'showing the window again does not replay a stale hint');
+
+  // The Host can still believe the window is visible while the native process
+  // has already hidden it: IPC accepts the hint, the native gate drops it.
+  const raceRuntime = currentRuntime();
+  bridge.control('hide');
+  assert.equal(bridge.notify({ ...hint, title: '竞态提示' }, raceRuntime), true, 'host still believes the window is visible');
+  await waitLifecycle(state => !state.visible);
+  const raceHidden = lifecycles.at(-1);
+  bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: raceHidden.generation, visibilityRevision: raceHidden.visibilityRevision, visible: false, suspended: false }, interactions: [] });
+  await pause(100);
+  assert.equal(await page.locator('#toast').isVisible(), false, 'the native window drops a hint that races with hiding');
+  bridge.control('show');
+  await waitLifecycle(state => state.visible);
+  const raceShown = lifecycles.at(-1);
+  bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: raceShown.generation, visibilityRevision: raceShown.visibilityRevision, visible: true, suspended: false }, interactions: [] });
+  await pause(100);
+  assert.equal(await page.locator('#toast').isVisible(), false, 'a dropped hint does not reappear after showing again');
   await verifyNativeTextScale({ page, bridge, snapshot: finalFrame });
   const idleFrame = { ...snapshot, mood: 'idle', active: false, revision: 2, sessions: [{ ...snapshot.sessions[0], mood: 'idle', active: false }] };
   bridge.update({ ...idleFrame, sessions: [...idleFrame.sessions, { id: 'second-test', label: '另一会话', mood: 'working', active: true, text: '正在运行命令', reply: '', revision: 1 }] });

@@ -77,6 +77,7 @@ jobs:
       - run: npm run character:pack -- examples/star paper-star.zip
       - run: npm run test:ui
       - run: npm run test:notification-ui
+      - run: npm run test:hint-ui
       - run: npm run test:inbox-ui
       - name: Verify native keyboard backend (synthetic X11 input only in managed display)
         env:

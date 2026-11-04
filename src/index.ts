@@ -22,6 +22,7 @@ import { COMPANIONSHIP_MODES, type CompanionshipMode } from '../web/companionshi
 
 export const name = 'dsh-coopanion';
 export const inject = ['agents'];
+export type { PetHint } from './controls.ts';
 export interface Config {
   size: Volatile<number>; npcHome: Volatile<number>; npcRange: Volatile<number>; textScale: Volatile<TextScale>; roam: Volatile<boolean>; diagnostics: Volatile<boolean>; companionship: Volatile<CompanionshipMode>; notifications: Volatile<boolean>;
   systemNotifications: Volatile<boolean>; reminders: Volatile<boolean>; reminderDelayMs: Volatile<number>;
