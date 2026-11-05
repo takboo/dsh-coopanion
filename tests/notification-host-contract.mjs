@@ -17,7 +17,7 @@ const [{ Context }, { SessionStore }, { SessionProjectionRegistry }, { UserQuest
   import(pathToFileURL(join(modules, '@deepseek-ai/cordis/lib/index.js')).href), load('dsh-session'), load('dsh-session-projection'), load('dsh-user-questions'), load('dsh-user-approval'),
 ]);
 const ctx = new Context();
-new SessionProjectionRegistry(ctx); new SessionStore(ctx); new UserQuestionService(ctx); new ApprovalService(ctx, { policy: 'ask' });
+new SessionProjectionRegistry(ctx); new SessionStore(ctx); await ctx.plugin(UserQuestionService); new ApprovalService(ctx, { policy: 'ask' });
 await ctx.fiber.await();
 const report = { dsh: values.version, pluginVersion: JSON.parse(await readFile('package.json', 'utf8')).version,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
