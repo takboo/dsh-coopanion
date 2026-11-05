@@ -8,6 +8,7 @@ import { componentIdentities, componentDue, selectChecks, plannedComponents } fr
 import { combineTargets, parseDesktopFeed } from '../scripts/compatibility/discover.mjs';
 import { completedComponents, overallStatus, validateReport, applyPreparationFailure, readArtifacts } from '../scripts/compatibility/report.mjs';
 import { targetManifest, candidateLock, validateProposal } from '../scripts/compatibility/proposal.mjs';
+import { reviewedDependencies } from '../scripts/compatibility/reviewed-dependencies.mjs';
 import { command, StageError, isolatedEnv } from '../scripts/compatibility/runner.mjs';
 import { validateArchivePaths, validateSignature, validateDesktopRuntime } from '../scripts/compatibility/desktop-artifact.mjs';
 const baseline = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -76,6 +77,39 @@ test('candidate manifest changes exact Host versions only and retains prior supp
   assert.deepEqual(candidate.dependencies, baseline.dependencies); assert.equal(candidate.version, baseline.version);
   assert.equal(candidate.devDependencies['@deepseek-ai/cordis'], baseline.devDependencies['@deepseek-ai/cordis']);
   assert.throws(() => targetManifest(baseline, '0.2.0-rc.1'), /downgrade/);
+});
+test('reviewed 0.2.2 candidates include their exact Cordis and Schemastery baselines only in the proposal', () => {
+  const production = { ...structuredClone(baseline), engines: { ...baseline.engines, dsh: '0.2.1-rc.5' } };
+  const original = structuredClone(production);
+  for (const [target, cordis, schemastery] of [
+    ['0.2.2-alpha.2', '4.0.6-alpha.1', '3.18.6-alpha.1'],
+    ['0.2.2-alpha.3', '4.0.6-alpha.2', '3.18.6-alpha.2'],
+    ['0.2.2-rc.1', '4.1.0', '3.19.0'],
+  ]) {
+    const candidate = targetManifest(production, target);
+    for (const [name, exact] of [['@deepseek-ai/cordis', cordis], ['@deepseek-ai/schemastery', schemastery]]) {
+      assert.equal(candidate.devDependencies[name], exact);
+      assert(candidate.peerDependencies[name].split(' || ').includes(exact));
+      assert(candidate.peerDependencies[name].startsWith(production.peerDependencies[name]));
+    }
+    assert.deepEqual(candidate.dependencies, baseline.dependencies);
+    assert.equal(candidate.version, baseline.version);
+    assert.deepEqual(production, original);
+    for (const [name, exact] of Object.entries(reviewedDependencies(target))) assert.equal(candidate.devDependencies[name], exact);
+    const originalIdentity = digest({ contract: 1, version: target, npm: { integrity: 'same' } });
+    const next = { version: target, npm: { integrity: 'same' } };
+    assert.notEqual(componentIdentities(next).sdk, originalIdentity, 'new dependency baseline must not reuse old failed evidence');
+  }
+});
+test('candidate proposals reject a different companion version even in a nested lock entry', () => {
+  const production = { ...structuredClone(baseline), engines: { ...baseline.engines, dsh: '0.2.1-rc.5' } };
+  const target = '0.2.2-alpha.2', manifest = targetManifest(production, target), next = candidateLock(lock, manifest);
+  const entry = { version: '1.0.7-alpha.1', resolved: 'https://registry.npmjs.org/@deepseek-ai/cordis-plugin-loader/-/cordis-plugin-loader-1.0.7-alpha.1.tgz', integrity: 'sha512-AA==' };
+  next.packages['node_modules/fixture/node_modules/@deepseek-ai/cordis-plugin-loader'] = entry;
+  const proposal = () => ({ version: target, sourceCommit, files: { 'package.json': JSON.stringify(manifest), 'npm-shrinkwrap.json': JSON.stringify(next) } });
+  validateProposal(proposal(), production, target, sourceCommit);
+  entry.version = '1.0.7-alpha.2';
+  assert.throws(() => validateProposal(proposal(), production, target, sourceCommit), /Unreviewed companion resolution/);
 });
 test('lock refresh preserves unrelated exact resolutions', () => {
   const next = candidateLock(lock, targetManifest(baseline, version));

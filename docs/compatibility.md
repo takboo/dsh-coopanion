@@ -23,7 +23,17 @@
 
 这些检查使用的 Cordis 开发基线为 `4.0.5`，基线安装、类型检查与单元检查通过，候选平台安装及 Desktop 检查没有运行。恢复三个原始 artifact 可以重放失败报告汇总；这不等于重新执行候选检查。支持新版需先审阅相应依赖基线，再执行精确版本复验及最终提交资格检查。
 
-准备 job 在隔离副本更新精确 DSH 开发依赖、peer/engines 声明及 npm-shrinkwrap.json。保留原有支持和其他顶层依赖；旧 Host 锁解析重建，其他锁条目保留。正式源码与工作区在前后做摘要核对。若新版需要新的 Cordis／Schemastery 等依赖基线，报告冲突，由维护者审阅后调整。
+`scripts/compatibility/reviewed-dependencies.mjs` 记录已审阅的精确配套基线，准备 job 与提案校验共用同一份表：
+
+| DSH 候选 | Cordis | Schemastery | Loader / Include / Group | Cosmokit |
+|---|---|---|---|---|
+| 0.2.2-alpha.2 | 4.0.6-alpha.1 | 3.18.6-alpha.1 | 1.0.7-alpha.1 / 1.0.11-alpha.1 / 1.0.6-alpha.1 | 1.8.7-alpha.1 |
+| 0.2.2-alpha.3 | 4.0.6-alpha.2 | 3.18.6-alpha.2 | 1.0.7-alpha.2 / 1.0.11-alpha.2 / 1.0.6-alpha.2 | 1.8.7-alpha.2 |
+| 0.2.2-rc.1 | 4.1.0 | 3.19.0 | 1.1.0 / 1.1.0 / 1.1.0 | 1.9.0 |
+
+这些版本与各候选 SDK 发布包的 peer 要求对应，包来自 npm 官方 registry，并按发布 integrity 校验后审阅源码。Schemastery 的 `src/index.ts` 相对 3.18.5 未变；Cordis 的配置解析、更新、事件分发和依赖卸载实现，以及 Loader／Include 的配置写入和挂载实现发生变化，必须继续经过类型、单元、真实 Loader 和恢复契约验证。精确配套表只改变候选开发依赖及已有 peer 声明；Loader／Include／Group／Cosmokit 显式列入候选开发依赖，以免预发布范围解析到下一轮组件，不改变正式 package.json、版本号或运行时依赖。准备阶段额外检查完整依赖树，提案校验也拒绝嵌套锁条目混入未审阅的配套版本。组件身份包含配套基线，避免复用旧依赖上的失败或成功证据。
+
+准备 job 在隔离副本更新精确 DSH 开发依赖、peer/engines 声明及 npm-shrinkwrap.json。保留原有支持和配套表以外的顶层依赖；旧 Host 锁解析重建，其他锁条目保留。正式源码与工作区在前后做摘要核对。未知版本不自动推断配套依赖，仍按既有基线执行，若存在冲突则报告失败，待源码审阅后再调整精确配套表。
 
 基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。未改声明的原包仍须通过官方准入判断拒绝未支持宿主。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
 
