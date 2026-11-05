@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { aggregate, subprocessStatus, digest, marker, compareVersions, assertRepository } from '../scripts/compatibility/common.mjs';
 import { componentIdentities, componentDue, selectChecks, plannedComponents } from '../scripts/compatibility/planning.mjs';
 import { combineTargets, parseDesktopFeed } from '../scripts/compatibility/discover.mjs';
-import { completedComponents, overallStatus, validateReport, applyPreparationFailure } from '../scripts/compatibility/report.mjs';
+import { completedComponents, overallStatus, validateReport, applyPreparationFailure, readArtifacts } from '../scripts/compatibility/report.mjs';
 import { targetManifest, candidateLock, validateProposal } from '../scripts/compatibility/proposal.mjs';
 import { command, StageError, isolatedEnv } from '../scripts/compatibility/runner.mjs';
 import { validateArchivePaths, validateSignature, validateDesktopRuntime } from '../scripts/compatibility/desktop-artifact.mjs';
@@ -129,6 +129,67 @@ test('a known preparation assertion failure is reported as failed rather than mi
   const components = { sdk: { ...completed, status: 'retry' } };
   applyPreparationFailure(components, { status: 'failed', sourceCommit, target, productionSourcesStable: true, reason: 'baseline assertion failed' }, target, sourceCommit);
   assert.equal(components.sdk.status, 'failed'); assert.equal(overallStatus(components, false), 'failed');
+});
+test('artifact collection preserves a preparation failure in both single and multiple download layouts', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-artifacts-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const preparation = { kind: 'prepare', version, status: 'failed', sourceCommit, target, productionSourcesStable: true, reason: 'target-lock: failed (ERESOLVE)' };
+  for (const layout of ['single', 'multiple']) {
+    const output = join(directory, layout);
+    const candidateDirectory = layout === 'single' ? output : join(output, 'dsh-candidate-' + version);
+    await mkdir(candidateDirectory, { recursive: true });
+    await writeFile(join(candidateDirectory, 'report.json'), JSON.stringify(preparation));
+    const artifacts = await readArtifacts(output, target, sourceCommit);
+    const components = completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit });
+    applyPreparationFailure(components, artifacts.preparation, target, sourceCommit);
+    assert.equal(overallStatus(components, false), 'failed', layout);
+    assert.equal(components.sdk.reason, preparation.reason);
+    assert.equal(artifacts.reports.length, 0);
+  }
+});
+test('a single successful preparation retains its candidate proposal without granting a platform pass', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-proposal-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const proposal = { version, sourceCommit, files: { 'package.json': '{}' } };
+  await writeFile(join(directory, 'report.json'), JSON.stringify({ kind: 'prepare', status: 'partial', sourceCommit, target }));
+  await writeFile(join(directory, 'proposal.json'), JSON.stringify(proposal));
+  const artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.deepEqual(artifacts.proposal, proposal);
+  const components = completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit });
+  applyPreparationFailure(components, artifacts.preparation, target, sourceCommit);
+  assert.equal(overallStatus(components, false), 'retry');
+});
+test('single component failures are collected and cannot stand in for preparation or bypass identity checks', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-component-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const kind of ['sdk', 'desktop']) {
+    const report = { version, sourceCommit, target, status: 'failed', platform: kind === 'desktop' ? 'darwin' : 'linux',
+      arch: kind === 'desktop' ? 'arm64' : 'x64', productionAdmissionChanged: false, productionSourcesStable: true,
+      ...(kind === 'desktop' ? { kind } : {}) };
+    await writeFile(join(directory, 'report.json'), JSON.stringify(report));
+    let artifacts = await readArtifacts(directory, target, sourceCommit);
+    assert.deepEqual(artifacts.reports, [report]);
+    assert.equal(artifacts.preparation, undefined);
+    await writeFile(join(directory, 'report.json'), JSON.stringify({ ...report, sourceCommit: 'f'.repeat(40) }));
+    artifacts = await readArtifacts(directory, target, sourceCommit);
+    assert.equal(artifacts.reports.length, 0);
+  }
+});
+test('artifact collection requires the prepared archive for all successful SDK platforms', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-archives-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const candidateDirectory = join(directory, 'dsh-candidate-' + version), archiveSha256 = 'd'.repeat(64);
+  await mkdir(candidateDirectory);
+  await writeFile(join(candidateDirectory, 'candidate.json'), JSON.stringify({ sourceCommit, targetIdentity: target.identity, archiveSha256 }));
+  for (const value of ['linux/x64', 'darwin/arm64', 'win32/x64']) {
+    const [platform, arch] = value.split('/'), output = join(directory, `dsh-check-${version}-${platform}`);
+    await mkdir(output);
+    await writeFile(join(output, 'report.json'), JSON.stringify({ version, sourceCommit, target, platform, arch, status: 'partial',
+      productionAdmissionChanged: false, productionSourcesStable: true, archiveSha256,
+      stages: ['host-install', 'normal-admission', 'candidate-installation'].map(name => ({ name, status: 'passed' })) }));
+  }
+  let artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.equal(overallStatus(completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit }), false), 'partial');
+  await writeFile(join(candidateDirectory, 'candidate.json'), JSON.stringify({ sourceCommit, targetIdentity: target.identity, archiveSha256: 'e'.repeat(64) }));
+  artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.equal(artifacts.reports.length, 0);
+  assert.equal(overallStatus(completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit }), false), 'retry');
 });
 test('three platforms using different candidate archive bytes cannot pass', () => {
   const reports = ['linux/x64','darwin/arm64','win32/x64'].map((value,i) => { const [platform,arch] = value.split('/'); return { platform,arch,status:'partial',archiveSha256:String(i) }; });

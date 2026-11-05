@@ -11,6 +11,18 @@
 - 网络或安装准备暂时失败、超时、中断及缺报告为 retry；至少六小时后重试，同一组件身份最多自动三次。明确断言、依赖冲突或完整性错误为 failed。手动精确版本可复验。
 - 候选检查成功为 partial，不能替代最终提交的常规 CI 或正式支持声明。未知 Desktop 运行时必须审阅，不能自动放宽。
 
+报告读取兼容下载后的两种布局：多个 artifact 的具名子目录，以及单个 artifact 直接展开到输出根目录。准备阶段已经确认的依赖冲突保留为 failed，不因后续平台 job 未执行而降为“缺报告、等待重试”；单个组件仍须通过原有来源、目标和包摘要校验。
+
+2026-11-05 核查的三个候选均在 `target-lock` 阶段发生 `ERESOLVE`：
+
+| 候选 | 上游 dsh-agent 要求的 Cordis | 原始检查 |
+|---|---|---|
+| 0.2.2-alpha.2 | `~4.0.6-alpha.1` | [Issue #35 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41626179738) |
+| 0.2.2-alpha.3 | `~4.0.6-alpha.2` | [Issue #36 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41788822490) |
+| 0.2.2-rc.1 | `~4.1.0` | [Issue #37 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41922628817) |
+
+这些检查使用的 Cordis 开发基线为 `4.0.5`，基线安装、类型检查与单元检查通过，候选平台安装及 Desktop 检查没有运行。恢复三个原始 artifact 可以重放失败报告汇总；这不等于重新执行候选检查。支持新版需先审阅相应依赖基线，再执行精确版本复验及最终提交资格检查。
+
 准备 job 在隔离副本更新精确 DSH 开发依赖、peer/engines 声明及 npm-shrinkwrap.json。保留原有支持和其他顶层依赖；旧 Host 锁解析重建，其他锁条目保留。正式源码与工作区在前后做摘要核对。若新版需要新的 Cordis／Schemastery 等依赖基线，报告冲突，由维护者审阅后调整。
 
 基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。未改声明的原包仍须通过官方准入判断拒绝未支持宿主。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
