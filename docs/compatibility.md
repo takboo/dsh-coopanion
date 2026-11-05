@@ -31,7 +31,7 @@
 | 0.2.2-alpha.3 | 4.0.6-alpha.2 | 3.18.6-alpha.2 | 1.0.7-alpha.2 / 1.0.11-alpha.2 / 1.0.6-alpha.2 | 1.8.7-alpha.2 |
 | 0.2.2-rc.1 | 4.1.0 | 3.19.0 | 1.1.0 / 1.1.0 / 1.1.0 | 1.9.0 |
 
-这些版本与各候选 SDK 发布包的 peer 要求对应，包来自 npm 官方 registry，并按发布 integrity 校验后审阅源码。Schemastery 的 `src/index.ts` 相对 3.18.5 未变；Cordis 的配置解析、更新、事件分发和依赖卸载实现，以及 Loader／Include 的配置写入和挂载实现发生变化，必须继续经过类型、单元、真实 Loader 和恢复契约验证。精确配套表只改变候选开发依赖及已有 peer 声明；Loader／Include／Group／Cosmokit 显式列入候选开发依赖，以免预发布范围解析到下一轮组件，不改变正式 package.json、版本号或运行时依赖。准备阶段额外检查完整依赖树，提案校验也拒绝嵌套锁条目混入未审阅的配套版本。组件身份包含配套基线，避免复用旧依赖上的失败或成功证据。
+这些版本与各候选 SDK 发布包的 peer 要求对应，包来自 npm 官方 registry，并按发布 integrity 校验后审阅源码。Schemastery 的 `src/index.ts` 相对 3.18.5 未变；Cordis 的配置解析、更新、事件分发和依赖卸载实现，以及 Loader／Include 的配置写入和挂载实现发生变化，必须继续经过类型、单元、真实 Loader 和恢复契约验证。候选准备通过精确配套表改变候选开发依赖及已有 peer 声明；Loader／Include／Group／Cosmokit 显式列入候选开发依赖，以免预发布范围解析到下一轮组件，不会由候选工作流自动改变正式 package.json、版本号或运行时依赖。准备阶段额外检查完整依赖树，提案校验也拒绝嵌套锁条目混入未审阅的配套版本。组件身份包含配套基线，避免复用旧依赖上的失败或成功证据。
 
 SDK 检查及 Desktop 的 npm Web Host 安装也使用这份精确配套基线，并分别固定 Timer 为 `1.1.8-alpha.1`、`1.1.8-alpha.2`、`1.2.0`。所有包保持官方发布字节及原有 peer 约束；安装后检查完整依赖树，并在报告中保存 `hostDependencies`。成功报告必须与该输入组合一致。官方 Desktop ASAR 继续按原字节独立验证。此证据只覆盖所记录的组合；默认 npm 浮动解析另行验证，不能把前者的成功套用到后者。alpha.2 默认解析到后一轮 Cordis 组件时，本地真实 Loader 的目标契约已复现上游 preset 初始化失败；固定匹配组合后，同一检查通过。
 
@@ -41,13 +41,19 @@ SDK 检查及 Desktop 的 npm Web Host 安装也使用这份精确配套基线�
 
 Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要、路径及符号链接、完整代码签名和 DeepSeek Team ID。当前审阅载体为 Electron 44.7.0 / Node 24.21.0 / libuv 1.52.1 / ABI 149。验证真实 ASAR 的 Host 契约，目标完成与会话契约也单独运行于真实 ASAR；随后在官方 Electron 中运行同包安装与桌宠联动，此完整 GUI 流程的 Web Host／Client 由对应 npm 产物提供，桌宠按产品正常路径使用其声明的独立 Electron 依赖。该自动化不声称驱动原生 Desktop shell、通知中心、真实账号模型或物理多屏／输入设备。
 
+## 0.4.19 正式支持范围
+
+0.4.19 将 `0.2.2-rc.1` 的已审阅提案纳入正式 manifest 和 shrinkwrap：开发基线为 Cordis `4.1.0`、Schemastery `3.19.0`，保留此前六版 Host 的精确支持和原有运行时依赖。常规及发布 CI 从 manifest 读取七版宿主，执行三平台二十一组同一规范包安装；rc.1 使用普通 npm 发布宿主安装路径，候选检查的固定配套输入不替代这项资格验证。
+
+`0.2.2-alpha.2` 与 `alpha.3` 保留固定配套候选证据，不加入正式支持列表；alpha.2 默认浮动组合已有上游初始化失败复现。对应 issue 在修复检查器、保留复验身份并转入后续 rc.1 支持后结案，不表示旧 alpha 的默认安装已通过。真实账号／模型、通知中心、物理多屏及长期体验仍需单独验收；macOS 原生补验使用项目隔离 VM。
+
 ## 报告与提案
 
 检查 job 仅有读取权限，环境剔除令牌及 API 凭据，使用临时 HOME、DSH_HOME 与 profile。默认分支的报告 job 才能更新 Issue、创建分支与 Draft PR；pull_request 只检查。流程直接串联候选验证，不依赖机器人 PR 触发第二轮 CI。
 
 依赖提案只允许 package.json 与 npm-shrinkwrap.json，严格核对目标版本、基线 manifest、锁内 registry 来源和 integrity。已有提案或人工修改不自动覆盖。候选报告不自动修改正式分支、标记 Ready、合并、打标签或发布。报告保留来源提交、目标身份、包摘要、平台、阶段及对应 Actions 链接；报告、必要日志、失败截图和候选包保留 14 天，应用 ZIP、依赖、浏览器和测试会话不上传。
 
-当前发布资格仍由 [发布流程](releasing.md) 的最终提交全量 CI、十八组同包安装和 npm／Release 字节核验决定。
+当前发布资格仍由 [发布流程](releasing.md) 的最终提交全量 CI、正式支持矩阵的同包安装和 npm／Release 字节核验决定。
 
 ## 本地执行
 
