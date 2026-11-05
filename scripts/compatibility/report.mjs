@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { aggregate, assertRepository, marker, pages, previousReports, request, safe, version } from './common.mjs';
 import { componentIdentities, plannedComponents, validComponents } from './planning.mjs';
 import { validateDesktopRuntime, validateDesktopTarget } from './desktop-artifact.mjs';
+import { reviewedDependencies, hostDependencies } from './reviewed-dependencies.mjs';
 export function issueBody(target, reports, { status, attempts, runUrl, sourceCommit, proposalUrl = '', details = '', components }) {
   const state = { version: version(target.version), identity: target.identity, status, attempts, run: /\/runs\/(\d+)$/.exec(runUrl)?.[1] };
   if (components) state.components = validComponents(components);
@@ -39,6 +40,11 @@ export function validateReport(r, target, sourceCommit, kind) {
   assert.equal(r.target?.identity, target.identity);
   assert.equal(r.productionAdmissionChanged, false); assert.equal(r.productionSourcesStable, true);
   assert(['passed', 'partial', 'failed', 'retry'].includes(r.status));
+  if (['passed', 'partial'].includes(r.status) && reviewedDependencies(target.version)) {
+    assert.deepEqual(r.hostDependencies, hostDependencies(target.version), 'Host dependency composition differs from the reviewed baseline');
+    const tree = kind === 'desktop' ? 'web-runtime-dependency-tree' : 'host-dependency-tree';
+    assert(r.stages.some(s => s.name === tree && s.status === 'passed'), `Missing dependency tree stage ${tree}`);
+  }
   if (kind === 'desktop') {
     assert.equal(r.kind, 'desktop'); assert.equal(r.platform, 'darwin'); assert.equal(r.arch, 'arm64');
     if (['passed', 'partial'].includes(r.status)) {

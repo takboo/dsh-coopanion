@@ -39,7 +39,7 @@ macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。浏览器回归�
 
 原生测试和安装使用隔离数据目录，系统桌面操作串行执行。CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox 与 contextIsolation，关闭 Node integration。测试通知适配器和模型答复器属于受控边界，不能代替通知中心实机送达或真实模型会话验收。
 
-通知单元、Host 契约和同包安装探针通过 Cordis 插件生命周期挂载并等待 `UserQuestionService`，再读取限时提问投影。DSH 0.2.2 把投影注册移到了 `Service.init`，仅调用构造函数无法代表已就绪的真实服务。模拟 Agent 也提供新版 `model` 接口，同时保留旧 SDK 的结构类型检查；原有身份、continued 状态、精确答复和卸载断言保持不变。
+通知单元、Host 契约和同包安装探针通过 Cordis 插件生命周期挂载并等待 `UserQuestionService`；使用实际审批服务的探针也等待 `ApprovalService`，再读取相关投影。DSH 0.2.2 把投影注册移到了 `Service.init`，仅调用构造函数无法代表已就绪的真实服务。模拟 Agent 也提供新版 `model` 接口，同时保留旧 SDK 的结构类型检查；原有身份、continued 状态、精确答复和卸载断言保持不变。
 
 ## 关键行为回归
 

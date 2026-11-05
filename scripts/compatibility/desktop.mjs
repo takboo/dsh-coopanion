@@ -9,6 +9,7 @@ import { root, commit, copySource, sourceDigest, isolatedEnv, command, npmCli, S
 import { FetchError } from './common.mjs';
 import { validateDesktopTarget, validateArchivePaths, validateSignature, validateDesktopRuntime } from './desktop-artifact.mjs';
 import { validateProposal } from './proposal.mjs';
+import { hostDependencies } from './reviewed-dependencies.mjs';
 assert.equal(process.platform, 'darwin'); assert.equal(process.arch, 'arm64');
 const parent = join(root, '.cache/compatibility'); await mkdir(parent, { recursive: true });
 const scratch = await mkdtemp(join(parent, 'desktop-')), workspace = join(scratch, 'workspace');
@@ -59,7 +60,9 @@ try {
   report.runtime = JSON.parse(await run('runtime-inspect', executable, ['--expose-internals', 'scripts/compatibility/inspect-desktop.mjs', sdk], { env: electronEnv, captureStdout: true }));
   validateDesktopRuntime(report.runtime, report.version);
   const runtime = join(scratch, 'npm-runtime');
-  await run('web-runtime', process.execPath, [npmCli(), 'install', '--prefix', runtime, '--no-audit', '--no-fund', `@deepseek-ai/dsh@${report.version}`], { setup: true });
+  report.hostDependencies = hostDependencies(report.version);
+  await run('web-runtime', process.execPath, [npmCli(), 'install', '--prefix', runtime, '--no-audit', '--no-fund', ...Object.entries(report.hostDependencies).map(([name, exact]) => `${name}@${exact}`)], { setup: true });
+  await run('web-runtime-dependency-tree', process.execPath, [npmCli(), 'ls', '--all', '--prefix', runtime]);
   const asarArgs = ['--expose-internals', '--import=' + join(workspace, 'scripts/compatibility/desktop-bootstrap.mjs')];
   // Bare SDK imports and explicit published Host module URLs are redirected to the inspected ASAR.
   await run('asar-contract', executable, [...asarArgs, 'tests/notification-host-contract.mjs', '--runtime', runtime, '--version', report.version], { env: electronEnv });

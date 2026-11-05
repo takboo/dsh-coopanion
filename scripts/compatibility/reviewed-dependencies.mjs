@@ -18,3 +18,8 @@ const baselines = Object.freeze({
   }),
 });
 export const reviewedDependencies = target => baselines[target];
+const timers = Object.freeze({ '0.2.2-alpha.2': '1.1.8-alpha.1', '0.2.2-alpha.3': '1.1.8-alpha.2', '0.2.2-rc.1': '1.2.0' });
+// The published prerelease ranges can select the next generation of Cordis plugins.
+// Pin the reviewed composition without overriding peer constraints or changing upstream bytes.
+export const hostDependencies = target => ({ '@deepseek-ai/dsh': target, ...baselines[target],
+  ...(timers[target] ? { '@deepseek-ai/cordis-plugin-timer': timers[target] } : {}) });

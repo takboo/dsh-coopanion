@@ -1,11 +1,11 @@
 import { compareVersions, digest, previousReports } from './common.mjs';
-import { reviewedDependencies } from './reviewed-dependencies.mjs';
+import { reviewedDependencies, hostDependencies } from './reviewed-dependencies.mjs';
 export { validComponents } from './common.mjs';
 
 // Bump only when a component's evidence contract requires a fresh run.
 export function componentIdentities(target) {
   const dependencies = reviewedDependencies(target.version);
-  const reviewed = dependencies ? { dependencyBaseline: dependencies } : {};
+  const reviewed = dependencies ? { dependencyBaseline: dependencies, hostDependencies: hostDependencies(target.version) } : {};
   return { sdk: digest({ contract: 1, version: target.version, npm: target.npm, ...reviewed }),
     desktop: target.desktop ? digest({ contract: 1, version: target.version, desktop: target.desktop, npm: target.npm, ...reviewed }) : null };
 }

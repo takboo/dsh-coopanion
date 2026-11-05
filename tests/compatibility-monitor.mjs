@@ -8,7 +8,7 @@ import { componentIdentities, componentDue, selectChecks, plannedComponents } fr
 import { combineTargets, parseDesktopFeed } from '../scripts/compatibility/discover.mjs';
 import { completedComponents, overallStatus, validateReport, applyPreparationFailure, readArtifacts } from '../scripts/compatibility/report.mjs';
 import { targetManifest, candidateLock, validateProposal } from '../scripts/compatibility/proposal.mjs';
-import { reviewedDependencies } from '../scripts/compatibility/reviewed-dependencies.mjs';
+import { reviewedDependencies, hostDependencies } from '../scripts/compatibility/reviewed-dependencies.mjs';
 import { command, StageError, isolatedEnv } from '../scripts/compatibility/runner.mjs';
 import { validateArchivePaths, validateSignature, validateDesktopRuntime } from '../scripts/compatibility/desktop-artifact.mjs';
 const baseline = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -110,6 +110,23 @@ test('candidate proposals reject a different companion version even in a nested 
   validateProposal(proposal(), production, target, sourceCommit);
   entry.version = '1.0.7-alpha.2';
   assert.throws(() => validateProposal(proposal(), production, target, sourceCommit), /Unreviewed companion resolution/);
+});
+test('successful reviewed reports require the exact Host composition and a valid dependency tree', () => {
+  const candidate = { ...target, version: '0.2.2-alpha.2' };
+  const host = hostDependencies(candidate.version);
+  assert.equal(host['@deepseek-ai/cordis'], '4.0.6-alpha.1');
+  assert.equal(host['@deepseek-ai/cordis-plugin-timer'], '1.1.8-alpha.1');
+  assert.deepEqual(hostDependencies(version), { '@deepseek-ai/dsh': version });
+  const report = { version: candidate.version, sourceCommit, target: candidate, productionAdmissionChanged: false, productionSourcesStable: true,
+    platform: 'linux', arch: 'x64', status: 'partial', archiveSha256: 'd'.repeat(64),
+    stages: ['host-install', 'normal-admission', 'candidate-installation'].map(name => ({ name, status: 'passed' })) };
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Host dependency composition/);
+  report.hostDependencies = host;
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Missing dependency tree/);
+  report.stages.push({ name: 'host-dependency-tree', status: 'passed' });
+  validateReport(report, candidate, sourceCommit, 'sdk');
+  report.hostDependencies = { ...host, '@deepseek-ai/cordis': '4.0.6-alpha.2' };
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Host dependency composition/);
 });
 test('lock refresh preserves unrelated exact resolutions', () => {
   const next = candidateLock(lock, targetManifest(baseline, version));
