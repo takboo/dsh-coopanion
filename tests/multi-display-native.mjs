@@ -73,7 +73,18 @@ try {
   await page.waitForFunction(()=>!['air','drag','crouch'].includes(document.querySelector('#pet').dataset.mode));
   await petClick(page);await page.locator('#pet').hover();await page.mouse.down();
   const viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight}));
-  await page.mouse.move(viewport.width-25,viewport.height*.4,{steps:12});await page.waitForSelector('#pet[data-mode=drag]');
+  await page.mouse.move(viewport.width-25,viewport.height*.4,{steps:12});
+  try { await page.waitForSelector('#pet[data-mode=drag]'); }
+  catch (error) {
+    try {
+      const input = await page.evaluate(() => ({ mode: document.querySelector('#pet').dataset.mode,
+        pressing: document.querySelector('#pet').dataset.pressing, nativeHit: document.querySelector('#pet').dataset.nativeHit,
+        viewport: { width: innerWidth, height: innerHeight, x: screenX, y: screenY }, trace: window.__nativeInputTrace ?? [] }));
+      await writeFile('artifacts/multi-display-native-drag-failure.json', JSON.stringify({ sourceCommit: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), platform: process.platform, arch: process.arch, input },null,2)+'\n');
+      console.log('M5 native drag failure:', JSON.stringify(input));
+    } catch (diagnosticError) { console.error('M5 native drag diagnostic unavailable:', String(diagnosticError)); }
+    throw error;
+  }
   await page.evaluate(()=>{window.m5DropEvents=[];window.addEventListener('message',e=>{if(e.source===document.querySelector('#body-layer iframe')?.contentWindow&&e.data?.t==='frame')for(const item of e.data.events??[])if(item.kind==='touch')window.m5DropEvents.push(item.detail.kind);});});
   await app.evaluate(({screen})=>{globalThis.m5Screen.layout=globalThis.m5Screen.layout.slice(0,1);screen.emit('display-removed',{},{});});
   await page.waitForSelector('#pet[data-display-id="91001"]');

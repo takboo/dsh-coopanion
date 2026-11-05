@@ -59,8 +59,11 @@ async function waitProfile(pattern) {
 }
 async function openPetSettings(page, chinese = true) {
   const settingsName = chinese ? '设置' : 'Settings';
-  const accountMenu = version.startsWith('0.2.1-rc.');
-  const launcher = page.getByRole('button', { name: accountMenu ? (chinese ? '账号菜单' : 'Account menu') : settingsName, exact: true });
+  const accountLauncher = page.getByRole('button', { name: chinese ? '账号菜单' : 'Account menu', exact: true });
+  const directLauncher = page.getByRole('button', { name: settingsName, exact: true });
+  await accountLauncher.or(directLauncher).first().waitFor();
+  const accountMenu = await accountLauncher.isVisible();
+  const launcher = accountMenu ? accountLauncher : directLauncher;
   const section = page.getByRole('button', { name: chinese ? '桌宠' : 'Desktop pet', exact: true });
   for (let attempt = 0; attempt < 2; attempt++) {
     await launcher.click();

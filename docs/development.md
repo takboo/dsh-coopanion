@@ -41,6 +41,8 @@ macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。浏览器回归�
 
 通知单元、Host 契约和同包安装探针通过 Cordis 插件生命周期挂载并等待 `UserQuestionService`；使用实际审批服务的探针也等待 `ApprovalService`，再读取相关投影。DSH 0.2.2 把投影注册移到了 `Service.init`，仅调用构造函数无法代表已就绪的真实服务。模拟 Agent 也提供新版 `model` 接口，同时保留旧 SDK 的结构类型检查；原有身份、continued 状态、精确答复和卸载断言保持不变。
 
+安装探针按当前可见的“账号菜单／Account menu”或直接“设置／Settings”入口打开同一设置面板，不按宿主版本前缀推断布局。面板关闭后的有限重开、桌宠分区、状态加载及可写配置断言保持不变。原生多屏拖拽未进入 `drag` 时，另存已有 OS／CDP 输入轨迹及按压／命中状态到 `multi-display-native-drag-failure.json`，保留原失败与等待期限。
+
 ## 关键行为回归
 
 | 改动 | 检查入口与范围 |
