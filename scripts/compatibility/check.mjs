@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, writeFile, cp, readdir } from 'node:fs/promis
 import { join, resolve } from 'node:path';
 import { root, commit, copySource, sourceDigest, isolatedEnv, command, npmCli, StageError } from './runner.mjs';
 import { FetchError, request } from './common.mjs';
+import { hostDependencies } from './reviewed-dependencies.mjs';
 const parent = join(root, '.cache/compatibility'); await mkdir(parent, { recursive: true });
 const scratch = await mkdtemp(join(parent, 'check-'));
 const workspace = join(scratch, 'workspace'), runtime = join(scratch, 'runtime');
@@ -28,11 +29,13 @@ try {
   const { validateProposal } = await import('./proposal.mjs');
   for (const [path, content] of Object.entries(validateProposal(proposal, baseline, report.version, report.sourceCommit))) await writeFile(join(workspace, path), content);
   await npm('platform-install', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], { setup: true });
-  await npm('host-install', ['install', '--prefix', runtime, '--no-audit', '--no-fund', `@deepseek-ai/dsh@${report.version}`], { setup: true, timeout: 10 * 60000 });
+  report.hostDependencies = hostDependencies(report.version);
+  await npm('host-install', ['install', '--prefix', runtime, '--no-audit', '--no-fund', ...Object.entries(report.hostDependencies).map(([name, exact]) => `${name}@${exact}`)], { setup: true, timeout: 10 * 60000 });
+  await npm('host-dependency-tree', ['ls', '--all', '--prefix', runtime]);
   await command(report, output, 'normal-admission', process.execPath, [join(workspace, 'scripts/compatibility/admission.mjs'), runtime, report.version, join(bundle, 'candidate.json')], { cwd: workspace, env });
   Object.assign(env, { DSH_TEST_VERSION: report.version, DSH_TEST_RUNTIME: runtime, DSH_TEST_PACKAGE_DIR: bundle });
   await npm('candidate-installation', ['run', 'test:install'], { timeout: 25 * 60000 });
-  report.status = 'partial'; report.reason = 'Actual Loader, browser Client, native companion, notification/goal/session contracts and recovery passed on the same candidate archive; source review remains required.';
+  report.status = 'partial'; report.reason = 'Actual Loader, browser Client, native companion, notification/goal/session contracts and recovery passed on the same candidate archive and reported exact Host dependency composition; source review and unpinned upstream installations remain separate.';
 } catch (error) { report.status = error instanceof StageError ? error.status : error instanceof FetchError ? 'retry' : 'failed'; report.reason = String(error.stack ?? error).slice(0, 6000); }
 finally {
   for (const name of await readdir(join(workspace, 'artifacts')).catch(() => [])) if (/\.(json|png)$/.test(name)) await cp(join(workspace, 'artifacts', name), join(output, name));

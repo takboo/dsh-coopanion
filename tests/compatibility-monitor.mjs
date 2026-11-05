@@ -6,8 +6,9 @@ import { join } from 'node:path';
 import { aggregate, subprocessStatus, digest, marker, compareVersions, assertRepository } from '../scripts/compatibility/common.mjs';
 import { componentIdentities, componentDue, selectChecks, plannedComponents } from '../scripts/compatibility/planning.mjs';
 import { combineTargets, parseDesktopFeed } from '../scripts/compatibility/discover.mjs';
-import { completedComponents, overallStatus, validateReport, applyPreparationFailure } from '../scripts/compatibility/report.mjs';
+import { completedComponents, overallStatus, validateReport, applyPreparationFailure, readArtifacts } from '../scripts/compatibility/report.mjs';
 import { targetManifest, candidateLock, validateProposal } from '../scripts/compatibility/proposal.mjs';
+import { reviewedDependencies, hostDependencies } from '../scripts/compatibility/reviewed-dependencies.mjs';
 import { command, StageError, isolatedEnv } from '../scripts/compatibility/runner.mjs';
 import { validateArchivePaths, validateSignature, validateDesktopRuntime } from '../scripts/compatibility/desktop-artifact.mjs';
 const baseline = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -77,6 +78,56 @@ test('candidate manifest changes exact Host versions only and retains prior supp
   assert.equal(candidate.devDependencies['@deepseek-ai/cordis'], baseline.devDependencies['@deepseek-ai/cordis']);
   assert.throws(() => targetManifest(baseline, '0.2.0-rc.1'), /downgrade/);
 });
+test('reviewed 0.2.2 candidates include their exact Cordis and Schemastery baselines only in the proposal', () => {
+  const production = { ...structuredClone(baseline), engines: { ...baseline.engines, dsh: '0.2.1-rc.5' } };
+  const original = structuredClone(production);
+  for (const [target, cordis, schemastery] of [
+    ['0.2.2-alpha.2', '4.0.6-alpha.1', '3.18.6-alpha.1'],
+    ['0.2.2-alpha.3', '4.0.6-alpha.2', '3.18.6-alpha.2'],
+    ['0.2.2-rc.1', '4.1.0', '3.19.0'],
+  ]) {
+    const candidate = targetManifest(production, target);
+    for (const [name, exact] of [['@deepseek-ai/cordis', cordis], ['@deepseek-ai/schemastery', schemastery]]) {
+      assert.equal(candidate.devDependencies[name], exact);
+      assert(candidate.peerDependencies[name].split(' || ').includes(exact));
+      assert(candidate.peerDependencies[name].startsWith(production.peerDependencies[name]));
+    }
+    assert.deepEqual(candidate.dependencies, baseline.dependencies);
+    assert.equal(candidate.version, baseline.version);
+    assert.deepEqual(production, original);
+    for (const [name, exact] of Object.entries(reviewedDependencies(target))) assert.equal(candidate.devDependencies[name], exact);
+    const originalIdentity = digest({ contract: 1, version: target, npm: { integrity: 'same' } });
+    const next = { version: target, npm: { integrity: 'same' } };
+    assert.notEqual(componentIdentities(next).sdk, originalIdentity, 'new dependency baseline must not reuse old failed evidence');
+  }
+});
+test('candidate proposals reject a different companion version even in a nested lock entry', () => {
+  const production = { ...structuredClone(baseline), engines: { ...baseline.engines, dsh: '0.2.1-rc.5' } };
+  const target = '0.2.2-alpha.2', manifest = targetManifest(production, target), next = candidateLock(lock, manifest);
+  const entry = { version: '1.0.7-alpha.1', resolved: 'https://registry.npmjs.org/@deepseek-ai/cordis-plugin-loader/-/cordis-plugin-loader-1.0.7-alpha.1.tgz', integrity: 'sha512-AA==' };
+  next.packages['node_modules/fixture/node_modules/@deepseek-ai/cordis-plugin-loader'] = entry;
+  const proposal = () => ({ version: target, sourceCommit, files: { 'package.json': JSON.stringify(manifest), 'npm-shrinkwrap.json': JSON.stringify(next) } });
+  validateProposal(proposal(), production, target, sourceCommit);
+  entry.version = '1.0.7-alpha.2';
+  assert.throws(() => validateProposal(proposal(), production, target, sourceCommit), /Unreviewed companion resolution/);
+});
+test('successful reviewed reports require the exact Host composition and a valid dependency tree', () => {
+  const candidate = { ...target, version: '0.2.2-alpha.2' };
+  const host = hostDependencies(candidate.version);
+  assert.equal(host['@deepseek-ai/cordis'], '4.0.6-alpha.1');
+  assert.equal(host['@deepseek-ai/cordis-plugin-timer'], '1.1.8-alpha.1');
+  assert.deepEqual(hostDependencies(version), { '@deepseek-ai/dsh': version });
+  const report = { version: candidate.version, sourceCommit, target: candidate, productionAdmissionChanged: false, productionSourcesStable: true,
+    platform: 'linux', arch: 'x64', status: 'partial', archiveSha256: 'd'.repeat(64),
+    stages: ['host-install', 'normal-admission', 'candidate-installation'].map(name => ({ name, status: 'passed' })) };
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Host dependency composition/);
+  report.hostDependencies = host;
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Missing dependency tree/);
+  report.stages.push({ name: 'host-dependency-tree', status: 'passed' });
+  validateReport(report, candidate, sourceCommit, 'sdk');
+  report.hostDependencies = { ...host, '@deepseek-ai/cordis': '4.0.6-alpha.2' };
+  assert.throws(() => validateReport(report, candidate, sourceCommit, 'sdk'), /Host dependency composition/);
+});
 test('lock refresh preserves unrelated exact resolutions', () => {
   const next = candidateLock(lock, targetManifest(baseline, version));
   assert.deepEqual(next.packages['node_modules/electron'], lock.packages['node_modules/electron']);
@@ -129,6 +180,67 @@ test('a known preparation assertion failure is reported as failed rather than mi
   const components = { sdk: { ...completed, status: 'retry' } };
   applyPreparationFailure(components, { status: 'failed', sourceCommit, target, productionSourcesStable: true, reason: 'baseline assertion failed' }, target, sourceCommit);
   assert.equal(components.sdk.status, 'failed'); assert.equal(overallStatus(components, false), 'failed');
+});
+test('artifact collection preserves a preparation failure in both single and multiple download layouts', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-artifacts-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const preparation = { kind: 'prepare', version, status: 'failed', sourceCommit, target, productionSourcesStable: true, reason: 'target-lock: failed (ERESOLVE)' };
+  for (const layout of ['single', 'multiple']) {
+    const output = join(directory, layout);
+    const candidateDirectory = layout === 'single' ? output : join(output, 'dsh-candidate-' + version);
+    await mkdir(candidateDirectory, { recursive: true });
+    await writeFile(join(candidateDirectory, 'report.json'), JSON.stringify(preparation));
+    const artifacts = await readArtifacts(output, target, sourceCommit);
+    const components = completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit });
+    applyPreparationFailure(components, artifacts.preparation, target, sourceCommit);
+    assert.equal(overallStatus(components, false), 'failed', layout);
+    assert.equal(components.sdk.reason, preparation.reason);
+    assert.equal(artifacts.reports.length, 0);
+  }
+});
+test('a single successful preparation retains its candidate proposal without granting a platform pass', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-proposal-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const proposal = { version, sourceCommit, files: { 'package.json': '{}' } };
+  await writeFile(join(directory, 'report.json'), JSON.stringify({ kind: 'prepare', status: 'partial', sourceCommit, target }));
+  await writeFile(join(directory, 'proposal.json'), JSON.stringify(proposal));
+  const artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.deepEqual(artifacts.proposal, proposal);
+  const components = completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit });
+  applyPreparationFailure(components, artifacts.preparation, target, sourceCommit);
+  assert.equal(overallStatus(components, false), 'retry');
+});
+test('single component failures are collected and cannot stand in for preparation or bypass identity checks', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-component-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const kind of ['sdk', 'desktop']) {
+    const report = { version, sourceCommit, target, status: 'failed', platform: kind === 'desktop' ? 'darwin' : 'linux',
+      arch: kind === 'desktop' ? 'arm64' : 'x64', productionAdmissionChanged: false, productionSourcesStable: true,
+      ...(kind === 'desktop' ? { kind } : {}) };
+    await writeFile(join(directory, 'report.json'), JSON.stringify(report));
+    let artifacts = await readArtifacts(directory, target, sourceCommit);
+    assert.deepEqual(artifacts.reports, [report]);
+    assert.equal(artifacts.preparation, undefined);
+    await writeFile(join(directory, 'report.json'), JSON.stringify({ ...report, sourceCommit: 'f'.repeat(40) }));
+    artifacts = await readArtifacts(directory, target, sourceCommit);
+    assert.equal(artifacts.reports.length, 0);
+  }
+});
+test('artifact collection requires the prepared archive for all successful SDK platforms', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-archives-')); t.after(() => rm(directory, { recursive: true, force: true }));
+  const candidateDirectory = join(directory, 'dsh-candidate-' + version), archiveSha256 = 'd'.repeat(64);
+  await mkdir(candidateDirectory);
+  await writeFile(join(candidateDirectory, 'candidate.json'), JSON.stringify({ sourceCommit, targetIdentity: target.identity, archiveSha256 }));
+  for (const value of ['linux/x64', 'darwin/arm64', 'win32/x64']) {
+    const [platform, arch] = value.split('/'), output = join(directory, `dsh-check-${version}-${platform}`);
+    await mkdir(output);
+    await writeFile(join(output, 'report.json'), JSON.stringify({ version, sourceCommit, target, platform, arch, status: 'partial',
+      productionAdmissionChanged: false, productionSourcesStable: true, archiveSha256,
+      stages: ['host-install', 'normal-admission', 'candidate-installation'].map(name => ({ name, status: 'passed' })) }));
+  }
+  let artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.equal(overallStatus(completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit }), false), 'partial');
+  await writeFile(join(candidateDirectory, 'candidate.json'), JSON.stringify({ sourceCommit, targetIdentity: target.identity, archiveSha256: 'e'.repeat(64) }));
+  artifacts = await readArtifacts(directory, target, sourceCommit);
+  assert.equal(artifacts.reports.length, 0);
+  assert.equal(overallStatus(completedComponents(target, artifacts.reports, {}, { run: '123', sourceCommit }), false), 'retry');
 });
 test('three platforms using different candidate archive bytes cannot pass', () => {
   const reports = ['linux/x64','darwin/arm64','win32/x64'].map((value,i) => { const [platform,arch] = value.split('/'); return { platform,arch,status:'partial',archiveSha256:String(i) }; });

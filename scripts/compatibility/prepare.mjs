@@ -32,6 +32,7 @@ try {
   await writeFile(join(workspace, 'npm-shrinkwrap.json'), JSON.stringify(lock, null, 2) + '\n');
   await npm('target-lock', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], { setup: true });
   await npm('target-install', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], { setup: true });
+  await npm('target-dependency-tree', ['ls', '--all']);
   for (const task of ['verify:metadata', 'typecheck']) await npm('candidate-' + task.replace(':', '-'), ['run', task]);
   if (report.target.runSdk !== false) await npm('candidate-tests', ['test']);
   await npm('candidate-build', ['run', 'build']);

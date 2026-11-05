@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { version, compareVersions } from './common.mjs';
 import { verifyMetadata } from '../release-support.mjs';
+import { reviewedDependencies } from './reviewed-dependencies.mjs';
 export function targetManifest(baseline, target) {
   version(target);
   const supported = baseline.engines.dsh.split(' || ');
@@ -11,6 +12,10 @@ export function targetManifest(baseline, target) {
     result.peerDependencies[name] = [...new Set([...result.peerDependencies[name].split(' || '), target])].join(' || ');
   }
   for (const name of Object.keys(result.devDependencies)) if (name.startsWith('@deepseek-ai/dsh-')) result.devDependencies[name] = target;
+  for (const [name, exact] of Object.entries(reviewedDependencies(target) ?? {})) {
+    result.devDependencies[name] = exact;
+    if (name in result.peerDependencies) result.peerDependencies[name] = [...new Set([...result.peerDependencies[name].split(' || '), exact])].join(' || ');
+  }
   return result;
 }
 export function validateProposal(proposal, baseline, target, sourceCommit) {
@@ -19,11 +24,14 @@ export function validateProposal(proposal, baseline, target, sourceCommit) {
   for (const content of Object.values(proposal.files)) assert(typeof content === 'string' && Buffer.byteLength(content) < 4 * 1024 * 1024);
   const pkg = JSON.parse(proposal.files['package.json']), lock = JSON.parse(proposal.files['npm-shrinkwrap.json']);
   assert.deepEqual(pkg, targetManifest(baseline, target)); verifyMetadata(pkg, lock);
+  const reviewed = reviewedDependencies(target) ?? {};
   for (const [path, entry] of Object.entries(lock.packages)) {
     if (!path) continue;
     assert(entry.resolved && new URL(entry.resolved).origin === 'https://registry.npmjs.org', 'Only registry packages allowed');
     assert(/^sha512-[A-Za-z\d+/]+=*$/.test(entry.integrity), 'Locked package needs integrity');
     if (/(?:^|\/)node_modules\/@deepseek-ai\/dsh(?:-[\w-]+)?$/.test(path)) assert.equal(entry.version, target);
+    const name = /(?:^|\/)node_modules\/(@deepseek-ai\/[\w-]+)$/.exec(path)?.[1];
+    if (reviewed[name]) assert.equal(entry.version, reviewed[name], `Unreviewed companion resolution: ${path}`);
   }
   return proposal.files;
 }

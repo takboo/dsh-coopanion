@@ -48,6 +48,8 @@ it('uses the real Cordis event bus, delegates approval, logs user input through 
   ctx.provide('sessionQuery', { observeSession: async () => ({ header: session.header, events: [], [Symbol.dispose]() {} }) });
   const agent: Agent = {
     id: session.id, session, followup, ctx, options: {}, status: 'idle',
+    // 0.2.2 adds Agent.model; a spread keeps the fixture compatible with older SDK shapes.
+    ...{ model: { current: () => undefined, select: vi.fn() } },
     inbox: { nextTurn: [], nextStep: [], clear() {}, append() {}, prepend() {}, replace: () => false, remove: () => false, splice: () => [] },
     cancel() {}, send() {}, steer() {}, inject() {}, whenIdle: async () => {},
     runMaintenance: task => task(new AbortController().signal),

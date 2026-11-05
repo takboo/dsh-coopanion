@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { aggregate, assertRepository, marker, pages, previousReports, request, safe, version } from './common.mjs';
 import { componentIdentities, plannedComponents, validComponents } from './planning.mjs';
 import { validateDesktopRuntime, validateDesktopTarget } from './desktop-artifact.mjs';
+import { reviewedDependencies, hostDependencies } from './reviewed-dependencies.mjs';
 export function issueBody(target, reports, { status, attempts, runUrl, sourceCommit, proposalUrl = '', details = '', components }) {
   const state = { version: version(target.version), identity: target.identity, status, attempts, run: /\/runs\/(\d+)$/.exec(runUrl)?.[1] };
   if (components) state.components = validComponents(components);
@@ -39,6 +40,11 @@ export function validateReport(r, target, sourceCommit, kind) {
   assert.equal(r.target?.identity, target.identity);
   assert.equal(r.productionAdmissionChanged, false); assert.equal(r.productionSourcesStable, true);
   assert(['passed', 'partial', 'failed', 'retry'].includes(r.status));
+  if (['passed', 'partial'].includes(r.status) && reviewedDependencies(target.version)) {
+    assert.deepEqual(r.hostDependencies, hostDependencies(target.version), 'Host dependency composition differs from the reviewed baseline');
+    const tree = kind === 'desktop' ? 'web-runtime-dependency-tree' : 'host-dependency-tree';
+    assert(r.stages.some(s => s.name === tree && s.status === 'passed'), `Missing dependency tree stage ${tree}`);
+  }
   if (kind === 'desktop') {
     assert.equal(r.kind, 'desktop'); assert.equal(r.platform, 'darwin'); assert.equal(r.arch, 'arm64');
     if (['passed', 'partial'].includes(r.status)) {
@@ -136,6 +142,33 @@ async function createProposal(target, proposal, repo, token, sourceCommit, issue
     body: `Prepare exact DSH ${target.version} dependencies for review. ${issueUrl}\n\nThis proposal changes only package.json and npm-shrinkwrap.json. Formal supported versions, runtime/platform acceptance and release version require separate review and final CI. Candidate reports are linked in the Issue and do not qualify formal support.\n\nDo not merge until source review and the required independent final compatibility qualification are complete. No automatic merge or publication.` } });
   return { url: pull.html_url };
 }
+export async function readArtifacts(directory, target, sourceCommit) {
+  const reports = []; let proposal, candidate;
+  let single;
+  try { single = JSON.parse(await readFile(join(directory, 'report.json'), 'utf8')); } catch {}
+  // download-artifact v8 flattens a single pattern match, even with merge-multiple=false.
+  const candidateDirectory = single?.kind === 'prepare' ? directory : join(directory, 'dsh-candidate-' + target.version);
+  try { candidate = JSON.parse(await readFile(join(candidateDirectory, 'candidate.json'), 'utf8')); } catch {}
+  const entries = (await readdir(directory).catch(() => [])).map(name => ({ name,
+    kind: name.startsWith('dsh-desktop-') ? 'desktop' : name.startsWith('dsh-check-') ? 'sdk' : null }));
+  if (single && single.kind !== 'prepare') entries.push({ name: '.', kind: single.kind === 'desktop' ? 'desktop' : 'sdk' });
+  for (const { name, kind } of entries) {
+    if (!kind) continue;
+    try {
+      const r = validateReport(JSON.parse(await readFile(join(directory, name, 'report.json'), 'utf8')), target, sourceCommit, kind);
+      if (['passed', 'partial'].includes(r.status)) {
+        assert.equal(candidate?.sourceCommit, sourceCommit); assert.equal(candidate?.targetIdentity, target.identity);
+        assert.equal(r.archiveSha256, candidate?.archiveSha256, 'All component reports must consume the prepared archive');
+      }
+      assert(!reports.some(old => Boolean(old.kind) === Boolean(r.kind) && old.platform === r.platform && old.arch === r.arch));
+      reports.push(r);
+    } catch (error) { console.error(`Incomplete report ${name}: ${safe(error.message)}`); }
+  }
+  try { proposal = JSON.parse(await readFile(join(candidateDirectory, 'proposal.json'), 'utf8')); } catch {}
+  let preparation;
+  try { preparation = JSON.parse(await readFile(join(candidateDirectory, 'report.json'), 'utf8')); } catch {}
+  return { reports, proposal, preparation };
+}
 async function main() {
   assert.equal(process.env.GITHUB_REF, 'refs/heads/main', 'Only default-branch monitoring may write');
   assert.notEqual(process.env.GITHUB_EVENT_NAME, 'pull_request', 'PR checks are read-only');
@@ -159,26 +192,8 @@ async function main() {
       details: 'Only due components are running. Completed component evidence retains its original run/source identity. An interrupted component is eligible for bounded six-hour retries.' }));
     console.log(JSON.stringify({ issue: issue.html_url, status: 'running', attempts })); return;
   }
-  const reports = []; let proposal, candidate;
-  const directory = process.argv[2];
-  try { candidate = JSON.parse(await readFile(join(directory, 'dsh-candidate-' + target.version, 'candidate.json'), 'utf8')); } catch {}
-  for (const name of await readdir(directory).catch(() => [])) {
-    const kind = name.startsWith('dsh-desktop-') ? 'desktop' : name.startsWith('dsh-check-') ? 'sdk' : null;
-    if (!kind) continue;
-    try {
-      const r = validateReport(JSON.parse(await readFile(join(directory, name, 'report.json'), 'utf8')), target, sourceCommit, kind);
-      if (['passed', 'partial'].includes(r.status)) {
-        assert.equal(candidate?.sourceCommit, sourceCommit); assert.equal(candidate?.targetIdentity, target.identity);
-        assert.equal(r.archiveSha256, candidate?.archiveSha256, 'All component reports must consume the prepared archive');
-      }
-      assert(!reports.some(old => Boolean(old.kind) === Boolean(r.kind) && old.platform === r.platform && old.arch === r.arch));
-      reports.push(r);
-    } catch (error) { console.error(`Incomplete report ${name}: ${safe(error.message)}`); }
-  }
-  try { proposal = JSON.parse(await readFile(join(directory, 'dsh-candidate-' + target.version, 'proposal.json'), 'utf8')); } catch {}
+  const { reports, proposal, preparation } = await readArtifacts(process.argv[2], target, sourceCommit);
   const components = completedComponents(target, reports, old?.components, { run, sourceCommit });
-  let preparation;
-  try { preparation = JSON.parse(await readFile(join(directory, 'dsh-candidate-' + target.version, 'report.json'), 'utf8')); } catch {}
   applyPreparationFailure(components, preparation, target, sourceCommit);
   const status = overallStatus(components, Boolean(target.desktop));
   const issue = await upsert(issueBody(target, reports, { status, attempts, runUrl, sourceCommit, components }));

@@ -10,7 +10,7 @@ export async function verifyInstalledServices({ modules, plugin }) {
     import(pathToFileURL(join(plugin, 'dist/index.js')).href),
   ]);
   const ctx = new Context();
-  new SessionProjectionRegistry(ctx); new SessionStore(ctx); new UserQuestionService(ctx); new ApprovalService(ctx, { policy: 'ask' });
+  new SessionProjectionRegistry(ctx); new SessionStore(ctx); await ctx.plugin(UserQuestionService); await ctx.plugin(ApprovalService, { policy: 'ask' });
   const session = ctx.sessions.create('installed-service-source');
   const agent = { id: session.id, session, ctx, status: 'idle', inbox: { nextTurn: [], nextStep: [] },
     // Admission is controlled here; answer() creates the actual public reply message.

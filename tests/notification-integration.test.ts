@@ -8,8 +8,8 @@ import { ApprovalRequestId } from '@deepseek-ai/dsh-user-approval';
 import { Config, mountPet } from '../src/index.ts';
 import type { NativeLifecycle, PetBridge } from '../src/bridge.ts';
 
-function setup() {
-  const ctx = new Context(); new SessionProjectionRegistry(ctx); new SessionStore(ctx); new UserQuestionService(ctx);
+async function setup() {
+  const ctx = new Context(); new SessionProjectionRegistry(ctx); new SessionStore(ctx); await ctx.plugin(UserQuestionService);
   const session = ctx.sessions.create(SessionId('source-full-identity'));
   const agent = { id: session.id, session, ctx, status: 'idle' } as Agent;
   ctx.provide('agents', { list: () => [agent], get: (id: string) => id === agent.id ? agent : undefined, roots: () => [agent] });
@@ -31,7 +31,7 @@ function setup() {
 }
 
 it('recovers Host state without replay and requires fresh native receipts for post-recovery claims', async () => {
-  const { ctx, session, bridge, role, invoke, lifecycle } = setup();
+  const { ctx, session, bridge, role, invoke, lifecycle } = await setup();
   const scope = ctx.plugin(child => mountPet(child, Config({ autoStart: false, systemNotifications: true, reminders: false }), bridge));
   await scope.await(); vi.useFakeTimers();
   try {
@@ -79,7 +79,7 @@ it('recovers Host state without replay and requires fresh native receipts for po
 });
 
 it('mounts Harness without waiting for native startup and cancels startup on unload', async () => {
-  const { ctx, bridge } = setup(); let aborted = false;
+  const { ctx, bridge } = await setup(); let aborted = false;
   bridge.start = vi.fn((_options, life) => new Promise<void>((_resolve, reject) => {
     life!.signal.addEventListener('abort', () => { aborted = true; reject(new Error('cancelled')); }, { once: true });
   }));
@@ -94,7 +94,7 @@ it('mounts Harness without waiting for native startup and cancels startup on unl
 });
 
 it('uses native visibility and exact audit identity for claims, accepts late evidence without another channel', async () => {
-  const { ctx, session, bridge, role, invoke, routes } = setup();
+  const { ctx, session, bridge, role, invoke, routes } = await setup();
   const scope = ctx.plugin(child => mountPet(child, Config({ systemNotifications: true }), bridge));
   try {
     await scope.await(); await vi.waitFor(() => expect(ctx.coopanion.status().phase).toBe('running'));
@@ -122,7 +122,7 @@ it('uses native visibility and exact audit identity for claims, accepts late evi
 });
 
 it('delegates public blocking questions and settles only after the original answerer finishes', async () => {
-  const { ctx, agent, session, bridge, invoke, role } = setup();
+  const { ctx, agent, session, bridge, invoke, role } = await setup();
   const scope = ctx.plugin(child => mountPet(child, Config(), bridge));
   try {
     await scope.await(); await vi.waitFor(() => expect(ctx.coopanion.status().phase).toBe('running'));
@@ -142,7 +142,7 @@ it('delegates public blocking questions and settles only after the original answ
 });
 
 it('observes a public question when the Harness answerer was registered before the plugin', async () => {
-  const { ctx, agent, session, bridge, invoke } = setup();
+  const { ctx, agent, session, bridge, invoke } = await setup();
   let answer!: (value: { answers: [] }) => void;
   const original = vi.fn(() => new Promise<{ answers: [] }>(resolve => { answer = resolve; }));
   ctx.on('user-questions/request', original);
@@ -160,7 +160,7 @@ it('observes a public question when the Harness answerer was registered before t
 });
 
 it('tracks the public timed projection through continued and exact late reply settlement', async () => {
-  const { ctx, session, bridge, invoke } = setup();
+  const { ctx, session, bridge, invoke } = await setup();
   const scope = ctx.plugin(child => mountPet(child, Config(), bridge));
   try {
     await scope.await(); await vi.waitFor(() => expect(ctx.coopanion.status().phase).toBe('running'));
@@ -183,7 +183,7 @@ it('tracks the public timed projection through continued and exact late reply se
 });
 
 it('keeps the original question answerer usable when reminder tracking reaches capacity', async () => {
-  const { ctx, agent, session, bridge, invoke } = setup();
+  const { ctx, agent, session, bridge, invoke } = await setup();
   const scope = ctx.plugin(child => mountPet(child, Config({ autoStart: false }), bridge));
   try {
     await scope.await(); session.append('turn/start', { turn: 1 });
@@ -210,7 +210,7 @@ it('restores dormant continued questions when optional projection services becom
   try {
     await scope.await();
     expect(bridge.notificationState).toHaveBeenLastCalledWith(expect.objectContaining({ interactions: [] }));
-    new SessionProjectionRegistry(ctx); new UserQuestionService(ctx);
+    new SessionProjectionRegistry(ctx); await ctx.plugin(UserQuestionService);
     await vi.waitFor(() => expect(bridge.notificationState).toHaveBeenLastCalledWith(expect.objectContaining({ interactions: [expect.objectContaining({ sessionId: session.id, nativeId: callId, state: 'continued' })] })));
   } finally { await scope.dispose(); await ctx.fiber.dispose(); }
 });
