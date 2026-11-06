@@ -1,6 +1,12 @@
 # DSH 兼容性自动检查
 
-`.github/workflows/dsh-compatibility.yml` 每小时第 37 分钟读取官方 GitHub Release（含候选版）、npm latest/next 和官方 macOS ARM64 Desktop feed。手动执行可提供精确版本或 dsh-v tag，当前最高已支持版本也可演练。默认只检查高于当前精确支持列表最高版本的目标，每轮最多三个版本。定时运行在工作流合入 main 后生效，平台调度可能延迟。
+[兼容性工作流](../.github/workflows/dsh-compatibility.yml) 每小时第 37 分钟从 main 读取官方 GitHub Release（含候选版）、npm latest/next 和官方 macOS ARM64 Desktop feed，平台调度可能延迟。默认只检查高于当前精确支持列表最高版本的目标，每轮最多三个版本；手动执行可指定精确版本或 dsh-v tag。
+
+## 正式支持与候选结案
+
+正式宿主范围以 [package.json](../package.json) 的 `engines.dsh` 和 DSH peer 声明为准。v0.4.19 已将 `0.2.2-rc.1` 的审阅提案纳入正式 manifest 与 shrinkwrap，保留此前六版 Host 支持和原有运行时依赖；[PR #38](https://github.com/takboo/dsh-coopanion/pull/38) 已合并，三个兼容性 Issue 已结案。发布身份、最终 CI、VM 范围及已知限制集中见[最近一次发布核验](releasing.md#最近一次发布核验)。
+
+`0.2.2-alpha.2` 与 `alpha.3` 只保留固定配套组合的候选证据，未加入正式支持列表。alpha.2 默认浮动解析曾复现上游 preset 初始化失败；候选成功和 Issue 结案均不表示旧 alpha 的默认安装已通过。原始失败及后续复验入口见[历史失败追溯](#历史失败追溯)。
 
 ## 检查与状态
 
@@ -11,41 +17,25 @@
 - 网络或安装准备暂时失败、超时、中断及缺报告为 retry；至少六小时后重试，同一组件身份最多自动三次。明确断言、依赖冲突或完整性错误为 failed。手动精确版本可复验。
 - 候选检查成功为 partial，不能替代最终提交的常规 CI 或正式支持声明。未知 Desktop 运行时必须审阅，不能自动放宽。
 
+准备提案要求目标版本不低于正式支持列表的最高版本。当前最高已支持版本可手动演练；较旧版本的复现需使用原记录对应的源码基线和产物。
+
 报告读取兼容下载后的两种布局：多个 artifact 的具名子目录，以及单个 artifact 直接展开到输出根目录。准备阶段已经确认的依赖冲突保留为 failed，不因后续平台 job 未执行而降为“缺报告、等待重试”；单个组件仍须通过原有来源、目标和包摘要校验。
 
-2026-11-05 核查的三个候选均在 `target-lock` 阶段发生 `ERESOLVE`：
+## 配套基线与验证范围
 
-| 候选 | 上游 dsh-agent 要求的 Cordis | 原始检查 |
-|---|---|---|
-| 0.2.2-alpha.2 | `~4.0.6-alpha.1` | [Issue #35 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41626179738) |
-| 0.2.2-alpha.3 | `~4.0.6-alpha.2` | [Issue #36 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41788822490) |
-| 0.2.2-rc.1 | `~4.1.0` | [Issue #37 / Actions](https://github.com/takboo/dsh-coopanion/actions/runs/41922628817) |
+已审阅的 Cordis、Schemastery、Loader／Include／Group、Cosmokit 及 Host Timer 精确输入统一由 [reviewed-dependencies.mjs](../scripts/compatibility/reviewed-dependencies.mjs) 维护。准备 job、SDK／Desktop 的 npm Web Host 安装和提案／报告校验共用该定义。
 
-这些检查使用的 Cordis 开发基线为 `4.0.5`，基线安装、类型检查与单元检查通过，候选平台安装及 Desktop 检查没有运行。恢复三个原始 artifact 可以重放失败报告汇总；这不等于重新执行候选检查。支持新版需先审阅相应依赖基线，再执行精确版本复验及最终提交资格检查。
+各配套版本与候选 SDK 发布包的 peer 要求对应，包来自 npm 官方 registry，并按发布 integrity 校验后审阅源码。0.2.2 基线审阅中，Schemastery 的 `src/index.ts` 相对 3.18.5 未变；Cordis 的配置解析、更新、事件分发和依赖卸载，以及 Loader／Include 的配置写入和挂载发生变化，仍需类型、单元、真实 Loader 和恢复契约验证。
 
-`scripts/compatibility/reviewed-dependencies.mjs` 记录已审阅的精确配套基线，准备 job 与提案校验共用同一份表：
+准备 job 在隔离副本更新精确 DSH 开发依赖、已有 peer、engines 及 npm-shrinkwrap.json，保留原有支持和配套表以外的顶层依赖；重建旧 Host 锁条目，保留其他锁条目。正式源码与工作区在前后做摘要核对，不自动改变正式 manifest、版本号或运行时依赖。未知版本沿用既有基线，若冲突则报告失败，待源码审阅后再调整精确配套定义。
 
-| DSH 候选 | Cordis | Schemastery | Loader / Include / Group | Cosmokit |
-|---|---|---|---|---|
-| 0.2.2-alpha.2 | 4.0.6-alpha.1 | 3.18.6-alpha.1 | 1.0.7-alpha.1 / 1.0.11-alpha.1 / 1.0.6-alpha.1 | 1.8.7-alpha.1 |
-| 0.2.2-alpha.3 | 4.0.6-alpha.2 | 3.18.6-alpha.2 | 1.0.7-alpha.2 / 1.0.11-alpha.2 / 1.0.6-alpha.2 | 1.8.7-alpha.2 |
-| 0.2.2-rc.1 | 4.1.0 | 3.19.0 | 1.1.0 / 1.1.0 / 1.1.0 | 1.9.0 |
+Loader／Include／Group／Cosmokit 显式列入候选开发依赖，避免预发布范围解析到下一轮组件。准备阶段检查完整依赖树，提案校验拒绝嵌套锁条目混入未审阅版本；组件身份包含配套基线，避免复用旧组合上的证据。
 
-这些版本与各候选 SDK 发布包的 peer 要求对应，包来自 npm 官方 registry，并按发布 integrity 校验后审阅源码。Schemastery 的 `src/index.ts` 相对 3.18.5 未变；Cordis 的配置解析、更新、事件分发和依赖卸载实现，以及 Loader／Include 的配置写入和挂载实现发生变化，必须继续经过类型、单元、真实 Loader 和恢复契约验证。候选准备通过精确配套表改变候选开发依赖及已有 peer 声明；Loader／Include／Group／Cosmokit 显式列入候选开发依赖，以免预发布范围解析到下一轮组件，不会由候选工作流自动改变正式 package.json、版本号或运行时依赖。准备阶段额外检查完整依赖树，提案校验也拒绝嵌套锁条目混入未审阅的配套版本。组件身份包含配套基线，避免复用旧依赖上的失败或成功证据。
-
-SDK 检查及 Desktop 的 npm Web Host 安装也使用这份精确配套基线，并分别固定 Timer 为 `1.1.8-alpha.1`、`1.1.8-alpha.2`、`1.2.0`。所有包保持官方发布字节及原有 peer 约束；安装后检查完整依赖树，并在报告中保存 `hostDependencies`。成功报告必须与该输入组合一致。官方 Desktop ASAR 继续按原字节独立验证。此证据只覆盖所记录的组合；默认 npm 浮动解析另行验证，不能把前者的成功套用到后者。alpha.2 默认解析到后一轮 Cordis 组件时，本地真实 Loader 的目标契约已复现上游 preset 初始化失败；固定匹配组合后，同一检查通过。
-
-准备 job 在隔离副本更新精确 DSH 开发依赖、peer/engines 声明及 npm-shrinkwrap.json。保留原有支持和配套表以外的顶层依赖；旧 Host 锁解析重建，其他锁条目保留。正式源码与工作区在前后做摘要核对。未知版本不自动推断配套依赖，仍按既有基线执行，若存在冲突则报告失败，待源码审阅后再调整精确配套表。
+SDK 检查及 Desktop 的 npm Web Host 安装保持官方发布字节和原有 peer 约束，安装后检查完整依赖树，并在报告中保存 `hostDependencies`；成功报告必须与审阅输入一致。官方 Desktop ASAR 按原字节独立验证。固定配套证据与普通 npm 浮动解析分别结算；正式 rc.1 的普通安装由发布矩阵验证。
 
 基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。未改声明的原包仍须通过官方准入判断拒绝未支持宿主。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
 
-Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要、路径及符号链接、完整代码签名和 DeepSeek Team ID。当前审阅载体为 Electron 44.7.0 / Node 24.21.0 / libuv 1.52.1 / ABI 149。验证真实 ASAR 的 Host 契约，目标完成与会话契约也单独运行于真实 ASAR；随后在官方 Electron 中运行同包安装与桌宠联动，此完整 GUI 流程的 Web Host／Client 由对应 npm 产物提供，桌宠按产品正常路径使用其声明的独立 Electron 依赖。该自动化不声称驱动原生 Desktop shell、通知中心、真实账号模型或物理多屏／输入设备。
-
-## 0.4.19 正式支持范围
-
-0.4.19 将 `0.2.2-rc.1` 的已审阅提案纳入正式 manifest 和 shrinkwrap：开发基线为 Cordis `4.1.0`、Schemastery `3.19.0`，保留此前六版 Host 的精确支持和原有运行时依赖。常规及发布 CI 从 manifest 读取七版宿主，执行三平台二十一组同一规范包安装；rc.1 使用普通 npm 发布宿主安装路径，候选检查的固定配套输入不替代这项资格验证。
-
-`0.2.2-alpha.2` 与 `alpha.3` 保留固定配套候选证据，不加入正式支持列表；alpha.2 默认浮动组合已有上游初始化失败复现。对应 issue 在修复检查器、保留复验身份并转入后续 rc.1 支持后结案，不表示旧 alpha 的默认安装已通过。真实账号／模型、通知中心、物理多屏及长期体验仍需单独验收；macOS 原生补验使用项目隔离 VM。
+Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要、路径及符号链接、完整代码签名和 DeepSeek Team ID；允许的载体运行时由 [desktop-artifact.mjs](../scripts/compatibility/desktop-artifact.mjs) 校验。通知、目标完成与会话契约单独运行于真实 ASAR，随后在官方 Electron 中运行同包安装与桌宠联动。该 GUI 流程的 Web Host／Client 由对应 npm 产物提供，桌宠按产品正常路径使用其声明的独立 Electron 依赖；原生 Desktop shell、通知中心、真实账号模型及物理输入／多屏另行验收。
 
 ## 报告与提案
 
@@ -57,13 +47,31 @@ Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要�
 
 ## 本地执行
 
-使用 `.node-version` 和 packageManager 固定工具链，先 npm ci --ignore-scripts。可只读发现：
+使用 `.node-version` 和 `packageManager` 固定工具链。只读发现不启动浏览器：
 
 ```bash
 npm run compat:discover -- --local
-DSH_VERSION=0.2.1-rc.5 npm run compat:prepare
 ```
 
-准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 npm run compat:check；Desktop 检查使用 npm run compat:desktop，只接受匹配的官方 feed 身份。浏览器依赖须提前安装，使用 PLAYWRIGHT_BROWSERS_PATH 指向测试缓存。原生检查串行执行。
+候选准备前先安装依赖和 Chromium。隔离进程会使用临时 HOME，浏览器缓存需通过绝对路径传入：
+
+```bash
+npm ci --ignore-scripts
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/compatibility-browsers"
+npx playwright-core install chromium
+DSH_VERSION=0.2.2-rc.1 npm run compat:prepare
+```
+
+示例版本对应 v0.4.19 的最高支持宿主，切换源码基线时先核对 `package.json`。准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 `npm run compat:check`；macOS ARM64 上的 `npm run compat:desktop` 只接受匹配的官方 feed 身份。原生检查在隔离 VM 中串行执行，范围及环境要求见[开发指南](development.md)。
 
 本地命令不写 Issue 或 PR。发现、状态与提案机制复用 dsh-session-bin / dsh-usage-state，MIT 许可保留在 scripts/compatibility/LICENSE；本流程不调用付费 AI 服务。
+
+## 历史失败追溯
+
+2026-11-05 核查的三个原始运行使用 Cordis `4.0.5` 开发基线，与候选 SDK 的 peer 要求冲突，均在 `target-lock` 阶段发生 `ERESOLVE`。当时基线安装、类型和单元检查通过，候选平台安装及 Desktop 检查没有运行；单 artifact 下载布局还曾使汇总器将该失败误报为待重试。
+
+- `0.2.2-alpha.2`：[Issue #35](https://github.com/takboo/dsh-coopanion/issues/35)、[原运行](https://github.com/takboo/dsh-coopanion/actions/runs/41626179738)。
+- `0.2.2-alpha.3`：[Issue #36](https://github.com/takboo/dsh-coopanion/issues/36)、[原运行](https://github.com/takboo/dsh-coopanion/actions/runs/41788822490)。
+- `0.2.2-rc.1`：[Issue #37](https://github.com/takboo/dsh-coopanion/issues/37)、[原运行](https://github.com/takboo/dsh-coopanion/actions/runs/41922628817)。
+
+Issue 保留原始要求、失败摘要、来源身份与后续候选复验，已随 v0.4.19 发布结案。重放原 artifact 只验证报告汇总，不算新一轮候选检查；后续成功不改写早期失败的含义。

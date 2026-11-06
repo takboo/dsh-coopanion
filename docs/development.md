@@ -15,6 +15,7 @@ npx playwright-core install chromium
 npm run character:pack -- examples/star paper-star.zip
 npm run test:ui
 npm run test:notification-ui
+npm run test:hint-ui
 npm run test:inbox-ui
 npm run test:keyboard-native
 npm run test:desktop
@@ -27,9 +28,11 @@ npm run test:install
 
 `npm run dev` 打开浏览器演示（默认 `http://127.0.0.1:4173`），`npm run demo` 启动桌面演示，二者的任务事件均为模拟。首页素材的重拍见[素材说明](assets/README.md)。
 
-浏览器检查真实 API 2 动画、聊天、完整阅读、角色导入及脚本隔离；桌面检查真实 Electron 窗口、IPC、托盘和恢复；安装检查使用官方 DSH loader 安装实际 `.tgz`。用 `DSH_TEST_VERSION=<支持版本>` 选择宿主，用 `DSH_TEST_PACKAGE_DIR=<规范包目录>` 消费已有规范包及校验文件。完整平台／宿主列表以 CI 矩阵为准。
+浏览器检查真实 API 2 动画、聊天、完整阅读、角色导入及脚本隔离；桌面检查真实 Electron 窗口、IPC、托盘和恢复；安装检查使用官方 DSH loader 安装实际 `.tgz`。`test:install` 默认检查 `0.2.0-rc.2`；用 `DSH_TEST_VERSION=<支持版本>` 选择其他已声明宿主，用 `DSH_TEST_PACKAGE_DIR=<规范包目录>` 消费已有规范包及校验文件。完整平台／宿主列表以 [CI 配置](../.github/workflows/ci.yml) 和 `package.json` 为准。
 
-macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。浏览器回归结束后再执行原生桌面检查，保留既有执行顺序，系统桌面操作串行进行。三平台测试和二十一组宿主安装保留全部断言与期限；本地 VM 验证仍单独记录实际系统、提交与包摘要。
+macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。原生测试和安装使用隔离数据目录，浏览器回归结束后再串行执行系统桌面操作。三平台测试和正式宿主安装矩阵保留全部断言与期限，同包发布规则见[发布流程](releasing.md)。
+
+本地 macOS 原生与交互验证使用项目隔离 VM。VM 管理入口和 SSH 身份属于本机环境配置；本分支不提供 VM 管理脚本。执行前核对实例状态和来宾工作目录，为每轮另建独立 checkout，只传选定源码与分发包，保持原有 profile、凭证和证据。结果记录实际系统、宿主、完整源码提交与包摘要；测试结束后停止本轮启动且已无其他工作使用的实例。VM 的验证范围与物理设备、真实账号模型和长期体验分别报告。
 
 真实轻抚回归在角色宽度的 20%／80% 位置间往返，保持每次十八个可信移动，避免窄幅轨迹在输入调度迟缓时衰减为无效手势。伪造事件拒绝、二十次反馈、增长冷却、500 ms 响应和原有等待期限继续检查，产品判定规则不变。
 
@@ -37,7 +40,7 @@ macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。浏览器回归�
 
 完成、打断与存档回归保留默认 `happy → dance → neutral` 长配方。该用例使用调度虚拟时钟，并通过 API 2 补充有效 `tick` 输入推进真实角色物理；每次等待输入处理回执，再读取角色实际报告的 `moving`。额外物理输入最多 400 × 50ms，回执与进度检查仍保留原十秒等待。角色实现、真实布局／事件及存档服务共同参与验证；渲染帧率与交互延迟继续由真实时间用例检查。
 
-原生测试和安装使用隔离数据目录，系统桌面操作串行执行。CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox 与 contextIsolation，关闭 Node integration。测试通知适配器和模型答复器属于受控边界，不能代替通知中心实机送达或真实模型会话验收。
+CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox 与 contextIsolation，关闭 Node integration。测试通知适配器和模型答复器属于受控边界，不能代替通知中心实机送达或真实模型会话验收。
 
 通知单元、Host 契约和同包安装探针通过 Cordis 插件生命周期挂载并等待 `UserQuestionService`；使用实际审批服务的探针也等待 `ApprovalService`，再读取相关投影。DSH 0.2.2 把投影注册移到了 `Service.init`，仅调用构造函数无法代表已就绪的真实服务。模拟 Agent 也提供新版 `model` 接口，同时保留旧 SDK 的结构类型检查；原有身份、continued 状态、精确答复和卸载断言保持不变。
 
@@ -48,6 +51,7 @@ macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。浏览器回归�
 | 改动 | 检查入口与范围 |
 |---|---|
 | 完成、通知与请求结算 | `npm test`、`test:n0`、`test:notification-ui`；宿主接口检查由安装入口执行 |
+| 同进程插件临时提示 | `npm test`、`test:hint-ui`；检查临时气泡、来源身份及可见性撤下，保持独立通知结算 |
 | 聊天、收件箱、字号、多屏、NPC 日常 | `test:inbox-ui`；会话与字号浏览器用例串行，初始化失败保留有界状态、控制台与截图 |
 | NPC 配置 | `tests/npc-controls-ui.mjs`：关闭许可、quiet／interactive、热切状态保持与禁用上游随机漫游 |
 | 异常查看与尺寸 | `tests/attention-size-ui.mjs`：通用异常回执、新修订、审批／提问与固定角色尺寸 |
