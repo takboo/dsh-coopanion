@@ -27,4 +27,6 @@
 
 正式发布使用 [GitHub Release](https://github.com/takboo/dsh-coopanion/releases) 中的版本、提交和包摘要核验；`verification.json`、`SHA256SUMS` 与版本包一起提供。本地试装包不代表该版本的正式分发产物。
 
+已发布版本的 CI、VM、分发字节核验和已知限制集中在[最近一次发布核验](releasing.md#最近一次发布核验)；候选检查的状态与结案范围见[兼容性检查](compatibility.md#正式支持与候选结案)。
+
 仓库的 `docs/evidence/` 只保留历史原始证据，普通搜索及安装包均排除它。追溯时先读其说明并核对实际产物身份。`.cache/`、`artifacts/` 与 `dist/` 属于本机或生成内容，可能来自其他提交。
