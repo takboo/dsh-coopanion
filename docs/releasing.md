@@ -61,6 +61,16 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 
 ## 最近一次发布核验
 
+### v0.4.20
+
+2026-11-09 发布 [v0.4.20](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.20)，发布源码为 `5febec8cfe35b4b106ab1587157b2f2574136564`，规范包 SHA-256 为 `4591faa7c1164b944ab844bc62cd83bb3cfa10b0ed86b63a5c47e528952cc0c0`。核验时 npm `latest` 为 `0.4.20`，DSH `0.2.2-rc.1` 从 npm 安装精确版本通过。npm tarball、Release 版本包、固定别名及 latest 下载与规范包逐字节一致。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.20/verification.json)
+
+[main CI](https://github.com/takboo/dsh-coopanion/actions/runs/42603391595) 通过。发布验证完成七版宿主、三平台共 21 组同包安装，OIDC 发布复用该运行的规范包。[发布验证](https://github.com/takboo/dsh-coopanion/actions/runs/42606722518) · [OIDC 发布](https://github.com/takboo/dsh-coopanion/actions/runs/42609601652)
+
+固定基座 `5fe3e92c64d4dfbbcfd3926fb52c347b10cc641e` 的 Linux 容器验证了 DSH `0.2.2-rc.1` 安装、设置和卸载，以及 `0.2.1-rc.4` 拒绝且无残留。Coopanion 收件箱测试同样在 Linux 容器通过。官方 Windows Desktop `0.2.2-rc.1` 的两个隔离 profile 分别验证了插件管理器安装后的真实桌宠窗口，以及冷下载中点击关闭后安装器和连接退出、Host 保持可用。正式复测覆盖隔离 VM 的交互会话。详细身份、检查范围和市场快照见[补充核验记录](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.20/additional-verification.json)。
+
+### v0.4.19
+
 2026-11-05 已发布 [v0.4.19](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.19)，核验时 npm `latest` 为 `0.4.19`。发布提交为 `28ed7679fe28fabff3f2b2d0fa48e69d85d05a55`，规范包 SHA-256 为 `7f5d0cc83823c25985a99ec30741662e64f17b6185b2fa5dc40ac863d2559ba1`；npm tarball、Release 版本包、固定别名和当时的 latest 下载字节一致。固定身份见该 Release 的 [verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.19/verification.json)，详细范围见[补充核验记录](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.19/additional-verification.json)。
 
 [main CI](https://github.com/takboo/dsh-coopanion/actions/runs/41995247279) 和[标签发布流程](https://github.com/takboo/dsh-coopanion/actions/runs/41998629966) 最终通过七版宿主、三平台共 21 组同包安装。首轮标签检查在 DSH `0.2.1-rc.5` 上分别出现 Linux 重启后陪伴模式不符和 Windows Host 退出超时，另有 Windows／DSH `0.2.1-rc.3` 原生窗口未就绪；三项在同源同包、原断言与原期限下复验通过，根因尚未确认，原始失败保留。
