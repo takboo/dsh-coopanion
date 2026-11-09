@@ -46,6 +46,16 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 安装探针按当前可见的“账号菜单／Account menu”或直接“设置／Settings”入口打开同一设置面板，不按宿主版本前缀推断布局。面板关闭后的有限重开、桌宠分区、状态加载及可写配置断言保持不变。原生多屏拖拽未进入 `drag` 时，另存已有 OS／CDP 输入轨迹及按压／命中状态到 `multi-display-native-drag-failure.json`，保留原失败与等待期限。
 
+## 固定基座验收
+
+在干净 checkout 准备 Git、Bash、Node.js 和 Docker。传入已构建的候选包，以及包含脚本所固定提交的共享基座 checkout。
+
+```bash
+bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
+```
+
+入口从包内构建信息读取源码提交，使用[宿主目标配置](../tests/engineering-targets.json)和仓库内的 Web 探针。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
+
 ## 关键行为回归
 
 | 改动 | 检查入口与范围 |
