@@ -3,32 +3,25 @@ import assert from 'node:assert/strict';
 // Business probe for the shared engineering runner's clean rc.1 Web profile.
 // The container has no graphical session; native startup is tested separately.
 export async function prepareClient(page) {
-  const add = page.getByRole('button', { name: /^(Add API Key|添加 API Key)$/i }).first();
-  const welcome = page.getByRole('dialog').getByRole('button', { name: /^(Continue|继续)$/ }).and(page.locator(':enabled')).first();
-  const settings = page.getByRole('button', { name: /^(Settings|设置|Account menu|账号菜单|More|更多)$/ }).first();
-  for (let i = 0; i < 3; i++) {
-    await add.or(welcome).or(settings).first().waitFor();
-    if (await add.isVisible()) {
-      await add.click();
-      const skip = page.getByRole('button', { name: /^(Set up later|稍后设置)$/i });
-      await skip.click();
-      await skip.waitFor({ state: 'hidden' });
-      break;
-    }
-    if (await welcome.isVisible()) await welcome.click();
-    else break;
-  }
+  const entry = page.getByText(/^(Add API Key|添加 API Key)$/i).first();
+  const welcome = page.getByRole('button', { name: /^(Continue|继续)$/ }).and(page.locator(':enabled')).first();
+  await entry.or(welcome).first().waitFor();
+  if (await welcome.isVisible()) await welcome.click();
+  await entry.click();
+  const skip = page.getByText(/^(Set up later|Configure later|稍后设置|稍后配置)$/i).first();
+  await skip.click();
+  await skip.waitFor({ state: 'hidden' });
 }
 
 export async function verifyClient(page) {
   await page.locator('style[data-plugin="dsh-coopanion"]').waitFor({ state: 'attached' });
   const direct = page.getByRole('button', { name: /^(Settings|设置)$/ });
-  const account = page.getByRole('button', { name: /^(Account menu|账号菜单|More|更多)$/ }).first();
+  const account = page.getByRole('button', { name: /^(Account menu|账号菜单)$/ });
   await direct.or(account).first().waitFor();
   if (await direct.isVisible()) await direct.click();
   else {
     await account.click();
-    await page.getByRole('menuitem', { name: /^(Settings|设置)$/ }).click();
+    await page.getByRole('menuitem', { name: /^(Settings|设置)(?:\s|$)/ }).click();
   }
   await page.getByRole('button', { name: /^(Desktop pet|桌宠)$/ }).click();
   const section = page.getByTestId('coopanion-settings');
