@@ -1,10 +1,10 @@
 import type { DesktopOptions, PetBridge } from './bridge.ts';
 import type { NotificationRuntime } from './notification-contract.ts';
-import { NativeStartError, type NativeLifecycle } from './desktop-lifecycle.ts';
+import { NativeStartError, RuntimePreparationError, type NativeLifecycle, type RuntimeFailure } from './desktop-lifecycle.ts';
 export { NativeStartError, type NativeLifecycle, type StartLifetime } from './desktop-lifecycle.ts';
 
 export type PetCommand = 'start' | 'show' | 'hide' | 'restart' | 'stop' | 'characters';
-export type PetStatus = NotificationRuntime;
+export type PetStatus = NotificationRuntime & { runtimeFailure?: RuntimeFailure };
 /** A host-authored hint. Views render it as a transient toast; it never carries task state or delivery claims. */
 export interface PetHint {
   /** One-line headline. Blank headlines are dropped. */
@@ -18,7 +18,8 @@ export interface ControlLimits { startTimeoutMs?: number; cleanupTimeoutMs?: num
 
 /** Commands own a cancellable native generation. Lifecycle acknowledgements alone establish visibility. */
 export class PetControls {
-  private state: PetStatus = { phase: 'stopped', visible: false, desiredVisible: true, recoveryAttempt: 0, generation: 0, visibilityRevision: 0, suspended: false };
+  private state: NotificationRuntime = { phase: 'stopped', visible: false, desiredVisible: true, recoveryAttempt: 0, generation: 0, visibilityRevision: 0, suspended: false };
+  private runtimeFailure?: RuntimeFailure;
   private queue: Promise<unknown> = Promise.resolve();
   private disposed = false;
   private startup?: AbortController;
@@ -28,7 +29,7 @@ export class PetControls {
   private epoch = 0;
   private wanted = false;
   private cleanupBlocked = false;
-  private readonly listeners = new Set<(status: PetStatus) => void>();
+  private readonly listeners = new Set<(status: NotificationRuntime) => void>();
   private readonly changed = (event: NativeLifecycle) => {
     if (this.disposed || event.generation !== this.state.generation || !Number.isSafeInteger(event.visibilityRevision) || event.visibilityRevision! < this.state.visibilityRevision) return;
     if (event.visibilityRevision === this.state.visibilityRevision && event.visible !== this.state.visible) return;
@@ -47,10 +48,10 @@ export class PetControls {
   constructor(private readonly bridge: PetBridge, private readonly options: () => DesktopOptions, private readonly limits: ControlLimits = {}) {
     bridge.onLifecycle?.(this.changed);
   }
-  status(): PetStatus { return { ...this.state }; }
+  status(): PetStatus { return { ...this.state, ...(this.runtimeFailure && { runtimeFailure: { ...this.runtimeFailure } }) }; }
   /** Root assembly registers this listener as a context-owned effect. */
-  onState(listener: (status: PetStatus) => void): () => void {
-    this.listeners.add(listener); try { listener(this.status()); } catch { /* A view is optional. */ } return () => this.listeners.delete(listener);
+  onState(listener: (status: NotificationRuntime) => void): () => void {
+    this.listeners.add(listener); try { listener({ ...this.state }); } catch { /* A view is optional. */ } return () => this.listeners.delete(listener);
   }
   configure(): void { this.bridge.configure?.(this.options()); }
   /**
@@ -69,9 +70,10 @@ export class PetControls {
     if (!title) return false;
     const sessionId = hintSessionId(value.sessionId);
     if (sessionId === false) return false;
-    return this.bridge.notify({ title, body, sessionId: sessionId ?? '', kind: 'message' }, this.status());
+    return this.bridge.notify({ title, body, sessionId: sessionId ?? '', kind: 'message' }, { ...this.state });
   }
   command(command: PetCommand): Promise<PetStatus> {
+    const alreadyStarting = this.state.phase === 'starting';
     // Intent and cancellation take effect before queued work, including queued starts.
     if (command === 'hide') this.set({ ...this.state, desiredVisible: false });
     else if (command === 'start' || command === 'show' || command === 'characters') this.set({ ...this.state, desiredVisible: true });
@@ -90,7 +92,9 @@ export class PetControls {
           await this.cleanup();
           this.set({ ...this.state, phase: 'stopped', visible: false, suspended: false });
         }
-        if (command !== 'stop' && command !== 'hide' && this.state.phase !== 'running') {
+        // A start/show/characters request received during startup shares that
+        // outcome. A fresh command after failure (or a restart) may try again.
+        if (command !== 'stop' && command !== 'hide' && this.state.phase !== 'running' && (!alreadyStarting || command === 'restart')) {
           if (this.cleanupBlocked) await this.cleanup();
           this.set({ ...this.state, recoveryAttempt: 0, retryAt: undefined });
           await this.launch(epoch); launched = true;
@@ -132,6 +136,7 @@ export class PetControls {
     const diagnostic = this.message(error).slice(0, 600 - cleanup.length) + cleanup;
     const attempt = this.state.recoveryAttempt ?? 0;
     if (!this.wanted || !recoverable || cleanup || attempt >= 3) {
+      this.runtimeFailure = !cleanup && error instanceof RuntimePreparationError ? error.failure : undefined;
       this.set({ ...this.state, phase: 'error', visible: false, suspended: false, retryAt: undefined, error: diagnostic }); return;
     }
     const delay = (this.limits.retryDelaysMs ?? [1000, 3000, 10000])[attempt]!;
@@ -177,9 +182,10 @@ export class PetControls {
       task.then(value => finish(undefined, value), error => finish(error));
     });
   }
-  private set(state: PetStatus): void {
+  private set(state: NotificationRuntime): void {
     this.state = state;
-    for (const listener of this.listeners) { try { listener(this.status()); } catch { /* View errors cannot stall native cleanup. */ } }
+    if (state.phase !== 'error') this.runtimeFailure = undefined;
+    for (const listener of this.listeners) { try { listener({ ...state }); } catch { /* View errors cannot stall native cleanup. */ } }
   }
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const pending = this.queue.then(operation); this.queue = pending.catch(() => undefined); return pending;

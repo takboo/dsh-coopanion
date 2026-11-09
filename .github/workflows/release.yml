@@ -15,6 +15,12 @@ on:
         default: verify
         type: choice
         options: [verify, publish]
+      verified-run:
+        description: Successful Release verification run ID (publish only)
+        type: string
+      verified-sha256:
+        description: SHA-256 of the accepted tarball from that run (publish only)
+        type: string
 
 permissions:
   contents: read
@@ -32,7 +38,7 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Dispatch stable tags to the npm-authorized workflow on main
+      - name: Verify stable tags on main
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
@@ -41,7 +47,7 @@ jobs:
             echo "Skipping non-stable tag: $RELEASE_TAG"
             exit 0
           fi
-          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "tag=$RELEASE_TAG" -f mode=publish
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "tag=$RELEASE_TAG" -f mode=verify
 
   verify:
     name: Verify release tag
@@ -69,24 +75,54 @@ jobs:
   checks:
     name: Test release artifact
     needs: verify
+    if: inputs.mode == 'verify'
     uses: ./.github/workflows/ci.yml
     with:
       ref: ${{ needs.verify.outputs.commit }}
       release-tag: ${{ needs.verify.outputs.tag }}
 
+  promotion:
+    name: Confirm the accepted verification run
+    needs: verify
+    if: inputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Require a successful Release verification on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN: ${{ inputs.verified-run }}
+          VERIFIED_SHA256: ${{ inputs.verified-sha256 }}
+        run: |
+          [[ "$VERIFIED_RUN" =~ ^[1-9][0-9]*$ && "$VERIFIED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN" | jq -e \
+            --arg repo "$GITHUB_REPOSITORY" '
+              .head_repository.full_name == $repo and .path == ".github/workflows/release.yml"
+              and .head_branch == "main" and .event == "workflow_dispatch" and .conclusion == "success"
+            ' > /dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN/jobs?per_page=100" | jq -e '
+            any(.jobs[]; .name == "Verify release tag" and .conclusion == "success")
+            and any(.jobs[]; (.name | startswith("Test release artifact / Install (")) and .conclusion == "success")
+            and all(.jobs[] | select(.name | startswith("Test release artifact / ")); .conclusion == "success")
+          ' > /dev/null
+
   publish:
     name: Publish verified tarball to npm
-    needs: [verify, checks]
+    needs: [verify, promotion]
     if: inputs.mode == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
       id-token: write
     env:
       RELEASE_TAG: ${{ needs.verify.outputs.tag }}
       VERIFIED_COMMIT: ${{ needs.verify.outputs.commit }}
       VERSION: ${{ needs.verify.outputs.version }}
+      VERIFIED_SHA256: ${{ inputs.verified-sha256 }}
     steps:
       # Validation comes from main; the tarball is never rebuilt in this job.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,12 +137,15 @@ jobs:
           name: desktop-pet
           path: ${{ runner.temp }}/release
           digest-mismatch: error
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.verified-run }}
       - name: Locate the verified tarball
         run: echo "TARBALL=$RUNNER_TEMP/release/dsh-coopanion-$VERSION.tgz" >> "$GITHUB_ENV"
       - name: Recheck tag and exact artifact bytes
         run: |
           cd "$RUNNER_TEMP/release"
           sha256sum --check SHA256SUMS
+          printf '%s  %s\n' "$VERIFIED_SHA256" "$TARBALL" | sha256sum --check
           cd "$GITHUB_WORKSPACE"
           node scripts/verify-release.mjs --tag "$RELEASE_TAG" --commit "$VERIFIED_COMMIT"
           node scripts/check-package.mjs "$TARBALL" --report "$RUNNER_TEMP/release/verification.json" --expected-commit "$VERIFIED_COMMIT" --expected-version "$VERSION"
@@ -127,11 +166,13 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ needs.verify.outputs.tag }}
       VERIFIED_COMMIT: ${{ needs.verify.outputs.commit }}
       VERSION: ${{ needs.verify.outputs.version }}
+      VERIFIED_SHA256: ${{ inputs.verified-sha256 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -145,12 +186,15 @@ jobs:
           name: desktop-pet
           path: ${{ runner.temp }}/release
           digest-mismatch: error
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.verified-run }}
       - name: Locate the verified tarball
         run: echo "TARBALL=$RUNNER_TEMP/release/dsh-coopanion-$VERSION.tgz" >> "$GITHUB_ENV"
       - name: Verify tag, checksums and npm identity again
         run: |
           cd "$RUNNER_TEMP/release"
           sha256sum --check SHA256SUMS
+          printf '%s  %s\n' "$VERIFIED_SHA256" "$TARBALL" | sha256sum --check
           cd "$GITHUB_WORKSPACE"
           node scripts/verify-release.mjs --tag "$RELEASE_TAG" --commit "$VERIFIED_COMMIT"
           node scripts/check-package.mjs "$TARBALL" --report "$RUNNER_TEMP/release/verification.json" --expected-commit "$VERIFIED_COMMIT" --expected-version "$VERSION"

@@ -91,6 +91,10 @@ export function Settings({ form, call, local, notifier, t }: SettingsProps) {
   const running = status?.phase === 'running';
   const disabled = !local || busy || status?.phase === 'starting' || status?.phase === 'stopping';
   const statusText = !status ? t('loading') : status.phase === 'running' ? t(status.visible ? 'running' : 'hidden') : t(status.phase);
+  const runtimeFailure = status?.runtimeFailure;
+  const runtimeReason = runtimeFailure && (runtimeFailure.reason === 'http' ? `${t('runtimeHttp')} (HTTP ${runtimeFailure.httpStatus})` : t(({
+    network: 'runtimeNetwork', timeout: 'runtimeTimeout', unavailable: 'runtimeUnavailable', install: 'runtimeInstall',
+  } as const)[runtimeFailure.reason]));
   return <div className="dsh-coopanion-settings" data-testid="coopanion-settings">
     <h2>{t('title')}</h2><p>{t('intro')} {t('languageHint')}</p>
     <section className="pet-card" aria-label={t('runtime')}>
@@ -103,7 +107,10 @@ export function Settings({ form, call, local, notifier, t }: SettingsProps) {
         <Button disabled={!local || status?.phase === 'stopped' || status?.phase === 'stopping'} onClick={() => void command('stop')}>{t('stop')}</Button>
       </div>
       {status?.recoveryAttempt ? <p role="status">{t('recoveryHint')}: {status.recoveryAttempt} / 3</p> : null}
-      {failure || status?.error ? <p className="pet-error" role="alert">{failure || status?.error}</p> : null}
+      {runtimeReason ? <p className="pet-error" role="alert" data-testid="pet-runtime-failure">
+        {t('runtimeMissing')}{runtimeReason}{t('runtimeRetry')}{' '}
+        <a href="https://github.com/takboo/dsh-coopanion/blob/main/docs/usage.md#electron-运行时准备" target="_blank" rel="noreferrer">{t('runtimeGuide')}</a>
+      </p> : failure || status?.error ? <p className="pet-error" role="alert">{failure || status?.error}</p> : null}
     </section>
     <section className="pet-card" aria-label={t('preferences')}>
       <h3>{t('preferences')}</h3>

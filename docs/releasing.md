@@ -14,7 +14,14 @@ git tag v<实际版本> <发布提交>
 git push origin v<实际版本>
 ```
 
-稳定标签新建 push 会派发 **main 上的 `release.yml`**。也可在 Actions → Release → Run workflow 选择 main，输入已有标签；默认 `mode=verify` 仅验证，选择 `publish` 才发布。发布授权应覆盖合并、标签及随后执行的 npm／GitHub Release 发布。
+稳定标签首次推送后，main 上的 `release.yml` 会以 `mode=verify` 执行完整验证。也可从 Actions 在 main 手动派发验证。等待验证通过并下载该运行的 `desktop-pet`，用其中的版本包完成对应的桌面验收。记录验证运行编号、包的 SHA-256 和验收结果，再在 main 派发发布。
+
+```bash
+gh workflow run release.yml --ref main -f tag="$RELEASE_TAG" -f mode=publish \
+  -f verified-run="$VERIFIED_RUN" -f verified-sha256="$VERIFIED_SHA256"
+```
+
+发布任务从指定的成功验证运行取回原始附件，复核标签、构建提交和所填摘要。验证报告和产物保留七天，过期后需要重新验证并验收新运行的包。
 
 ## 自动检查与同包分发
 
@@ -26,7 +33,7 @@ Linux 构建并打包一次，成为规范产物。`npm pack` 产生的 `takboo-
 
 `verification.json` 绑定完整源码提交、版本、SHA-256 与 npm SHA-512 integrity；`dist/build-info.json` 记录产品输入摘要。生成正式报告要求干净、已提交的 checkout。构建摘要不代替完整 `.tgz` 的身份。
 
-发布顺序为 **完整 CI → npm → GitHub Release**。npm job 使用 Trusted Publisher OIDC；Release job 独立拥有内容写权限。发布前再次核对标签没有移动。fork、其他分支、移动／删除标签和预发布标签不进入稳定版自动发布路径。
+发布顺序为 **完整 CI → 本轮要求的额外宿主验收 → npm → GitHub Release**。npm job 使用 Trusted Publisher OIDC；Release job 独立拥有内容写权限。发布前再次核对标签没有移动。fork、其他分支、移动／删除标签和预发布标签不进入稳定版验证与发布流程。
 
 Release 附件包括：
 

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { ElectronBridge as Bridge } from '../src/bridge.ts';
+import type { PetControls as Controls } from '../src/controls.ts';
 
 // Keep Electron's real lazy-install entrypoint; replace only the download with
 // a deterministic slow installer and a tiny IPC peer, without network access.
@@ -32,12 +33,12 @@ async function fixture(install = '') {
     await writeFile(join(directory, 'desktop/main.cjs'), `process.on('message', m => { if(m.type === 'quit') process.exit(0); }); process.send({type:'ready'});`);
     // A real executable plus a JS main works on Windows as well as POSIX;
     // spawning a shebang-only fixture silently omitted the Windows regression.
-    const success = `setTimeout(()=>{fs.mkdirSync(path.join(__dirname,'dist'));const executable=path.join(__dirname,'dist/peer.exe');try{fs.linkSync(process.execPath,executable);}catch(error){if(error.code!=='EXDEV')throw error;fs.copyFileSync(process.execPath,executable);fs.chmodSync(executable,0o700);}fs.writeFileSync(path.join(__dirname,'path.txt'),'peer.exe');},800);`;
+    const success = `setTimeout(()=>{fs.mkdirSync(path.join(__dirname,'dist'));const executable=path.join(__dirname,'dist/peer.exe');try{fs.linkSync(process.execPath,executable);}catch(error){if(!['EXDEV','EPERM','EACCES'].includes(error.code))throw error;fs.copyFileSync(process.execPath,executable);fs.chmodSync(executable,0o700);}fs.writeFileSync(path.join(__dirname,'path.txt'),'peer.exe');},800);`;
     await writeFile(join(electron, 'install.js'), `const fs=require('node:fs'),path=require('node:path');fs.writeFileSync(path.join(__dirname,'installer-pid'),String(process.pid));${install || success}`);
-    await build({ entryPoints: ['src/bridge.ts'], outfile: join(directory, 'dist/bridge.mjs'), bundle: true, packages: 'external', platform: 'node', format: 'esm' });
-    const { ElectronBridge } = await import(pathToFileURL(join(directory, 'dist/bridge.mjs')).href);
+    await build({ stdin: { contents: "export { ElectronBridge } from './src/bridge.ts'; export { PetControls } from './src/controls.ts';", resolveDir: process.cwd() }, outfile: join(directory, 'dist/bridge.mjs'), bundle: true, packages: 'external', platform: 'node', format: 'esm' });
+    const { ElectronBridge, PetControls } = await import(pathToFileURL(join(directory, 'dist/bridge.mjs')).href);
     bridge = new ElectronBridge();
-    return { bridge: bridge!, electron, close };
+    return { bridge: bridge!, electron, close, PetControls: PetControls as typeof Controls };
   } catch (error) { await close(); throw error; }
 }
 const options = { size: 150, roam: false, notifications: false, bubbleDurationMs: 12000 };
@@ -64,6 +65,30 @@ it('reports installer failure without launching a native window', async () => {
   const { bridge, close } = await fixture('process.exit(7);');
   try { await expect(bridge.start(options)).rejects.toMatchObject({ recoverable: false, message: expect.stringContaining('(7)') }); }
   finally { await close(); }
+});
+
+it('keeps a refused download actionable and shares the attempt with queued start commands', async () => {
+  const { bridge, electron, close, PetControls } = await fixture(`
+    fs.appendFileSync(path.join(__dirname, 'attempts'), 'started\\n');
+    setTimeout(() => {
+      console.error('HTTPError: Response code 403 (Forbidden) for https://mirror.invalid/file?token=secret');
+      console.error('private stack '.repeat(1024));
+      process.exitCode = 1;
+    }, 200);`);
+  const controls = new PetControls(bridge, () => options);
+  try {
+    const starting = controls.command('start');
+    await Promise.resolve();
+    expect(controls.status().phase).toBe('starting');
+    const results = await Promise.all([starting, controls.command('start'), controls.command('show')]);
+    for (const status of results) {
+      expect(status).toMatchObject({ phase: 'error', recoveryAttempt: 0, runtimeFailure: { reason: 'http', httpStatus: 403 } });
+      expect(status.error).not.toMatch(/mirror\.invalid|secret|private stack/);
+    }
+    expect(await readFile(join(electron, 'attempts'), 'utf8')).toBe('started\n');
+    await controls.command('start');
+    expect(await readFile(join(electron, 'attempts'), 'utf8')).toBe('started\nstarted\n');
+  } finally { await controls.dispose(); await close(); }
 });
 
 it('cancels runtime preparation, reaps its installer and rejects a concurrent start', async () => {

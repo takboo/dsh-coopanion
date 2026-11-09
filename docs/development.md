@@ -46,6 +46,16 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 安装探针按当前可见的“账号菜单／Account menu”或直接“设置／Settings”入口打开同一设置面板，不按宿主版本前缀推断布局。面板关闭后的有限重开、桌宠分区、状态加载及可写配置断言保持不变。原生多屏拖拽未进入 `drag` 时，另存已有 OS／CDP 输入轨迹及按压／命中状态到 `multi-display-native-drag-failure.json`，保留原失败与等待期限。
 
+## 固定基座验收
+
+在干净 checkout 准备 Git、Bash、Node.js 和 Docker。传入已构建的候选包，以及包含脚本所固定提交的共享基座 checkout。
+
+```bash
+bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
+```
+
+入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
+
 ## 关键行为回归
 
 | 改动 | 检查入口与范围 |
@@ -58,6 +68,7 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 | 拖放与小窝 | `tests/npc-drag-ui.mjs`：真实指针轨迹、两侧边缘、区域外停留、旧路线取消、按住及释放后小窝锚点 |
 | 自主循环与互动存档 | `tests/npc-life.test.js`、`tests/npc-life-native.mjs`、`tests/companionship-ui.mjs`、`tests/companionship-native.mjs` |
 | 原生冷启动 | `tests/lifecycle-startup-native.mjs`：受控 unknown／locked 与实际系统状态分别检查 |
+| Electron 首次准备 | `tests/electron-startup.test.ts` 检查安装器、取消和并发启动；`tests/engineering-web-probe.mjs` 由共享基座在真实 Web Host 验证设置和重试。Windows 官方 Desktop 的拒绝、完整挂起、取消和真实窗口单独复测 |
 | Windows 置顶 | `tests/always-on-top.test.js`、`tests/windows-topmost-native.mjs`：平台策略、寿命清理与真实 Win32 TOPMOST 丢失／恢复 |
 
 原生 NPC 用例控制时钟、粗粒度输入和鼠标感知；身体移动及 arrived／interrupted 保持真实。受控循环通过与物理输入、自然体验分别报告。
