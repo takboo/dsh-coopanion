@@ -58,6 +58,7 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 | 拖放与小窝 | `tests/npc-drag-ui.mjs`：真实指针轨迹、两侧边缘、区域外停留、旧路线取消、按住及释放后小窝锚点 |
 | 自主循环与互动存档 | `tests/npc-life.test.js`、`tests/npc-life-native.mjs`、`tests/companionship-ui.mjs`、`tests/companionship-native.mjs` |
 | 原生冷启动 | `tests/lifecycle-startup-native.mjs`：受控 unknown／locked 与实际系统状态分别检查 |
+| Electron 首次准备 | `tests/electron-startup.test.ts` 检查安装器、取消和并发启动；`tests/engineering-web-probe.mjs` 由共享基座在真实 Web Host 验证设置和重试。Windows 官方 Desktop 的拒绝、完整挂起、取消和真实窗口单独复测 |
 | Windows 置顶 | `tests/always-on-top.test.js`、`tests/windows-topmost-native.mjs`：平台策略、寿命清理与真实 Win32 TOPMOST 丢失／恢复 |
 
 原生 NPC 用例控制时钟、粗粒度输入和鼠标感知；身体移动及 arrived／interrupted 保持真实。受控循环通过与物理输入、自然体验分别报告。

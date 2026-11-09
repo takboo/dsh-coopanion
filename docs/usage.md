@@ -55,7 +55,7 @@ Windows 桌宠显示期间会在失去置顶后自动恢复，恢复时不抢当
 
 ### Electron 运行时准备
 
-首次安装或升级 Electron 后，桌宠在独立子进程中下载、校验并解压运行时；准备期间设置页显示“正在启动”，Harness 的窗口、服务和其他插件继续响应，也可随时关闭桌宠来取消准备。准备最多等待四分钟，失败后设置页显示错误；检查网络后点击启动重试。运行时准备完成后才开始原生窗口的 20 秒启动检查。
+首次安装或升级 Electron 后，桌宠在独立子进程中下载、校验并解压运行时；准备期间设置页显示“正在启动”，Harness 可继续使用。点击“关闭桌宠”可取消准备。准备最多等待四分钟；失败后，设置页会区分下载被拒（含 HTTP 状态码）、连接失败、超时和安装失败，并提供恢复入口。检查网络后点击“启动桌宠”重试。运行时准备完成后才开始原生窗口的 20 秒启动检查。
 
 网络受限时可设置 Electron 支持的 `ELECTRON_MIRROR`，并从设置了该变量的终端启动 Harness。也可完全退出 Harness 后，在实际 profile 目录手动准备（下面以 Windows PowerShell 为例）：
 
@@ -64,7 +64,7 @@ $env:ELECTRON_MIRROR='https://npmmirror.com/mirrors/electron/'
 node "$env:DSH_HOME\profiles\desktop\node_modules\electron\install.js"
 ```
 
-使用实际配置的 `DSH_HOME`；CLI 的其他 profile 替换 `desktop`。运行时继续按 Electron 的安装器校验。成功后重新打开 Harness；已准备好的二进制直接复用。自备运行时也可使用 `electronPath` 的绝对路径配置。
+使用实际配置的 `DSH_HOME`（默认是用户目录下的 `.dsh`）；CLI 的其他 profile 替换 `desktop`。运行时继续按 Electron 的安装器校验。成功后重新打开 Harness；已准备好的二进制直接复用。也可在该 profile 的桌宠配置中设置 `electronPath` 为已准备好且平台、架构匹配的 Electron 44.7.0 可执行文件的绝对路径，例如 Windows 的 `C:\Electron\electron.exe`，然后重新打开 Harness。
 
 ## 配置与会话
 

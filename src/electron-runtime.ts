@@ -2,12 +2,26 @@ import { spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { NativeStartError } from './desktop-lifecycle.ts';
+import { RuntimePreparationError } from './desktop-lifecycle.ts';
+
+function installerFailure(stderr: string, code: number | null): RuntimePreparationError {
+  // Electron prints the error before its stack. Only extract allowlisted
+  // diagnostics: URLs can contain credentials and stacks expose local paths.
+  const summary = stderr.split(/\r?\n/, 1)[0] ?? '';
+  const status = /^HTTPError: Response code ([45]\d\d)\b/.exec(summary);
+  if (status) return new RuntimePreparationError({ reason: 'http', httpStatus: Number(status[1]) });
+  if (/\b(?:ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ENETUNREACH|ETIMEDOUT)\b|^TypeError: fetch failed\b/.test(summary)) {
+    return new RuntimePreparationError({ reason: 'network' });
+  }
+  return new RuntimePreparationError({ reason: 'install' }, code === null ? undefined : String(code));
+}
 
 // Electron 44's index.js may spawnSync its installer. Resolve files without
 // executing that entrypoint, then prepare missing binaries off the Host loop.
 export async function electronExecutable(signal: AbortSignal): Promise<string> {
-  const directory = dirname(createRequire(import.meta.url).resolve('electron'));
+  let directory: string;
+  try { directory = dirname(createRequire(import.meta.url).resolve('electron')); }
+  catch { throw new RuntimePreparationError({ reason: 'unavailable' }); }
   async function installed(): Promise<string | undefined> {
     let relative: string;
     try { relative = await readFile(join(directory, 'path.txt'), 'utf8'); }
@@ -24,7 +38,11 @@ export async function electronExecutable(signal: AbortSignal): Promise<string> {
   await new Promise<void>((resolve, reject) => {
     if (signal.aborted) { reject(new Error('桌宠启动已取消')); return; }
     const child = spawn(process.execPath, [join(directory, 'install.js')], {
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'ignore', windowsHide: true,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true,
+    });
+    let stderr = '';
+    child.stderr.on('data', (data: Buffer) => {
+      if (stderr.length < 512) stderr += data.subarray(0, 512 - stderr.length).toString();
     });
     let failure: Error | undefined, killTimer: ReturnType<typeof setTimeout> | undefined;
     const stop = (error: Error) => {
@@ -33,18 +51,18 @@ export async function electronExecutable(signal: AbortSignal): Promise<string> {
       killTimer = setTimeout(() => child.kill('SIGKILL'), 1000);
     };
     const aborted = () => stop(new Error('桌宠启动已取消'));
-    const timer = setTimeout(() => stop(new NativeStartError('Electron 运行时准备超时，请检查网络或按使用指南预先安装运行时。', false)), 240_000);
+    const timer = setTimeout(() => stop(new RuntimePreparationError({ reason: 'timeout' })), 240_000);
     signal.addEventListener('abort', aborted, { once: true });
     const finish = (error?: Error) => {
       clearTimeout(timer); clearTimeout(killTimer); signal.removeEventListener('abort', aborted);
       if (failure || error) reject(failure ?? error); else resolve();
     };
-    child.once('error', error => finish(new NativeStartError(error.message.slice(0, 600), false)));
-    child.once('exit', code => finish(code === 0 ? undefined : new NativeStartError(`Electron 运行时准备失败 (${code})，请检查网络或按使用指南预先安装运行时。`, false)));
+    child.once('error', () => { failure ??= new RuntimePreparationError({ reason: 'unavailable' }); });
+    child.once('close', code => finish(code === 0 ? undefined : installerFailure(stderr, code)));
     if (signal.aborted) aborted();
   });
   if (signal.aborted) throw new Error('桌宠启动已取消');
   const executable = await installed();
-  if (!executable) throw new NativeStartError('Electron 安装未生成可用运行时，请按使用指南重新准备。', false);
+  if (!executable) throw new RuntimePreparationError({ reason: 'unavailable' });
   return executable;
 }
