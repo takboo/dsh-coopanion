@@ -54,7 +54,7 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
 ```
 
-入口从包内构建信息读取源码提交，使用[宿主目标配置](../tests/engineering-targets.json)和仓库内的 Web 探针。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
+入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
 
 ## 关键行为回归
 

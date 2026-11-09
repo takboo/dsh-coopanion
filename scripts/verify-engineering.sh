@@ -37,6 +37,14 @@ if ! git -C "$root" merge-base --is-ancestor "$source_commit" HEAD; then
   exit 2
 fi
 
+for input in "$targets" "$probe"; do
+  relative=${input#"$root/"}
+  git -C "$root" show "$source_commit:$relative" > "$scratch/source-input"
+  tar -xOf "$candidate" "package/$relative" > "$scratch/packed-input"
+  cmp "$scratch/source-input" "$scratch/packed-input"
+  cmp "$scratch/source-input" "$input"
+done
+
 mkdir -p -- "$(dirname "$report_dir")"
 mkdir -m 700 -- "$report_dir"
 report="$report_dir/host.json"
