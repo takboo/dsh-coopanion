@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { compareVersions, digest, pages, request, version, versionPattern, assertRepository, FetchError } from './common.mjs';
+import { packageName, stableVersion } from '../release-support.mjs';
 import { selectChecks } from './planning.mjs';
 export const desktopFeed = 'https://download.deepseek.com/dsh-desk/feeds/mac-arm64/nightly-mac.yml';
 export function parseDesktopFeed(source) {
@@ -70,6 +71,13 @@ export async function discover({ manual = '', token, repo, local = false, pullRe
     assert(/^[a-f\d]{40}$/.test(commit.sha)); target.commit = commit.sha;
   }
   for (const target of targets) target.identity = digest({ version: target.version, npm: target.npm, release: target.release ?? null, desktop: target.desktop ?? null, commit: target.commit ?? null });
+  if (targets.some(target => target.npm.integrity)) {
+    const metadata = await request(`https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`);
+    assert.equal(metadata.name, packageName);
+    assert.match(metadata.version, stableVersion);
+    assert.match(metadata.dist.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
+    for (const target of targets) target.published = { name: metadata.name, version: metadata.version, integrity: metadata.dist.integrity };
+  }
   const selected = selectChecks(targets, issues, { baseline, manual: normalized, pullRequest });
   if (manual) assert.equal(selected.length, 1, 'Exact published target not found');
   return selected;
