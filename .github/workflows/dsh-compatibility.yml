@@ -78,7 +78,7 @@ jobs:
   published:
     name: Published npm archive / DSH ${{ matrix.target.version }}
     needs: [discover, track]
-    if: always() && needs.discover.result == 'success' && needs.discover.outputs.sdk_count != '0' && (github.event_name == 'pull_request' || needs.track.result == 'success')
+    if: always() && needs.discover.result == 'success' && needs.discover.outputs.sdk_count != '0' && (github.ref != 'refs/heads/main' || github.event_name == 'pull_request' || needs.track.result == 'success')
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
@@ -89,15 +89,16 @@ jobs:
       max-parallel: 3
       matrix:
         target: ${{ fromJSON(needs.discover.outputs.sdk_matrix).include }}
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/published-browsers
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-toolchain
       - run: npm ci --ignore-scripts
-      - run: npx playwright-core install chromium
+      - name: Install the Chromium revision from the project lock
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/published-browsers" >> "$GITHUB_ENV"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/published-browsers" npx playwright-core install chromium
       - name: Exercise the unmodified npm package under default Host admission
         env:
           DSH_TARGET_JSON: ${{ toJSON(matrix.target) }}
@@ -107,13 +108,13 @@ jobs:
         if: always()
         with:
           name: dsh-published-${{ matrix.target.version }}
-          path: ${{ runner.temp }}/dsh-published-report/
+          path: ${{ runner.temp }}/dsh-published-report/report.json
           retention-days: 14
           if-no-files-found: warn
 
   prepare:
     needs: [discover, track]
-    if: always() && needs.discover.result == 'success' && needs.discover.outputs.build_count != '0' && (github.event_name == 'pull_request' || needs.track.result == 'success')
+    if: always() && needs.discover.result == 'success' && needs.discover.outputs.build_count != '0' && (github.ref != 'refs/heads/main' || github.event_name == 'pull_request' || needs.track.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
