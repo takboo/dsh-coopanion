@@ -2,29 +2,17 @@
 
 先从[文档索引](README.md)阅读对应行为契约。工具链分别固定在 `.node-version` 和 `package.json#packageManager`，依赖锁为随包提供的 `npm-shrinkwrap.json`。
 
-## 准备与验证入口
+## 本地源码检查
 
 ```bash
 npm ci --ignore-scripts
 npm run verify:metadata
-npm run setup:electron
 npm run typecheck
 npm test
 npm run build
-npx playwright-core install chromium
-npm run character:pack -- examples/star paper-star.zip
-npm run test:ui
-npm run test:notification-ui
-npm run test:hint-ui
-npm run test:inbox-ui
-npm run test:keyboard-native
-npm run test:desktop
-npm pack
-node scripts/check-package.mjs
-npm run test:install
 ```
 
-按改动选择检查；完整发布门槛见[发布流程](releasing.md)。Linux 原生窗口需要 X11／Xvfb 和窗口管理器，测试光标还需要 Python 3 与 libX11；浏览器及网格动画需要 Chromium WebGL。CI 的 Linux 显示准备由 `.github/actions/setup-linux-display` 完成。
+按改动选择检查。浏览器、宿主安装和原生桌面验证使用下方的共享基座或项目 CI。CI 的 Linux 显示准备由 `.github/actions/setup-linux-display` 完成，完整发布门槛见[发布流程](releasing.md)。
 
 `npm run dev` 打开浏览器演示（默认 `http://127.0.0.1:4173`），`npm run demo` 启动桌面演示，二者的任务事件均为模拟。首页素材的重拍见[素材说明](assets/README.md)。
 
@@ -32,7 +20,7 @@ npm run test:install
 
 macOS CI 固定使用 `macos-15` Apple Silicon 标准 runner。原生测试和安装使用隔离数据目录，浏览器回归结束后再串行执行系统桌面操作。三平台测试和正式宿主安装矩阵保留全部断言与期限，同包发布规则见[发布流程](releasing.md)。
 
-本地 macOS 原生与交互验证使用项目隔离 VM。VM 管理入口和 SSH 身份属于本机环境配置；本分支不提供 VM 管理脚本。执行前核对实例状态和来宾工作目录，为每轮另建独立 checkout，只传选定源码与分发包，保持原有 profile、凭证和证据。结果记录实际系统、宿主、完整源码提交与包摘要；测试结束后停止本轮启动且已无其他工作使用的实例。VM 的验证范围与物理设备、真实账号模型和长期体验分别报告。
+本地原生安装与交互验证使用[共享 Tart 来宾](#本地-macos-原生安装)。
 
 真实轻抚回归在角色宽度的 20%／80% 位置间往返，保持每次十八个可信移动，避免窄幅轨迹在输入调度迟缓时衰减为无效手势。伪造事件拒绝、二十次反馈、增长冷却、500 ms 响应和原有等待期限继续检查，产品判定规则不变。
 
@@ -48,9 +36,9 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 ## 固定基座验收
 
-在干净 checkout 准备 Git、Bash、Node.js 和 Docker。共享基座为 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) 提交 `9ed36752356975cd7d47c11d63744220443c1bf7`，在该提交下阅读 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`。传入已构建的包，以及包含这个固定提交的基座 checkout。
+在干净 checkout 准备 Git、Bash、Node.js 和 Docker。Linux 入口固定使用 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) 提交 `9ed36752356975cd7d47c11d63744220443c1bf7`，在该提交下阅读 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`。传入已构建的包，以及包含这个固定提交的基座 checkout。
 
-试点的普通浏览器检查在 Linux Docker 内使用锁定的 Chromium。本机 macOS 的浏览器与原生桌面检查按上方隔离环境执行。
+普通浏览器检查使用基座固定的 Linux 容器。宿主 Web 探针使用基座镜像提供的 Playwright 和 Chromium。项目回归使用包内锁文件要求的 Playwright 及匹配的 Chromium，在同一镜像的临时容器内安装并随任务回收。项目目录不保留浏览器缓存、独立测试运行时或持久测试 VM。
 
 ```bash
 bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
@@ -58,7 +46,23 @@ bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/cand
 
 入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
 
+任务结束时清理临时 checkout、安装器、候选包、自动录屏和下载缓存。本地只保留仍用于问题复现、发布验收或恢复的独有材料。记录对应提交、包摘要和证据路径，相同字节只保留一份。可以从 Git、GitHub Release 或共享基座恢复的内容按需获取。
+
 DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`。发布包校验同时检查导出、图标字节和原始 SVG。升级图标后在真实插件管理器核对实际渲染的 PNG。
+
+## 本地 macOS 原生安装
+
+使用持有基线的 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) checkout，固定在 `56bcd3c0b122c3281b1090f45673ddde2d538481`。Tart 存储在该 checkout 的 `.local/tart`，基线为 `dsh-sequoia-arm64-base-eee659985b01`。准备 Apple Silicon、Tart、Git、能读取 Release 的 GitHub CLI，以及至少 60 GiB 可用空间。基线缺失时按固定提交的 `docs/test-environments.md` 准备。
+
+在 Coopanion 仓库根目录复跑已发布的 0.4.21。基座参数指向实际持有 `.local/tart` 的 checkout。
+
+```bash
+bash docs/tools/replay-tart-install-0421.sh /path/to/dsh-plugin-engineering
+```
+
+入口核对基座脚本与标签，临时下载 Release 规范包和来宾所需运行时，从基座 checkout 调用 `scripts/run-tart.sh run`。基座将 `DSH_TART_INPUTS` 只读挂载到来宾。来宾再次核对包摘要、源码和 npm 宿主 integrity，使用空 profile、精确的 DSH `0.2.2-rc.1` 和完整 Chromium 运行标签上的 `npm run test:install`。
+
+验收时同时检查 `installEvidence` 的安装、原生窗体、关闭后重开和正常退出断言，以及 `runnerExit=0` 和 `guestReclaimed`。失败时保存已完成阶段和脱敏错误，再用同一命令复跑。结果按实际载体分别记录，npm DSH Host 启动 Electron、官方签名 DSH Desktop 和物理设备各自结算。见 [0.4.21 迁移试跑报告](evidence/shared-tart-install-20261110/report.md)。
 
 ## 关键行为回归
 
@@ -78,7 +82,7 @@ DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`
 
 原生 NPC 用例控制时钟、粗粒度输入和鼠标感知；身体移动及 arrived／interrupted 保持真实。受控循环通过与物理输入、自然体验分别报告。
 
-Windows 置顶回归由 CI 的隔离 Windows runner 串行运行 `node tests/windows-topmost-native.mjs`。它启动真实 Electron 窗口，用 Win32 读取 `WS_EX_TOPMOST`，主动清除标志后核对恢复和前台焦点保持，并检查隐藏／显示、最小化／还原与正常退出。失败也保留 `artifacts/windows-topmost-native.json`，绑定实际提交、构建与 Electron 版本。系统置顶丢失为受控注入；它不代替 Windows 11 物理设备、独占全屏游戏或长期桌面体验验收。本地缺少 Windows VM 时可使用此 CI 检查，本地 macOS 原生测试仍使用主项目虚拟机。
+Windows 置顶回归由 CI 的隔离 Windows runner 串行运行 `node tests/windows-topmost-native.mjs`。它启动真实 Electron 窗口，用 Win32 读取 `WS_EX_TOPMOST`，主动清除标志后核对恢复和前台焦点保持，并检查隐藏／显示、最小化／还原与正常退出。失败也保留 `artifacts/windows-topmost-native.json`，绑定实际提交、构建与 Electron 版本。系统置顶丢失为受控注入，Windows 11 物理设备、独占全屏游戏或长期桌面体验分别验收。
 
 Windows 的 125% 缩放与任务栏回归可在已登录、解锁的隔离控制台运行 `node tests/windows-geometry-native.mjs`。先通过系统显示设置选择 125%；脚本核对 Electron 读取的真实 DPI，不强制 Chromium 比例。它通过 Windows Shell API 切换任务栏自动隐藏、核对实际工作区及 viewport，再注入过期边界检查重同步与角色保持，结束时恢复原任务栏状态。NPC 时钟和感知为受控输入；这项 VM 检查不代替物理多屏或用户体验验收。RDP 会话不允许更改显示缩放时，先在虚拟机控制台设置并验证实际比例。
 

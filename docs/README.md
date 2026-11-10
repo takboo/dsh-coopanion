@@ -8,6 +8,7 @@
 |---|---|
 | 安装、配置、操作与升级 | [使用指南](usage.md) |
 | 开发、构建、测试与录制回归 | [开发指南](development.md) |
+| 本地 macOS 原生安装与共享 Tart 复跑 | [本地 macOS 原生安装](development.md#本地-macos-原生安装) |
 | 完成判断、通知身份与请求结算 | [提醒契约](notification-contract.md) |
 | 会话续接、接受回执、草稿与去重 | [会话契约](session-chat-contract.md) |
 | 进程退出、有限恢复与临时状态 | [恢复契约](desktop-recovery-contract.md) |
