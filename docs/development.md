@@ -58,6 +58,8 @@ bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/cand
 
 入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
 
+DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`。发布包校验同时检查导出、图标字节和原始 SVG。升级图标后在真实插件管理器核对实际渲染的 PNG。
+
 ## 关键行为回归
 
 | 改动 | 检查入口与范围 |

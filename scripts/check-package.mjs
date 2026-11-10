@@ -26,6 +26,7 @@ if (values['expected-version']) assert.equal(packed.version, values['expected-ve
 else assert.equal(packed.version, pkg.version);
 assert.equal(packed.repository.url, pkg.repository.url);
 assert.equal(packed.icon, './assets/coopanion.png');
+assert.equal(packed.exports['./package.json'], './package.json', 'DSH needs the exported manifest to read the installed icon');
 const icon = execFileSync('tar', ['-xOzf', archive, `package/${packed.icon.slice(2)}`]);
 assert.deepEqual(icon, readFileSync(packed.icon), 'archive icon differs from project icon');
 assert.equal(icon.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
