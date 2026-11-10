@@ -102,8 +102,9 @@ jobs:
       - name: Exercise the unmodified npm package under default Host admission
         env:
           DSH_TARGET_JSON: ${{ toJSON(matrix.target) }}
-          DSH_REPORT_DIR: ${{ runner.temp }}/dsh-published-report
-        run: npm run compat:published
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          DSH_REPORT_DIR="$RUNNER_TEMP/dsh-published-report" npm run compat:published
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
