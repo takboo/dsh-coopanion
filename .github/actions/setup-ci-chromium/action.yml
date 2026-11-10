@@ -1,0 +1,18 @@
+name: Setup CI Chromium
+description: Install the locked Playwright browser and its system dependencies.
+runs:
+  using: composite
+  steps:
+    - name: Use the runner's Ubuntu HTTPS mirrors
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        mirrors=/etc/apt/apt-mirrors.txt
+        if [[ -f "$mirrors" ]] && grep -q '^https://archive\.ubuntu\.com/ubuntu/' "$mirrors"; then
+          # APT can stall on the Azure mirror before using the runner's fallback.
+          sudo sed -i '/^https\?:\/\/azure\.archive\.ubuntu\.com\/ubuntu\//d' "$mirrors"
+          cat "$mirrors"
+        fi
+    - name: Install Chromium and dependencies
+      shell: bash
+      run: npx playwright-core install --with-deps chromium

@@ -47,7 +47,14 @@ async function drag(page, target) {
 }
 async function record(name, page, frame) {
   await mkdir('artifacts', { recursive: true });
-  await writeFile('artifacts/' + name + '.json', JSON.stringify({ state: await page.evaluate(() => window.npcState), trace: await page.evaluate(() => window.npcTrace), layout: await layout(page), orders: await frame.evaluate(() => window.orders) }, null, 2) + '\n');
+  const diagnostics = {
+    state: await page.evaluate(() => window.npcState),
+    trace: await page.evaluate(() => window.npcTrace),
+    layout: await layout(page),
+    orders: await frame.evaluate(() => window.orders),
+    touches: await page.evaluate(() => window.dragTouches),
+  };
+  await writeFile('artifacts/' + name + '.json', JSON.stringify(diagnostics, null, 2) + '\n');
 }
 
 test('selection, typing and dragging always retain the configured size', async t => {
@@ -64,19 +71,27 @@ test('selection, typing and dragging always retain the configured size', async t
 for (const mode of ['off', 'quiet']) for (const target of [10, 990]) test(`a fast release throws within the stage (${mode}, ${target})`, async t => {
   const { page, frame } = await fixture(t, mode);
   const box = await page.locator('#pet').boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
+  const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const start = target < 500 ? 280 : 720;
-  await page.mouse.move(start, 190);
-  await page.waitForSelector('#pet[data-mode=drag]');
-  await page.mouse.move(start + (target < 500 ? -10 : 10), 190);
-  await page.mouse.move(target, 190);
-  await page.mouse.up();
-  await page.mouse.move(0, 0);
-  await page.waitForFunction(() => window.dragTouches.includes('throw'));
+  const cdp = await page.context().newCDPSession(page);
+  const held = { button: 'left', buttons: 1, force: .5 };
   const samples = [];
-  for (let i = 0; i < 12; i++) { samples.push((await layout(page)).x); await page.waitForTimeout(40); }
-  await record('npc-drag-edge-' + mode + '-' + target, page, frame);
+  try {
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...origin });
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...origin, ...held, clickCount: 1 });
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: start, y: 190, ...held });
+    await page.waitForSelector('#pet[data-mode=drag]');
+    // Give Chromium real pointer input with a fixed gesture cadence across runner speeds.
+    const timestamp = Date.now() / 1000;
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: start + (target < 500 ? -10 : 10), y: 190, ...held, timestamp });
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: target, y: 190, ...held, timestamp: timestamp + .02 });
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: target, y: 190, button: 'left', buttons: 0, clickCount: 1, timestamp: timestamp + .04 });
+    await page.mouse.move(0, 0);
+    await page.waitForFunction(() => window.dragTouches.includes('throw'));
+    for (let i = 0; i < 12; i++) { samples.push((await layout(page)).x); await page.waitForTimeout(40); }
+  } finally {
+    await record('npc-drag-edge-' + mode + '-' + target, page, frame);
+  }
   assert.ok(samples.every(x => x >= 0 && x <= 1000), 'throw remains within the stage');
   assert.ok(Math.max(...samples) - Math.min(...samples) > 15, 'a throw keeps moving after release');
   assert.ok(await frame.evaluate(() => window.orders.some(o => o.t === 'pointer' && o.type === 'up')));
