@@ -18,7 +18,7 @@ export function issueBody(target, reports, { status, attempts, runUrl, sourceCom
     `Upstream commit: ${safe(target.commit ?? target.npm.commit ?? 'not available; npm publication only')}`,
     `Plugin source commit: \`${safe(sourceCommit)}\`; [Actions evidence](${runUrl})`,
     `Result: **${status}** (attempt ${attempts})`, '',
-    ...reports.map(r => `- ${r.kind === 'desktop' ? 'Desktop ' : 'SDK '}${safe(r.platform)}/${safe(r.arch)}: **${safe(r.status)}** — ${safe(r.reason)}`), '',
+    ...reports.map(r => `- ${r.kind === 'desktop' ? 'Desktop ' : r.kind === 'published' ? 'Published npm ' : 'SDK candidate '}${safe(r.platform)}/${safe(r.arch)}: **${safe(r.status)}** — ${safe(r.reason ?? r.admission)}`), '',
     ...componentLines(components),
     proposalUrl ? `Dependency proposal: ${proposalUrl}` : '', safe(details), '',
     'This is candidate evidence, not a production compatibility declaration. Formal host support is unchanged. No automatic merge, tag or release.',
@@ -38,6 +38,26 @@ function componentLines(components = {}) {
 export function validateReport(r, target, sourceCommit, kind) {
   assert.equal(r.version, target.version); assert.equal(r.sourceCommit, sourceCommit);
   assert.equal(r.target?.identity, target.identity);
+  if (kind === 'published') {
+    assert.deepEqual(r.target.published, target.published);
+    assert.equal(r.target.npm.integrity, target.npm.integrity);
+    assert.equal(r.kind, 'published');
+    assert.equal(r.platform, 'linux');
+    assert(['passed', 'failed', 'retry'].includes(r.status));
+    if (r.status === 'passed') {
+      const { sha256, sourceCommit: publishedCommit, ...publication } = r.package;
+      assert.deepEqual(publication, target.published);
+      assert.match(sha256, /^[a-f\d]{64}$/);
+      assert.match(publishedCommit, /^[a-f\d]{40}$/);
+      assert(['admitted', 'refused-as-expected'].includes(r.admission));
+      assert(r.stages.some(stage => stage.name === 'admission' && stage.status === (r.admission === 'admitted' ? 'passed' : r.admission)));
+      if (r.admission === 'admitted') {
+        assert.match(r.probeSha256, /^[a-f\d]{64}$/);
+        assert(r.stages.some(stage => stage.name === 'plugin-web' && stage.status === 'passed'));
+      }
+    }
+    return r;
+  }
   assert.equal(r.productionAdmissionChanged, false); assert.equal(r.productionSourcesStable, true);
   assert(['passed', 'partial', 'failed', 'retry'].includes(r.status));
   if (['passed', 'partial'].includes(r.status) && reviewedDependencies(target.version)) {
@@ -55,7 +75,15 @@ export function validateReport(r, target, sourceCommit, kind) {
     }
   } else {
     assert(!r.kind); assert(['darwin/arm64','win32/x64','linux/x64'].includes(`${r.platform}/${r.arch}`));
-    if (['passed', 'partial'].includes(r.status)) for (const name of ['host-install', 'normal-admission', 'candidate-installation']) assert(r.stages.some(s => s.name === name && s.status === 'passed'), `Missing SDK stage ${name}`);
+    if (['passed', 'partial'].includes(r.status)) {
+      for (const name of ['host-install', 'normal-admission', 'candidate-installation']) assert(r.stages.some(s => s.name === name && s.status === 'passed'), `Missing SDK stage ${name}`);
+      if (target.published) {
+        assert.deepEqual(r.candidatePhases, ['admitted', 'host-contracts', 'web-settings-and-native-window']);
+        assert.equal(r.package?.sha256, r.archiveSha256);
+        assert.equal(r.package?.sourceCommit, sourceCommit);
+        assert.match(r.package?.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
+      }
+    }
   }
   if (['passed', 'partial'].includes(r.status)) assert(/^[a-f\d]{64}$/.test(r.archiveSha256));
   return r;
@@ -70,12 +98,14 @@ export function completedComponents(target, reports, previous, { run, sourceComm
       continue;
     }
     const rows = reports.filter(r => key === 'desktop' ? r.kind === 'desktop' : !r.kind);
-    let status = aggregate(rows, key === 'desktop' ? 1 : 3);
-    if (rows.length && new Set(rows.map(r => r.archiveSha256)).size !== 1) status = 'failed';
+    const published = reports.find(r => r.kind === 'published');
+    const hasPublished = key === 'sdk' && Boolean(target.published);
+    let status = hasPublished ? aggregate([...rows, published], 4) : aggregate(rows, key === 'desktop' ? 1 : 3);
+    if (rows.length > 1 && new Set(rows.map(r => r.archiveSha256)).size !== 1) status = 'failed';
     components[key] = { identity: identities[key], status,
       attempts: old?.identity === identities[key] ? old.attempts + (old.run === run ? 0 : 1) : 1,
       run, sourceCommit, updatedAt: now,
-      reason: key === 'desktop' && rows[0]?.reason ? safe(rows[0].reason) : `${rows.length}/${key === 'desktop' ? 1 : 3} component reports received`,
+      reason: key === 'desktop' && rows[0]?.reason ? safe(rows[0].reason) : `${rows.length}/${key === 'desktop' ? 1 : 3} component reports received${hasPublished ? `; published npm: ${published?.admission ?? published?.status ?? 'missing'}` : ''}`,
       ...(key === 'desktop' && rows[0]?.artifact ? { artifactSha256: rows[0].artifact.sha256 } : {}) };
   }
   return validComponents(components);
@@ -150,17 +180,17 @@ export async function readArtifacts(directory, target, sourceCommit) {
   const candidateDirectory = single?.kind === 'prepare' ? directory : join(directory, 'dsh-candidate-' + target.version);
   try { candidate = JSON.parse(await readFile(join(candidateDirectory, 'candidate.json'), 'utf8')); } catch {}
   const entries = (await readdir(directory).catch(() => [])).map(name => ({ name,
-    kind: name.startsWith('dsh-desktop-') ? 'desktop' : name.startsWith('dsh-check-') ? 'sdk' : null }));
-  if (single && single.kind !== 'prepare') entries.push({ name: '.', kind: single.kind === 'desktop' ? 'desktop' : 'sdk' });
+    kind: name.startsWith('dsh-desktop-') ? 'desktop' : name.startsWith('dsh-check-') ? 'sdk' : name.startsWith('dsh-published-') ? 'published' : null }));
+  if (single && single.kind !== 'prepare') entries.push({ name: '.', kind: single.kind ?? 'sdk' });
   for (const { name, kind } of entries) {
     if (!kind) continue;
     try {
       const r = validateReport(JSON.parse(await readFile(join(directory, name, 'report.json'), 'utf8')), target, sourceCommit, kind);
-      if (['passed', 'partial'].includes(r.status)) {
+      if (kind !== 'published' && ['passed', 'partial'].includes(r.status)) {
         assert.equal(candidate?.sourceCommit, sourceCommit); assert.equal(candidate?.targetIdentity, target.identity);
         assert.equal(r.archiveSha256, candidate?.archiveSha256, 'All component reports must consume the prepared archive');
       }
-      assert(!reports.some(old => Boolean(old.kind) === Boolean(r.kind) && old.platform === r.platform && old.arch === r.arch));
+      assert(!reports.some(old => old.kind === r.kind && old.platform === r.platform && old.arch === r.arch));
       reports.push(r);
     } catch (error) { console.error(`Incomplete report ${name}: ${safe(error.message)}`); }
   }

@@ -94,6 +94,13 @@ let hostUrl;
 let settingsPage;
 const uiErrors = [];
 const consoleErrors = [];
+const phaseFile = process.env.DSH_TEST_PHASE_FILE;
+const phases = [];
+async function recordPhase(phase) {
+  if (!phaseFile) return;
+  phases.push(phase);
+  await writeFile(phaseFile, JSON.stringify(phases) + '\n');
+}
 let hostLog = '';
 
 async function run(command, args, cwd = project, timeoutMs = 240000) {
@@ -177,10 +184,13 @@ try {
   assert.equal(existsSync(join(profile, 'compatibility.json')), false, 'no risk exemption is used');
   const installed = join(profile, 'node_modules', manifest.name);
   assert.equal(JSON.parse(await readFile(join(installed, 'package.json'), 'utf8')).version, manifest.version);
+  await recordPhase('admitted');
   await run(process.execPath, [join(project, 'tests/notification-host-contract.mjs'), '--runtime', runtime, '--version', version]);
 
   await run(process.execPath, [join(project, 'tests/goal-host-contract.mjs'), '--runtime', runtime, '--version', version, '--package', archive]);
   await run(process.execPath, [join(project, 'tests/session-host-contract.mjs'), '--verify-plugin', '--runtime', runtime, '--version', version, '--package', archive]);
+
+  await recordPhase('host-contracts');
 
   // Keep the observer in its own package. The Client loader identifies packages
   // from ancestor manifests; a fixture inside this repository can be mistaken
@@ -334,6 +344,7 @@ try {
   await settings.getByRole('navigation', { name: '会话层级', exact: true }).filter({ hasText: '安装验证' }).waitFor();
   assert.equal(await page.locator('#chat-session-name').innerText(), '安装验证');
   await openPetSettings(settings);
+  await recordPhase('web-settings-and-native-window');
   const surface = settings.getByTestId('coopanion-settings');
   await surface.waitFor();
   console.log('Official DSH settings page loaded; checking controls and persisted preferences…');

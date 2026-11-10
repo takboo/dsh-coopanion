@@ -6,7 +6,7 @@ export { validComponents } from './common.mjs';
 export function componentIdentities(target) {
   const dependencies = reviewedDependencies(target.version);
   const reviewed = dependencies ? { dependencyBaseline: dependencies, hostDependencies: hostDependencies(target.version) } : {};
-  return { sdk: digest({ contract: 1, version: target.version, npm: target.npm, ...reviewed }),
+  return { sdk: digest({ contract: 2, version: target.version, npm: target.npm, published: target.published, ...reviewed }),
     desktop: target.desktop ? digest({ contract: 1, version: target.version, desktop: target.desktop, npm: target.npm, ...reviewed }) : null };
 }
 export function componentDue(previous, identity, { manual = false, now = Date.now() } = {}) {

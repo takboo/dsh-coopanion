@@ -30,7 +30,7 @@ export async function isolatedEnv(scratch) {
   return env;
 }
 export class StageError extends Error { constructor(name, status) { super(`${name}: ${status}`); this.status = status; } }
-export async function command(report, output, name, file, args, { cwd = root, env = process.env, setup = false, captureStdout = false, timeout = 15 * 60000 } = {}) {
+export async function command(report, output, name, file, args, { cwd = root, env = process.env, setup = false, captureStdout = false, expectedRefusal, timeout = 15 * 60000 } = {}) {
   await mkdir(output, { recursive: true });
   let log = '', stdout = '', timedOut = false, error;
   const result = await new Promise(done => {
@@ -49,11 +49,14 @@ export async function command(report, output, name, file, args, { cwd = root, en
   });
   log = log.replace(/(token|password|authorization)\s*[=:]\s*[^\s]+/gi, '$1=[redacted]');
   await writeFile(join(output, name + '.log'), log);
-  const status = subprocessStatus({ ...result, error, timedOut, setup, log });
+  const refused = result.code > 0 && !result.signal && !error && !timedOut && expectedRefusal?.(log);
+  let status = subprocessStatus({ ...result, error, timedOut, setup, log });
+  if (refused) status = 'refused-as-expected';
+  else if (expectedRefusal && status === 'passed') status = 'failed';
   report.stages.push({ name, status, exitCode: result.code, signal: result.signal, timedOut });
   await writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(`${name}: ${status}`);
-  if (status !== 'passed') { console.error(log.slice(-6000)); throw new StageError(name, status); }
+  if (status !== 'passed' && status !== 'refused-as-expected') { console.error(log.slice(-6000)); throw new StageError(name, status); }
   return captureStdout ? stdout : log;
 }
 export const npmCli = () => { if (!process.env.npm_execpath) throw new Error('Run through npm run compat:<command>'); return process.env.npm_execpath; };

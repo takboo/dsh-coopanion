@@ -12,6 +12,10 @@ The textures and thumbnails in `web/upstream/whale/`, and the generated tray ico
 
 This integration follows the project user's existing statement that the community character is reusable. AGPL does not relicense these textures. The complete original upstream rights notice is preserved verbatim in [web/upstream/THIRD_PARTY_NOTICES.md](web/upstream/THIRD_PARTY_NOTICES.md). Its sections on speech-recognition libraries/models describe the upstream package; this plugin does not bundle those components.
 
+## Coopanion distribution icon
+
+`assets/coopanion.svg` is original project artwork made from geometric shapes, licensed under AGPL-3.0-or-later. `assets/coopanion.png` is its 180 × 180 raster export for the package manifest and the market card. Regenerate it with `rsvg-convert -o assets/coopanion.png assets/coopanion.svg`. The tray keeps its separate artwork and notice above.
+
 ## Electron
 
 Electron 44.7.0 is installed as a dependency and retains its MIT license and Chromium's accompanying notices. Runtime download and verification remain unchanged.

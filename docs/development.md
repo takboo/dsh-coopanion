@@ -48,13 +48,17 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 ## 固定基座验收
 
-在干净 checkout 准备 Git、Bash、Node.js 和 Docker。传入已构建的候选包，以及包含脚本所固定提交的共享基座 checkout。
+在干净 checkout 准备 Git、Bash、Node.js 和 Docker。共享基座为 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) 提交 `9ed36752356975cd7d47c11d63744220443c1bf7`，在该提交下阅读 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`。传入已构建的包，以及包含这个固定提交的基座 checkout。
+
+试点的普通浏览器检查在 Linux Docker 内使用锁定的 Chromium。本机 macOS 的浏览器与原生桌面检查按上方隔离环境执行。
 
 ```bash
 bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
 ```
 
 入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
+
+DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`。发布包校验同时检查导出、图标字节和原始 SVG。升级图标后在真实插件管理器核对实际渲染的 PNG。
 
 ## 关键行为回归
 

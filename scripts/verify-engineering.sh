@@ -7,7 +7,7 @@ if [[ $# -ne 3 ]]; then
 fi
 
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
-engineering_commit=5fe3e92c64d4dfbbcfd3926fb52c347b10cc641e
+engineering_commit=9ed36752356975cd7d47c11d63744220443c1bf7
 targets="$root/tests/engineering-targets.json"
 probe="$root/tests/engineering-web-probe.mjs"
 report_dir=$3
