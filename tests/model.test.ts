@@ -38,11 +38,13 @@ describe('Harness task presentation', () => {
     expect(m.snapshot()).toMatchObject({ mood: 'thinking', active: true, streaming: true });
     expect(m.snapshot().text).not.toContain('private');
     for (const [index, text] of ['你好', '，正在输出'].entries()) m.stream(s, { type: 'chunk', attemptId, revision: 1, index: index + 1, time: 2, chunk: { type: 'text-delta', index: 1, text } });
-    expect(m.snapshot()).toMatchObject({ mood: 'talking', speechId: attemptId, results: [] });
+    expect(m.snapshot()).toMatchObject({ mood: 'talking', speechId: attemptId, speechRevision: 2, results: [] });
     expect(m.snapshot().sessions[0].reply).toBe('');
     expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 1, time: 1, chunk: { type: 'text-delta', index: 1, text: '重复' } })).toBe(false);
     m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'block-end', index: 1, block: { type: 'text', text: '你好，正在输出' } } });
+    expect(m.snapshot().sessions[0].speechRevision).toBe(2);
     m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 4, time: 4, chunk: { type: 'text-delta', index: 2, text: '第二段' } });
+    expect(m.snapshot().sessions[0].speechRevision).toBe(3);
     expect(m.snapshot().results).toEqual([]);
     m.consume(s, event('assistant/message', { turn: 1, step: 1, message: createAssistantMessage({ content: [{ type: 'text', text: '你好，正在输出' }, { type: 'text', text: '第二段' }], source: { provider: 'test', model: 'test' } }), stream: [] }));
     expect(m.snapshot()).toMatchObject({ mood: 'talking', streaming: false, speechId: attemptId });
@@ -53,6 +55,15 @@ describe('Harness task presentation', () => {
     expect(m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'text-delta', index: 1, text: '迟到' } })).toBe(false);
     m.consume(s, event('turn/start', { turn: 2 }));
     expect(m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 })).toBe(false);
+  });
+  it('tracks new text beyond the preview limit without counting whitespace or private reasoning', () => {
+    const m = new PetModel(), s = session('long-stream'), attemptId = LlmAttemptId('long');
+    m.stream(s, { type: 'start', attemptId, revision: 1, turn: 1, step: 1 });
+    for (const [index, text] of ['长'.repeat(1200), ' ', '续'].entries()) {
+      m.stream(s, { type: 'chunk', attemptId, revision: 1, index, time: index, chunk: { type: 'text-delta', index: 0, text } });
+    }
+    m.stream(s, { type: 'chunk', attemptId, revision: 1, index: 3, time: 3, chunk: { type: 'reasoning-delta', index: 1, text: 'private' } });
+    expect(m.snapshot()).toMatchObject({ speechRevision: 2, results: [] });
   });
   it('shows task work and assistant replies, then issues a completion notification', () => {
     const m = new PetModel(), s = session('one');

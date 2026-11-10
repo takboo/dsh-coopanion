@@ -1,4 +1,5 @@
 import { advanceRenderCadence } from './render-cadence.js';
+import { createLiveMouth } from './live-mouth.js';
 import { createDiagnosticCounters } from './diagnostics.js';
 import { createCompanionStroke } from './companion-touch.js';
 import { initialNpc, stepNpc, npcSpace } from './npc-life.js';
@@ -45,7 +46,8 @@ let snapshot = { mood: 'idle', text: '你好。点点我，或双击和我说话
 let x = innerWidth * .68, y = innerHeight - 155, hovered = false, asleep = false, toastTimer, noticeSession;
 let cursorPoint, lastHit;
 let renderedSessionId = null, reactionUntil = 0, reactionMood, bubbleSession, trayKey, touchTimer, touchBlockedUntil = 0;
-let bubbleResult, readerResult, pendingOnly = false, talkAt = 0;
+let bubbleResult, readerResult, pendingOnly = false;
+const liveMouth = createLiveMouth();
 let readerQueue, inboxState = { requests: [], issues: [], replies: [], total: 0 };
 let resizeLayout, displayGeometry, pendingDisplayPlacement, resizeOrigin;
 let geometryRequestedAt = -Infinity;
@@ -373,6 +375,7 @@ function updateMood() {
 
 function render() {
   attentionSnapshot = sessionAttention.project(snapshot, pendingRequests());
+  liveMouth.update(attentionSnapshot, performance.now());
   applyLocale(); const labels = uiCopy().labels;
   const previous = renderedSessionId;
   const selected = snapshot.sessions.find(session => session.id === snapshot.sessionId);
@@ -707,12 +710,13 @@ pet.addEventListener('pointerdown', event => {
 function release(event) {
   if (!pressing) return;
   const moved = dragging;
-  // A desktop drag places the pet. Forwarding up would turn pointer speed into
-  // a throw, including a rebound when the body reaches the screen edge.
-  if (moved) body?.drop(event.type === 'pointercancel' ? dragPoint : { x: event.clientX, y: event.clientY });
-  else body?.pointer(event.type === 'pointercancel' ? 'cancel' : 'up', { x: event.clientX, y: event.clientY, t: event.timeStamp });
+  const cancelled = event.type === 'pointercancel';
+  const point = { x: event.clientX, y: event.clientY, t: event.timeStamp };
+  const outsideDisplay = native && (point.x < 0 || point.x >= innerWidth || point.y < 0 || point.y >= innerHeight);
+  if (moved && (cancelled || outsideDisplay)) body?.drop(cancelled ? dragPoint : point);
+  else body?.pointer(cancelled ? 'cancel' : 'up', point);
   pressing = false; dragging = false; pressedPointerId = undefined;
-  if (event.type === 'pointerup' && native && moved) send({ type: 'move-display' });
+  if (!cancelled && native && moved) send({ type: 'move-display' });
 }
 pet.addEventListener('pointerup', release); pet.addEventListener('pointercancel', release);
 // The upstream body owns poke, stroke, wake, grab and drop. Respond to its
@@ -884,7 +888,7 @@ function animate(now) {
   }
   presentNextNotice();
   updateMood();
-  if (!reduced && pet.dataset.mood === 'talking' && now >= talkAt) { body?.talk(); talkAt = now + 180; }
+  if (liveMouth.pulse(now, !reduced && !document.hidden && pet.dataset.mood === 'talking')) body?.talk();
   // Only P1's fully idle pose renders at 30fps. Work and input retain the original cadence.
   // Accumulate real dt so rendering fewer frames never slows physics.
   const companionIdle = options.companionship !== 'off' && pet.dataset.mood === 'idle' && !companion.active && !hovered && !pressing && !dragging && !reducedNeedsStep && body?.layout && !body.layout.moving && !userInputOccupied() && ![...composer.sessions.values()].some(s => !!s.text.trim() || s.phase === 'sending') && interaction.hidden && companionInvitation.hidden;

@@ -122,6 +122,8 @@ test('controlled irregular layout and mixed DPR preserve reading, draft, in-flig
   const b=await page.locator('#pet').boundingBox(); await page.mouse.move(b.x+b.width/2,b.y+b.height/2); await page.mouse.down();
   await page.mouse.move(b.x+b.width/2,-180,{steps:8}); await page.mouse.up();
   assert.ok((await page.evaluate(()=>window.displayActions)).some(a=>a.type==='move-display'),'vertical release requests native display selection');
+  await page.waitForFunction(()=>window.m5DropEvents.includes('drop'));
+  assert.equal(await page.evaluate(()=>window.m5DropEvents.includes('throw')),false,'outside-display release drops without throwing');
   await page.waitForFunction(()=>!['air','drag','crouch'].includes(document.querySelector('#pet').dataset.mode));
   await page.locator('#pet').hover(); await page.mouse.down();
   await page.mouse.move(920,280,{steps:12}); await page.waitForSelector('#pet[data-mode=drag]');

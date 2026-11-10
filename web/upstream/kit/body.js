@@ -692,9 +692,10 @@ export function createPet(els, opts) {
 
   /* pointer: stage-pixel coordinates; `p.t` is when it happened (ms), else now */
   const now = (p) => p?.t ?? performance.now();
-  function velocity() {
+  const momentumWindow = 110;
+  function velocity(t) {
     const s = pointer.samples;
-    if (s.length < 2) return { x: 0, y: 0 };
+    if (s.length < 2 || t - s.at(-1).t > momentumWindow) return { x: 0, y: 0 };
     const a = s[0], b = s[s.length - 1], dt = Math.max(.016, (b.t - a.t) / 1000);
     return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt };
   }
@@ -711,8 +712,8 @@ export function createPet(els, opts) {
     const ddx = p.x - pointer.x, ddy = p.y - pointer.y;
     Object.assign(pointer, { x: p.x, y: p.y, inside: true });
     pointer.samples.push({ t, x: p.x, y: p.y });
-    while (pointer.samples.length > 2 && t - pointer.samples[0].t > 110) pointer.samples.shift();
-    pointer.vx = lerp(pointer.vx, velocity().x, .35);
+    while (pointer.samples.length > 2 && t - pointer.samples[0].t > momentumWindow) pointer.samples.shift();
+    pointer.vx = lerp(pointer.vx, velocity(t).x, .35);
 
     if (press && pet.mode !== 'drag' && Math.hypot(p.x - press.x, p.y - press.y) > 6) {
       const scruff = toStage(128, 36);
@@ -740,9 +741,10 @@ export function createPet(els, opts) {
     pet.cursor = '';
     if (!press) return;
     if (pet.mode === 'drag') {
+      const v = velocity(now(p));
+      if (!v.x && !v.y) return dropAt(p);
       // hand over from the scruff anchor to the feet anchor without a visual jump
       const foot = toStage(128, 256);
-      const v = velocity();
       pet.x = clamp(foot.x, minX(), maxX());
       pet.fy = Math.min(floorY, foot.y);
       pet.vx = clamp(v.x, -1800, 1800); pet.vy = clamp(v.y, -1800, 1400);

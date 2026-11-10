@@ -32,5 +32,5 @@ Harness refinements, 2026-10-10:
 - Outlined menus and conversation cards use manifest console hues and thumbnails. Session identity comes from public human prompts, cwd, timestamps and distinct short IDs.
 - The native tray projects the same snapshot, selected appearance and acknowledged settings as the desktop page. macOS uses an icon-only template with aggregate attention markers, while menu and tooltip retain state details.
 
-- `kit/body.js` adds optional persistent `set({ expression })` for Harness task faces, without repeating expression sounds or bounces. All other original body behavior is retained.
+- `kit/body.js` adds optional persistent `set({ expression })` for Harness task faces, without repeating expression sounds or bounces. Drag release uses recent pointer samples for momentum. A pause before release lets the body fall without carrying its earlier velocity.
 - Final replies retain complete text and per-result read identity. Bounded previews use the original typewriter, punctuation and mouth pulses; a stable full-text reader and explicit session focus prevent concurrent tasks from interrupting reading or redirecting chat.

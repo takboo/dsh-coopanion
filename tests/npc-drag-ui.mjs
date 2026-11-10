@@ -17,7 +17,14 @@ async function fixture(t, mode = 'quiet', videoPath) {
   t.after(async () => { await page.close(); if (videoPath) await page.video().saveAs(videoPath); await new Promise(r => server.close(r)); await rm(directory, { recursive: true, force: true }); });
   const errors = []; page.on('pageerror', e => errors.push(e.message)); t.after(() => assert.deepEqual(errors, []));
   await controlNpc(page);
-  await page.addInitScript(() => { window.dshPetBridge = { subscribe(fn) { window.receive = fn; }, action() {}, hit() {} }; });
+  await page.addInitScript(() => {
+    window.dragTouches = [];
+    addEventListener('message', event => {
+      if (event.source !== document.querySelector('#body-layer iframe')?.contentWindow || event.data?.t !== 'frame') return;
+      for (const item of event.data.events ?? []) if (item.kind === 'touch') window.dragTouches.push(item.detail.kind);
+    });
+    window.dshPetBridge = { subscribe(fn) { window.receive = fn; }, action() {}, hit() {} };
+  });
   await page.goto(`http://127.0.0.1:${server.address().port}`); await page.waitForSelector('#pet[data-mode]');
   const receive = value => page.evaluate(value => window.receive(value), value);
   await receive({ type: 'init', baseline: true, options: { companionship: mode, roam: true, size: 180 }, snapshot: { mood: 'idle', active: false, sessionId: null, sessions: [], results: [] } });
@@ -54,16 +61,44 @@ test('selection, typing and dragging always retain the configured size', async t
   assert.equal(await frame.evaluate(() => window.orders.filter(o => o.t === 'set' && o.state.bounds).at(-1).state.bounds.S), 180 / 256);
 });
 
-for (const mode of ['off', 'quiet']) for (const target of [10, 990]) test(`a fast placement at the edge drops without an automatic reverse throw (${mode}, ${target})`, async t => {
+for (const mode of ['off', 'quiet']) for (const target of [10, 990]) test(`a fast release throws within the stage (${mode}, ${target})`, async t => {
   const { page, frame } = await fixture(t, mode);
-  await drag(page, target);
-  await page.waitForFunction(target => target < 500 ? window.npcInput.layout.x < 100 : window.npcInput.layout.x > 900, target);
+  const box = await page.locator('#pet').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  const start = target < 500 ? 280 : 720;
+  await page.mouse.move(start, 190);
+  await page.waitForSelector('#pet[data-mode=drag]');
+  await page.mouse.move(start + (target < 500 ? -10 : 10), 190);
+  await page.mouse.move(target, 190);
+  await page.mouse.up();
+  await page.mouse.move(0, 0);
+  await page.waitForFunction(() => window.dragTouches.includes('throw'));
   const samples = [];
   for (let i = 0; i < 12; i++) { samples.push((await layout(page)).x); await page.waitForTimeout(40); }
   await record('npc-drag-edge-' + mode + '-' + target, page, frame);
-  assert.ok(Math.max(...samples) - Math.min(...samples) < 12, 'placing at the edge must not recoil across the screen: ' + JSON.stringify(samples));
+  assert.ok(samples.every(x => x >= 0 && x <= 1000), 'throw remains within the stage');
+  assert.ok(Math.max(...samples) - Math.min(...samples) > 15, 'a throw keeps moving after release');
+  assert.ok(await frame.evaluate(() => window.orders.some(o => o.t === 'pointer' && o.type === 'up')));
+  await page.waitForFunction(() => !['air', 'drag', 'land'].includes(document.querySelector('#pet').dataset.mode));
   for (let i = 0; i < 20; i++) await npcTick(page);
-  assert.equal(await frame.evaluate(() => window.orders.some(o => ['walk', 'place'].includes(o.t))), false, 'outside-area drop must remain user-owned');
+  assert.equal(await frame.evaluate(() => window.orders.some(o => o.t === 'place')), false, 'a throw cannot restore an old home placement');
+});
+
+test('releasing after a pause drops without stale momentum', async t => {
+  const { page } = await fixture(t, 'off');
+  const box = await page.locator('#pet').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(360, 220);
+  await page.waitForSelector('#pet[data-mode=drag]');
+  await page.waitForTimeout(250);
+  await page.mouse.up();
+  await page.waitForFunction(() => window.dragTouches.includes('drop'));
+  await page.waitForFunction(() => !['air', 'drag', 'land'].includes(document.querySelector('#pet').dataset.mode));
+  assert.equal(await page.evaluate(() => window.dragTouches.includes('throw')), false);
+  const landed = (await layout(page)).x;
+  assert.ok(Math.abs(landed - 360) < 20, `the body lands near the stationary pointer, got ${landed}`);
 });
 
 test('manual relocation before the first NPC departure cannot be overwritten by home placement', async t => {

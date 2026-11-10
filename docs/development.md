@@ -65,7 +65,8 @@ bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/cand
 | 聊天、收件箱、字号、多屏、NPC 日常 | `test:inbox-ui`；会话与字号浏览器用例串行，初始化失败保留有界状态、控制台与截图 |
 | NPC 配置 | `tests/npc-controls-ui.mjs`：关闭许可、quiet／interactive、热切状态保持与禁用上游随机漫游 |
 | 异常查看与尺寸 | `tests/attention-size-ui.mjs`：通用异常回执、新修订、审批／提问与固定角色尺寸 |
-| 拖放与小窝 | `tests/npc-drag-ui.mjs`：真实指针轨迹、两侧边缘、区域外停留、旧路线取消、按住及释放后小窝锚点 |
+| 流式口型 | `tests/model.test.ts` 验证文本进度，`test:ui` 验证停流收住和新文本恢复 |
+| 拖放与小窝 | `tests/npc-drag-ui.mjs`：真实指针轨迹、两侧边缘的抛掷、停稳松手、取消拖拽、旧路线取消和小窝锚点 |
 | 自主循环与互动存档 | `tests/npc-life.test.js`、`tests/npc-life-native.mjs`、`tests/companionship-ui.mjs`、`tests/companionship-native.mjs` |
 | 原生冷启动 | `tests/lifecycle-startup-native.mjs`：受控 unknown／locked 与实际系统状态分别检查 |
 | Electron 首次准备 | `tests/electron-startup.test.ts` 检查安装器、取消和并发启动；`tests/engineering-web-probe.mjs` 由共享基座在真实 Web Host 验证设置和重试。Windows 官方 Desktop 的拒绝、完整挂起、取消和真实窗口单独复测 |

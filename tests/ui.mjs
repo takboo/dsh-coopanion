@@ -111,12 +111,25 @@ try {
   await mainFrame(page).locator('[data-face=thinking]').waitFor();
   await page.waitForTimeout(3800);
   assert.equal(await mainFrame(page).locator('[data-face]').getAttribute('data-face'), 'thinking', 'the thinking state survives the initial expression timeout');
+  await mainFrame(page).locator('[data-talk]').evaluate(() => {
+    window.mouthPulses = 0;
+    addEventListener('message', event => { if (event.data?.t === 'talk') window.mouthPulses++; });
+  });
   await page.locator('[data-demo=talking]').click();
   await mainFrame(page).locator('[data-face=determined]').waitFor();
   assert.equal(await page.locator('#bubble').isVisible(), false, 'live output animates the mouth without exposing partial text');
   await mainFrame(page).locator('[data-talk]').evaluate(async () => {
     await new Promise((resolve, reject) => { const start = performance.now(); const check = () => { if (+document.querySelector('[data-talk]').dataset.talk > .2) resolve(); else if (performance.now() - start > 3000) reject(new Error('no mouth pulses')); else requestAnimationFrame(check); }; check(); });
   });
+  await page.waitForTimeout(2000);
+  const pulses = () => mainFrame(page).locator('[data-talk]').evaluate(() => window.mouthPulses);
+  const settledPulses = await pulses();
+  await page.waitForTimeout(600);
+  assert.equal(await pulses(), settledPulses, 'a stalled stream stops pulsing while the session is still talking');
+  assert.equal(await page.locator('#pet').getAttribute('data-mood'), 'talking');
+  await page.locator('[data-demo=talking]').click();
+  await page.frames().find(frame => frame.url().includes('figure-frame.html'))
+    .waitForFunction(count => window.mouthPulses > count, settledPulses);
   await page.reload(); await page.waitForSelector('#pet[data-character=paper-star]');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator('[data-demo=waiting]').click();
