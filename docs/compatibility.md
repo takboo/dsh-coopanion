@@ -59,12 +59,9 @@ Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要�
 npm run compat:discover -- --local
 ```
 
-候选准备前先安装依赖和 Chromium。隔离进程会使用临时 HOME，浏览器缓存需通过绝对路径传入：
+候选准备在共享基座的隔离 Linux 容器或项目 CI 内执行。容器内使用锁文件安装依赖，`PLAYWRIGHT_BROWSERS_PATH` 指向本轮环境提供的浏览器绝对路径。项目测试若需另一个匹配版本，在临时容器内准备并随任务回收。
 
 ```bash
-npm ci --ignore-scripts
-export PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/compatibility-browsers"
-npx playwright-core install chromium
 DSH_VERSION=0.2.2-rc.1 npm run compat:prepare
 ```
 

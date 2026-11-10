@@ -43,6 +43,8 @@ Release 附件包括：
 
 `docs/release-notes.md` 是 Release 正文源；工作流提取当前版本节，不能只上传附件而省略正文。固定包名供市场的 `latest/download/dsh-coopanion.tgz` 使用。
 
+发布完成后，核对本地附件与 GitHub Release 的 SHA-256。确认字节一致的本地副本可以清理，需要复验时从固定版本的 Release 下载。独有的原始验收报告、日志与尚未发布的候选证据单独保留。
+
 ## 失败与重跑
 
 检查失败时先保留对应 job 的日志与 artifact，核对失败断言、运行环境及规范包身份，再决定修复或复验。对失败检查复验时沿用规范包、原断言及原期限，并保留首轮失败与后续结果；复验通过单独记账，不能据此宣称根因已修复。
@@ -60,6 +62,12 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 安装入口使用精确 `@takboo/dsh-coopanion@<版本>`。pnpm 的发布时间保护可能使裸包名暂时解析为旧版，详情页显示新版不证明安装了新版；检查隔离 profile 中的精确版本安装及实际日志。原因与操作见[使用指南](usage.md#安装版本与发布时间保护)。
 
 ## 最近一次发布核验
+
+### v0.4.22
+
+2026-11-10 发布 [v0.4.22](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.22)，源码为 `ca3bab64ab1751dfbb4841c05c3e9e843738be83`，包含恢复抛掷的 `a7db69b`。规范包 SHA-256 为 `37835e5088b086988557bddff0caa3e2dfbd35fcbe3c1433801739be69999b49`。npm `latest` 为 `0.4.22`，npm tarball、Release 版本包、固定别名和 latest 下载与规范包逐字节一致。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.22/verification.json)
+
+[main CI](https://github.com/takboo/dsh-coopanion/actions/runs/42778829622) 和[标签验证](https://github.com/takboo/dsh-coopanion/actions/runs/42781603647) 均通过三平台测试和 21 组同包宿主安装。[OIDC 发布](https://github.com/takboo/dsh-coopanion/actions/runs/42784594550) 使用标签验证的原始产物。固定 Linux 容器通过准入、Web 行为、卸载和完整收件箱回归。macOS 15.7.7 ARM64 Tart 来宾使用 DSH `0.2.2-rc.1` 通过同包安装、原生窗口打开与重开、正常退出，来宾已回收。抛掷用例使用受控 Chromium 指针输入，物理设备上的手势体验仍待实测。
 
 ### v0.4.20
 
