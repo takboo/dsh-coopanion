@@ -274,3 +274,35 @@ test('Desktop resolution preserves package subpath exports, relative chunks and 
   const result = spawnSync(process.execPath, ['--import='+bootstrap, probe], { env: { ...process.env, COOPANION_ASAR_SDK: sdk }, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr); assert.deepEqual(JSON.parse(result.stdout), ['asar','asar-operation','asar']);
 });
+
+test('published npm evidence binds the selected artifact and does not substitute for the candidate', () => {
+  const published = { name: baseline.name, version: '0.4.20', integrity: 'sha512-test-publication' };
+  const observedTarget = { ...target, published };
+  assert.notEqual(componentIdentities(observedTarget).sdk, componentIdentities(target).sdk);
+  const report = {
+    kind: 'published', platform: 'linux', arch: 'x64', sourceCommit, version, target: observedTarget,
+    status: 'passed', admission: 'refused-as-expected',
+    package: { ...published, sha256: 'c'.repeat(64), sourceCommit: 'd'.repeat(40) },
+    stages: [{ name: 'admission', status: 'refused-as-expected' }],
+  };
+  assert.equal(validateReport(report, observedTarget, sourceCommit, 'published'), report);
+  assert.throws(() => validateReport({ ...report, package: { ...report.package, integrity: 'other' } }, observedTarget, sourceCommit, 'published'));
+  const candidates = Array.from({ length: 3 }, () => ({ status: 'partial', archiveSha256: 'e'.repeat(64) }));
+  const outcome = reports => completedComponents(observedTarget, reports, {}, { run: '123', sourceCommit }).sdk.status;
+  assert.equal(outcome(candidates), 'retry');
+  assert.equal(outcome([report]), 'retry');
+  assert.equal(outcome([...candidates, report]), 'partial');
+  assert.equal(outcome([...candidates, { ...report, status: 'failed' }]), 'failed');
+});
+
+test('only an actual Host refusal counts as expected', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'coopanion-refusal-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = { stages: [] };
+  const opts = { expectedRefusal: log => log.includes('engines.dsh rejection') };
+  const run = source => command(report, directory, 'admission', process.execPath, ['-e', source], opts);
+  await run('console.error("engines.dsh rejection"); process.exitCode = 1');
+  await assert.rejects(run('console.error("engines.dsh rejection")'), { status: 'failed' });
+  await assert.rejects(run('console.error("ECONNRESET"); process.exitCode = 1'), { status: 'retry' });
+  assert.deepEqual(report.stages.map(stage => stage.status), ['refused-as-expected', 'failed', 'retry']);
+});

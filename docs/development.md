@@ -48,7 +48,9 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 ## 固定基座验收
 
-在干净 checkout 准备 Git、Bash、Node.js 和 Docker。传入已构建的候选包，以及包含脚本所固定提交的共享基座 checkout。
+在干净 checkout 准备 Git、Bash、Node.js 和 Docker。共享基座为 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) 提交 `9ed36752356975cd7d47c11d63744220443c1bf7`，在该提交下阅读 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`。传入已构建的包，以及包含这个固定提交的基座 checkout。
+
+试点的普通浏览器检查在 Linux Docker 内使用锁定的 Chromium。本机 macOS 的浏览器与原生桌面检查按上方隔离环境执行。
 
 ```bash
 bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance

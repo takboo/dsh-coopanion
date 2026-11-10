@@ -21,6 +21,12 @@
 
 报告读取兼容下载后的两种布局：多个 artifact 的具名子目录，以及单个 artifact 直接展开到输出根目录。准备阶段已经确认的依赖冲突保留为 failed，不因后续平台 job 未执行而降为“缺报告、等待重试”；单个组件仍须通过原有来源、目标和包摘要校验。
 
+## 双轨宿主证据
+
+发现阶段读取 npm `latest` 的精确版本和 integrity。SDK 组件身份同时绑定宿主和这份发布物，原包更新后会重新观察。发布轨在独立 Linux Docker 任务中下载并校验 npm 原始 tarball，使用默认准入安装到干净 profile。接受后用包内探针验证真实 Web 宿主和插件设置。拒绝时核对官方诊断、profile 回滚和配置中无该插件，报告 `refused-as-expected`。候选轨继续运行原有三平台适配安装矩阵，报告候选包 SHA-256、integrity、实际准入和运行阶段。两轨核对同一精确 DSH 版本和 integrity。插件断言失败记 `failed`，安装准备、浏览器启动或执行中断按实际阶段记 `retry`。
+
+手动工作流输入一个精确宿主版本可同时演练两轨。可用 Docker 在本地复现发布轨，容器内安装项目锁定的 Playwright Chromium 后运行 `DSH_VERSION=0.2.2-rc.1 npm run compat:published`。候选适配使用 `compat:prepare` 和 `compat:check`，传入同一发现目标和构建目录。正式支持范围由项目 PR 审阅决定。
+
 ## 配套基线与验证范围
 
 已审阅的 Cordis、Schemastery、Loader／Include／Group、Cosmokit 及 Host Timer 精确输入统一由 [reviewed-dependencies.mjs](../scripts/compatibility/reviewed-dependencies.mjs) 维护。准备 job、SDK／Desktop 的 npm Web Host 安装和提案／报告校验共用该定义。
@@ -33,7 +39,7 @@ Loader／Include／Group／Cosmokit 显式列入候选开发依赖，避免预�
 
 SDK 检查及 Desktop 的 npm Web Host 安装保持官方发布字节和原有 peer 约束，安装后检查完整依赖树，并在报告中保存 `hostDependencies`；成功报告必须与审阅输入一致。官方 Desktop ASAR 按原字节独立验证。固定配套证据与普通 npm 浮动解析分别结算；正式 rc.1 的普通安装由发布矩阵验证。
 
-基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。未改声明的原包仍须通过官方准入判断拒绝未支持宿主。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
+基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。项目基线继续保留静态准入断言。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
 
 Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要、路径及符号链接、完整代码签名和 DeepSeek Team ID；允许的载体运行时由 [desktop-artifact.mjs](../scripts/compatibility/desktop-artifact.mjs) 校验。通知、目标完成与会话契约单独运行于真实 ASAR，随后在官方 Electron 中运行同包安装与桌宠联动。该 GUI 流程的 Web Host／Client 由对应 npm 产物提供，桌宠按产品正常路径使用其声明的独立 Electron 依赖；原生 Desktop shell、通知中心、真实账号模型及物理输入／多屏另行验收。
 

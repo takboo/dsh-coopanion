@@ -1,6 +1,6 @@
 {
   "name": "@takboo/dsh-coopanion",
-  "version": "0.4.20",
+  "version": "0.4.21",
   "description": "DeepSeek Whale desktop companion and task notifications for DeepSeek Harness",
   "type": "module",
   "license": "AGPL-3.0-or-later",
@@ -27,6 +27,7 @@
     "node": ">=22.19",
     "dsh": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3 || 0.2.1-rc.5 || 0.2.2-rc.1"
   },
+  "icon": "./assets/coopanion.png",
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
@@ -35,6 +36,7 @@
   },
   "files": [
     "dist",
+    "assets",
     "desktop",
     "web",
     "web/markdown-runtime.js",
@@ -97,6 +99,7 @@
     "test:m2:host": "node tests/session-host-contract.mjs",
     "compat:discover": "node scripts/compatibility/discover.mjs",
     "compat:prepare": "node scripts/compatibility/prepare.mjs",
+    "compat:published": "node scripts/compatibility/published.mjs",
     "compat:check": "node scripts/compatibility/check.mjs",
     "compat:desktop": "node scripts/compatibility/desktop.mjs",
     "compat:report": "node scripts/compatibility/report.mjs"
