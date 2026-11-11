@@ -63,6 +63,16 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 
 ## 最近一次发布核验
 
+### v0.4.23
+
+2026-11-11 发布 [v0.4.23](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.23)，源码为 `46e6143c8e763a106d15f0a43d3e6ecf52e7b87d`。规范包 SHA-256 为 `905a007ec92d4303c7f8a3e92e4205fe2aba7911cfced2fd14ab0266dc05b3a8`。npm `latest` 为 `0.4.23`。版本元数据可读后，npm tarball 下载首轮返回 404，12:37（Asia/Shanghai）原 URL 恢复为 HTTP 200。随后直接下载和空缓存 `npm pack` 均通过。npm tarball、Release 版本包、固定别名与 latest 下载均和规范包逐字节一致，Release 正文与校验附件一致。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.23/verification.json)
+
+[PR #45](https://github.com/takboo/dsh-coopanion/pull/45)、[发布提交 CI](https://github.com/takboo/dsh-coopanion/actions/runs/42953831399) 和[标签验证](https://github.com/takboo/dsh-coopanion/actions/runs/42956903105) 均通过三平台测试和 21 组安装。[OIDC 发布](https://github.com/takboo/dsh-coopanion/actions/runs/42959322811) 使用标签验证的原始产物。
+
+同一份规范包在固定 Linux arm64 容器的 DSH `0.2.2-rc.1` 独立 Web profile 中通过安装、简中和英文的标题／描述／PNG 图标验证及卸载，`0.2.1-rc.4` 按预期拒绝且无残留。完整收件箱回归通过。macOS 15.7.7 ARM64 Tart 来宾使用 npm DSH `0.2.2-rc.1` 通过同包安装、原生窗口打开与重开及正常退出，来宾已回收。签名 DSH Desktop 与从 Discover 安装留待单独验证。
+
+12:33（Asia/Shanghai）核对时，dshmarket 的 Discover 索引列出 `0.4.20`，dshfind 的 Discover 索引列出 `0.4.19`，来源均为 npm。[dshmarket 索引](https://cdn.jsdelivr.net/npm/dsh-plugin-catalog/index.json) · [dshfind 索引](https://api.dshfind.com/market/dsh-index.json)
+
 ### v0.4.22
 
 2026-11-10 发布 [v0.4.22](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.22)，源码为 `ca3bab64ab1751dfbb4841c05c3e9e843738be83`，包含恢复抛掷的 `a7db69b`。规范包 SHA-256 为 `37835e5088b086988557bddff0caa3e2dfbd35fcbe3c1433801739be69999b49`。npm `latest` 为 `0.4.22`，npm tarball、Release 版本包、固定别名和 latest 下载与规范包逐字节一致。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.22/verification.json)
