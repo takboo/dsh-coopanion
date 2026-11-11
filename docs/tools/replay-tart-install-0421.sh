@@ -100,7 +100,6 @@ COPYFILE_DISABLE=1 tar -czf "$inputs/dependencies.tar.gz" -C "$work" dsh-coopani
 
 cd "$base"
 export TART_HOME="$base/.local/tart" DSH_TART_INPUTS="$inputs"
-printf 'TART_HOME=%s\n' "$TART_HOME"
 tart --version
 tart list
 set +e

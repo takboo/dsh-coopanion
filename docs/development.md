@@ -54,7 +54,22 @@ DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`
 
 ## 本地 macOS 原生安装
 
-使用持有基线的 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) checkout，固定在 `56bcd3c0b122c3281b1090f45673ddde2d538481`。Tart 存储在该 checkout 的 `.local/tart`，基线为 `dsh-sequoia-arm64-base-eee659985b01`。准备 Apple Silicon、Tart、Git、能读取 Release 的 GitHub CLI，以及至少 60 GiB 可用空间。基线缺失时按固定提交的 `docs/test-environments.md` 准备。
+准备 Apple Silicon、Tart、Git、Node.js、GitHub CLI 和至少 60 GiB 可用空间。基座 checkout 需要包含[项目锁文件](../dsh-engineering.lock.json)指定的 tag，Tart 存储需要固定提交的 `docs/test-environments.md` 指定的基线。默认读取 `${XDG_CONFIG_HOME:-$HOME/.config}/dsh-plugin-engineering/` 下的 `checkout` 和 `tart-home` 文件，每个文件包含一行绝对目录。显式参数 `--checkout` 和 `--tart-home` 优先，其次是 `DSH_ENGINEERING_CHECKOUT` 和 `DSH_TART_HOME`。用 `bash docs/tools/verify-tart-candidate.sh --doctor` 检查配置来源和路径，诊断输出仅在本机使用。
+
+提交要测试的源码，在干净 checkout 运行。每次使用一个新结果目录。
+
+```bash
+env -u DSH_ENGINEERING_CHECKOUT -u DSH_TART_HOME \
+  bash docs/tools/verify-tart-candidate.sh artifacts/tart-candidate
+```
+
+入口按锁文件核对基座 origin、tag 和 SHA，从该提交导出 runner。它用项目固定的 Node 和 npm 构建一次 tarball，生成 `verification.json`、`SHA256SUMS` 和示例角色，并准备来宾离线所需的 npm DSH Host、Electron 和完整 Chromium。共享 Tart runner 将这些材料只读挂载。来宾复核 tarball、源码提交、DSH 版本和 npm integrity，再通过空 profile 运行 `npm run test:install`。
+
+本机结果目录保存本轮 tarball、校验材料和 `tart.log`。通过需要 `installEvidence` 中的安装、Loader 激活、原生窗口、关闭后重开及正常退出断言，以及 `runnerExit=0` 和 `guestReclaimed`。公开记录摘取脱敏结果。此入口验收 npm DSH Host 和它启动的 Electron 窗口。签名 DSH Desktop 和物理设备各自验收，正式发布走[现有发布门禁](releasing.md#准备发布)。
+
+### 0.4.21 历史复跑
+
+历史基座固定为 `56bcd3c0b122c3281b1090f45673ddde2d538481`，共享存储沿用该 checkout 的 `.local/tart`。来宾所需镜像、规范包身份和原始断言见 [0.4.21 迁移试跑报告](evidence/shared-tart-install-20261110/report.md)。
 
 在 Coopanion 仓库根目录复跑已发布的 0.4.21。基座参数指向实际持有 `.local/tart` 的 checkout。
 
@@ -62,9 +77,7 @@ DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`
 bash docs/tools/replay-tart-install-0421.sh /path/to/dsh-plugin-engineering
 ```
 
-入口核对基座脚本与标签，临时下载 Release 规范包和来宾所需运行时，从基座 checkout 调用 `scripts/run-tart.sh run`。基座将 `DSH_TART_INPUTS` 只读挂载到来宾。来宾再次核对包摘要、源码和 npm 宿主 integrity，使用空 profile、精确的 DSH `0.2.2-rc.1` 和完整 Chromium 运行标签上的 `npm run test:install`。
-
-验收时同时检查 `installEvidence` 的安装、原生窗体、关闭后重开和正常退出断言，以及 `runnerExit=0` 和 `guestReclaimed`。失败时保存已完成阶段和脱敏错误，再用同一命令复跑。结果按实际载体分别记录，npm DSH Host 启动 Electron、官方签名 DSH Desktop 和物理设备各自结算。见 [0.4.21 迁移试跑报告](evidence/shared-tart-install-20261110/report.md)。
+历史入口临时下载 Release 规范包和来宾所需运行时，在来宾复核原始包摘要、源码和 npm 宿主 integrity，运行标签上的 `npm run test:install`。
 
 ## 关键行为回归
 

@@ -8,8 +8,8 @@
 
 | 路径 | 本轮盘点 |
 | --- | --- |
-| Coopanion 旧 VM 存储 `~/Documents/codespace/personal-projects/dsh-coopanion/.local/macos-vm/tart` | 路径已不存在。父目录约 104 KiB，为历史本机记录。 |
-| 共享 `TART_HOME` `~/Documents/codespace/personal-projects/dsh-plugin-engineering/.local/tart` | 固定基座 runner 直接设置此路径。Tart 2.41.1 列出本地基线 `dsh-sequoia-arm64-base-eee659985b01` 和对应的 OCI 镜像缓存，运行前均停止。 |
+| Coopanion 旧 VM 存储 `<Coopanion checkout>/.local/macos-vm/tart` | 路径已不存在。父目录约 104 KiB，为历史本机记录。 |
+| 共享 `TART_HOME` `<基座 checkout>/.local/tart` | 固定基座 runner 直接设置此路径。Tart 2.41.1 列出本地基线 `dsh-sequoia-arm64-base-eee659985b01` 和对应的 OCI 镜像缓存，运行前均停止。 |
 | 标签上的本地开发指南 | 旧指南指向项目隔离 VM，本机管理入口和 SSH 配置由操作者提供。接入前的主分支工作稿已改称共享实验室，缺少可直接复跑的来宾安装步骤。 |
 | 产品探针和输出 | `package.json` 的 `test:install` 调用 `tests/install.mjs`，读取 `DSH_TEST_VERSION` 和 `DSH_TEST_PACKAGE_DIR`。最终断言产物为 `artifacts/install-0.2.2-rc.1.json`，中间阶段由 `DSH_TEST_PHASE_FILE` 记录。 |
 | CI 和普通 Web | CI 的宿主安装矩阵在 `macos-15` 等 runner 下载产物并核对 SHA-256 后运行同一安装入口。普通 Web 回归走 `scripts/verify-engineering.sh` 的 Linux 容器。 |
@@ -60,4 +60,4 @@ OCI 基线引用为 `ghcr.io/cirruslabs/macos-sequoia-base@sha256:eee659985b01e4
 | 来宾依赖准备 | host-only 来宾无法解析 npm registry。宿主在临时目录准备 npm 依赖和 pnpm 离线存储，只读传入来宾。来宾中的 Loader 重新创建安装结果。复跑脚本使用彼此独立的临时 npm 配置文件。 |
 | 安装探针运行到 Web 设置 | 来宾 `dsh-job-20261110T072048-57701` 已通过 `admitted` 和 `host-contracts`，并连接到原生窗体。只有 headless shell 时，标签的探针在打开设置页报缺少 `chromium-1248`，退出码为 1。该来宾已回收，复跑改为暂存完整 Chromium。 |
 
-复跑使用[开发指南的本地 macOS 原生安装入口](../../development.md#本地-macos-原生安装)。宿主临时依赖与发布附件随任务清理，项目只保留脱敏报告和复跑入口。
+复跑使用[开发指南的 0.4.21 历史复跑入口](../../development.md#0421-历史复跑)。宿主临时依赖与发布附件随任务清理，项目只保留脱敏报告和复跑入口。
