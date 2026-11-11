@@ -12,6 +12,8 @@
 
 打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.22`**，点击安装，再启用 `dsh-coopanion`。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
 
+带展示元信息的包在 DSH 的「已安装插件」列表中随界面语言显示 **Coopanion · 桌宠搭子** 或 **Coopanion · Desk Pet Pal**。启用时可按这个名称找到卡片，安装时仍填写 npm 包名。
+
 ### 安装版本与发布时间保护
 
 pnpm 11 的 `minimumReleaseAge` 默认为 1440 分钟（24 小时）。详情页可以从 npm metadata 显示最新版本，但仅输入 `@takboo/dsh-coopanion` 时，安装解析仍可能跳过等待期内的新版本。见 [pnpm 官方说明](https://pnpm.io/supply-chain-security)。

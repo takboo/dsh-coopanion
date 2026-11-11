@@ -22,6 +22,8 @@ export function verifyMetadata(pkg, lock) {
   assert.equal(pkg.dsh?.client?.platform, 'web');
   assert.equal(pkg.exports?.['.'], './dist/index.js');
   assert.equal(pkg.exports?.['./client'], './dist/client.js');
+  assert.equal(pkg.exports?.['./locale/*.json'], './locale/*.json', 'DSH needs exported locale metadata');
+  assert.ok(pkg.files?.includes('locale'), 'locale metadata must be included in the package');
   assert.equal(lock.lockfileVersion, 3);
   for (const root of [lock, lock.packages?.['']]) {
     assert.equal(root?.name, pkg.name, 'shrinkwrap package name differs');
