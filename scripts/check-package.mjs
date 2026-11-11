@@ -27,6 +27,16 @@ else assert.equal(packed.version, pkg.version);
 assert.equal(packed.repository.url, pkg.repository.url);
 assert.equal(packed.icon, './assets/coopanion.png');
 assert.equal(packed.exports['./package.json'], './package.json', 'DSH needs the exported manifest to read the installed icon');
+for (const language of ['en', 'zh']) {
+  const file = `locale/${language}.json`;
+  assert.ok(entries.includes(`package/${file}`), `missing ${file}`);
+  const contents = unpack(file);
+  const { meta } = JSON.parse(contents);
+  for (const field of ['title', 'description']) {
+    assert.ok(typeof meta?.[field] === 'string' && meta[field].trim(), `${file} needs a nonempty meta.${field}`);
+  }
+  assert.equal(contents, readFileSync(file, 'utf8'), `archive ${file} differs from source`);
+}
 const icon = execFileSync('tar', ['-xOzf', archive, `package/${packed.icon.slice(2)}`]);
 assert.deepEqual(icon, readFileSync(packed.icon), 'archive icon differs from project icon');
 assert.equal(icon.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');

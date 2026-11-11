@@ -26,7 +26,7 @@ async function collectInputs(directory) {
     else if (entry.isFile() && path !== 'web/markdown-runtime.js') inputPaths.push(path);
   }
 }
-for (const directory of ['src', 'desktop', 'web']) await collectInputs(directory);
+for (const directory of ['src', 'desktop', 'web', 'locale']) await collectInputs(directory);
 const inputs = Object.fromEntries(await Promise.all(inputPaths.sort().map(async path => [path, createHash('sha256').update(await readFile(path)).digest('hex')])));
 let commit = null, dirty = null;
 try {

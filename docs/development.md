@@ -50,7 +50,7 @@ bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/cand
 
 任务结束时清理临时 checkout、安装器、候选包、自动录屏和下载缓存。本地只保留仍用于问题复现、发布验收或恢复的独有材料。记录对应提交、包摘要和证据路径，相同字节只保留一份。可以从 Git、GitHub Release 或共享基座恢复的内容按需获取。
 
-DSH 插件管理器通过 `./package.json` 导出读取安装包的顶层 `icon`。发布包校验同时检查导出、图标字节和原始 SVG。升级图标后在真实插件管理器核对实际渲染的 PNG。
+DSH 插件管理器从导出的 `locale/en.json` 和 `locale/zh.json` 读取已安装插件的标题和描述，从导出的 manifest 读取顶层 `icon`。发布包校验检查导出、包内文案、图标字节和原始 SVG。固定 Linux 容器的 Web 探针在真实已安装列表中切换界面语言，逐项核对标题、描述和可解码的 PNG。
 
 ## 本地 macOS 原生安装
 
