@@ -1,3 +1,10 @@
+# v0.4.23
+
+- DSH 的「已安装插件」列表现在用本地化标题和描述介绍桌宠。简体中文显示 **Coopanion · 桌宠搭子**，英文显示 **Coopanion · Desk Pet Pal**。
+- 从 npm 安装仍使用 `@takboo/dsh-coopanion`，已安装卡片继续使用随包的 Coopanion 图标。
+
+安装包为 `dsh-coopanion-0.4.23.tgz`，npm 与 GitHub Release 使用同一份通过发布检查的包。
+
 # v0.4.22
 
 - 恢复内置大肥鱼在同一块屏幕内的惯性抛掷。快速拖动并松手可甩出角色，停稳再松手会放下角色，跨屏松手按光标所在显示器切换。
