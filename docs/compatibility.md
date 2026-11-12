@@ -4,7 +4,9 @@
 
 ## 正式支持与候选结案
 
-正式宿主范围以 [package.json](../package.json) 的 `engines.dsh` 和 DSH peer 声明为准。v0.4.19 已将 `0.2.2-rc.1` 的审阅提案纳入正式 manifest 与 shrinkwrap，保留此前六版 Host 支持和原有运行时依赖；[PR #38](https://github.com/takboo/dsh-coopanion/pull/38) 已合并，三个兼容性 Issue 已结案。发布身份、最终 CI、VM 范围及已知限制集中见[最近一次发布核验](releasing.md#最近一次发布核验)。
+正式宿主范围以 [package.json](../package.json) 的 `engines.dsh` 和 DSH peer 声明为准。v0.4.24 将 `0.2.2-rc.2` 的审阅提案纳入正式 manifest 与 shrinkwrap，保留此前七版 Host 支持与运行时依赖。[PR #47](https://github.com/takboo/dsh-coopanion/pull/47)
+
+v0.4.19 纳入了 `0.2.2-rc.1`，三个历史兼容性 Issue 已结案。发布身份、最终 CI、VM 范围及已知限制集中见[最近一次发布核验](releasing.md#最近一次发布核验)。[PR #38](https://github.com/takboo/dsh-coopanion/pull/38)
 
 `0.2.2-alpha.2` 与 `alpha.3` 只保留固定配套组合的候选证据，未加入正式支持列表。alpha.2 默认浮动解析曾复现上游 preset 初始化失败；候选成功和 Issue 结案均不表示旧 alpha 的默认安装已通过。原始失败及后续复验入口见[历史失败追溯](#历史失败追溯)。
 
@@ -25,7 +27,7 @@
 
 发现阶段读取 npm `latest` 的精确版本和 integrity。SDK 组件身份同时绑定宿主和这份发布物，原包更新后会重新观察。发布轨在独立 Linux Docker 任务中下载并校验 npm 原始 tarball，使用默认准入安装到干净 profile。接受后用包内探针验证真实 Web 宿主和插件设置。拒绝时核对官方诊断、profile 回滚和配置中无该插件，报告 `refused-as-expected`。候选轨继续运行原有三平台适配安装矩阵，报告候选包 SHA-256、integrity、实际准入和运行阶段。两轨核对同一精确 DSH 版本和 integrity。插件断言失败记 `failed`，安装准备、浏览器启动或执行中断按实际阶段记 `retry`。
 
-手动工作流输入一个精确宿主版本可同时演练两轨。可用 Docker 在本地复现发布轨，容器内安装项目锁定的 Playwright Chromium 后运行 `DSH_VERSION=0.2.2-rc.1 npm run compat:published`。候选适配使用 `compat:prepare` 和 `compat:check`，传入同一发现目标和构建目录。正式支持范围由项目 PR 审阅决定。
+手动工作流输入一个精确宿主版本可同时演练两轨。可用 Docker 在本地复现发布轨，容器内安装项目锁定的 Playwright Chromium 后运行 `DSH_VERSION=0.2.2-rc.2 npm run compat:published`。候选适配使用 `compat:prepare` 和 `compat:check`，传入同一发现目标和构建目录。正式支持范围由项目 PR 审阅决定。
 
 ## 配套基线与验证范围
 
@@ -42,6 +44,8 @@ SDK 检查及 Desktop 的 npm Web Host 安装保持官方发布字节和原有 p
 基线和候选分别执行类型及单元检查，候选执行完整浏览器、通知与 test:inbox-ui。Linux 只构建一次候选 .tgz，三个安装 job 下载同一字节，验证摘要后分别在 Linux x64、Windows x64 与 macOS ARM64 运行真实 Loader、网页设置、通知／目标／会话契约、原生桌宠与恢复。项目基线继续保留静态准入断言。既有完整安装断言保留，候选没有跳过完成或接受回执检查。
 
 Desktop job 在独立目录下载匹配的官方 macOS ARM64 ZIP，检查摘要、路径及符号链接、完整代码签名和 DeepSeek Team ID；允许的载体运行时由 [desktop-artifact.mjs](../scripts/compatibility/desktop-artifact.mjs) 校验。通知、目标完成与会话契约单独运行于真实 ASAR，随后在官方 Electron 中运行同包安装与桌宠联动。该 GUI 流程的 Web Host／Client 由对应 npm 产物提供，桌宠按产品正常路径使用其声明的独立 Electron 依赖；原生 Desktop shell、通知中心、真实账号模型及物理输入／多屏另行验收。
+
+Desktop 契约探针从签名 ASAR 解析宿主模块。ESM 使用 ASAR 作为解析基点，CommonJS 使用以 ASAR 为基点创建的 `require`，两者都校验解析结果的来源。DSH `0.2.2-rc.2` 的目标完成检查曾因 `require.resolve()` 保留 npm 调用方的解析基点而失败，原始记录见 [Issue #46](https://github.com/takboo/dsh-coopanion/issues/46)。
 
 ## 报告与提案
 
@@ -62,10 +66,10 @@ npm run compat:discover -- --local
 候选准备在共享基座的隔离 Linux 容器或项目 CI 内执行。容器内使用锁文件安装依赖，`PLAYWRIGHT_BROWSERS_PATH` 指向本轮环境提供的浏览器绝对路径。项目测试若需另一个匹配版本，在临时容器内准备并随任务回收。
 
 ```bash
-DSH_VERSION=0.2.2-rc.1 npm run compat:prepare
+DSH_VERSION=0.2.2-rc.2 npm run compat:prepare
 ```
 
-示例版本对应 v0.4.19 的最高支持宿主，切换源码基线时先核对 `package.json`。准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 `npm run compat:check`；macOS ARM64 上的 `npm run compat:desktop` 只接受匹配的官方 feed 身份。原生检查在隔离 VM 中串行执行，范围及环境要求见[开发指南](development.md)。
+示例版本对应 v0.4.24 的最高支持宿主，切换源码基线时先核对 `package.json`。准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 `npm run compat:check`；macOS ARM64 上的 `npm run compat:desktop` 只接受匹配的官方 feed 身份。原生检查在隔离 VM 中串行执行，范围及环境要求见[开发指南](development.md)。
 
 本地命令不写 Issue 或 PR。发现、状态与提案机制复用 dsh-session-bin / dsh-usage-state，MIT 许可保留在 scripts/compatibility/LICENSE；本流程不调用付费 AI 服务。
 
