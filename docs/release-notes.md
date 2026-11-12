@@ -1,3 +1,10 @@
+# v0.4.24
+
+- 正式支持 DSH `0.2.2-rc.2`，继续支持此前七个精确宿主版本。
+- 修复 macOS Desktop 兼容性探针的 CommonJS 模块解析。通知、目标完成及会话契约从官方签名 ASAR 加载宿主模块。
+
+安装包为 `dsh-coopanion-0.4.24.tgz`，npm 与 GitHub Release 使用同一份通过发布检查的包。
+
 # v0.4.23
 
 - DSH 的「已安装插件」列表现在用本地化标题和描述介绍桌宠。简体中文显示 **Coopanion · 桌宠搭子**，英文显示 **Coopanion · Desk Pet Pal**。

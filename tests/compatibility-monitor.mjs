@@ -85,6 +85,7 @@ test('reviewed 0.2.2 candidates include their exact Cordis and Schemastery basel
     ['0.2.2-alpha.2', '4.0.6-alpha.1', '3.18.6-alpha.1'],
     ['0.2.2-alpha.3', '4.0.6-alpha.2', '3.18.6-alpha.2'],
     ['0.2.2-rc.1', '4.1.0', '3.19.0'],
+    ['0.2.2-rc.2', '4.1.0', '3.19.0'],
   ]) {
     const candidate = targetManifest(production, target);
     for (const [name, exact] of [['@deepseek-ai/cordis', cordis], ['@deepseek-ai/schemastery', schemastery]]) {
@@ -254,7 +255,7 @@ test('structured stdout remains parseable and stderr remains in the evidence log
   assert.match(await readFile(join(directory, 'structured.log'), 'utf8'), /carrier diagnostic/);
 });
 
-test('Desktop resolution preserves package subpath exports, relative chunks and explicit Host file URLs', async t => {
+test('Desktop resolution preserves ESM and CommonJS exports, relative chunks and explicit Host file URLs', async t => {
   const { spawnSync } = await import('node:child_process');
   const { pathToFileURL } = await import('node:url');
   const directory = await realpath(await mkdtemp(join(tmpdir(), 'coopanion-asar-resolve-'))); t.after(() => rm(directory, { recursive: true, force: true }));
@@ -262,17 +263,42 @@ test('Desktop resolution preserves package subpath exports, relative chunks and 
   const client = join(directory, 'client');
   for (const [base, label] of [[sdk, 'asar'], [client, 'npm']]) {
     const pkg = join(base, 'node_modules/@deepseek-ai/dsh-compat-fixture'); await mkdir(join(pkg, 'lib'), { recursive: true });
-    await writeFile(join(pkg, 'package.json'), JSON.stringify({ type: 'module', exports: { '.': './lib/index.js', './operations': './lib/operations.js', './package.json': './package.json' } }));
+    await writeFile(join(pkg, 'package.json'), JSON.stringify({
+      type: 'module',
+      exports: {
+        '.': './lib/index.js',
+        './operations': { require: './lib/operations.cjs', default: './lib/operations.js' },
+        './package.json': './package.json',
+      },
+    }));
     await writeFile(join(pkg, 'lib/index.js'), "export { carrier } from './chunk.js';");
     await writeFile(join(pkg, 'lib/chunk.js'), `export const carrier = '${label}';`);
     await writeFile(join(pkg, 'lib/operations.js'), `export const operation = '${label}-operation';`);
+    await writeFile(join(pkg, 'lib/operations.cjs'), `module.exports = '${label}-require';`);
   }
+  const npmOnly = join(directory, 'node_modules/@deepseek-ai/dsh-npm-only');
+  await mkdir(npmOnly, { recursive: true });
+  await writeFile(join(npmOnly, 'index.cjs'), "module.exports = 'outside';");
+  await writeFile(join(npmOnly, 'package.json'), JSON.stringify({ main: 'index.cjs' }));
   const explicit = pathToFileURL(join(client, 'node_modules/@deepseek-ai/dsh-compat-fixture/lib/index.js')).href;
   const probe = join(client, 'probe.mjs');
-  await writeFile(probe, `import {carrier} from '@deepseek-ai/dsh-compat-fixture'; import {operation} from '@deepseek-ai/dsh-compat-fixture/operations'; import {carrier as explicit} from '${explicit}';console.log(JSON.stringify([carrier,operation,explicit]));`);
+  await writeFile(probe, `
+    import assert from 'node:assert/strict';
+    import { createRequire } from 'node:module';
+    import { carrier } from '@deepseek-ai/dsh-compat-fixture';
+    import { operation } from '@deepseek-ai/dsh-compat-fixture/operations';
+    import { carrier as explicit } from '${explicit}';
+    const require = createRequire(import.meta.url);
+    const specifier = '@deepseek-ai/dsh-compat-fixture/operations';
+    assert.throws(() => require.resolve('@deepseek-ai/dsh-npm-only'), /must resolve into the signed ASAR/);
+    console.log(JSON.stringify([carrier, operation, explicit, require.resolve(specifier), require(specifier)]));
+  `);
   const bootstrap = new URL('../scripts/compatibility/desktop-bootstrap.mjs', import.meta.url).href;
   const result = spawnSync(process.execPath, ['--import='+bootstrap, probe], { env: { ...process.env, COOPANION_ASAR_SDK: sdk }, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr); assert.deepEqual(JSON.parse(result.stdout), ['asar','asar-operation','asar']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), [
+    'asar', 'asar-operation', 'asar', join(sdk, 'node_modules/@deepseek-ai/dsh-compat-fixture/lib/operations.cjs'), 'asar-require',
+  ]);
 });
 
 test('published npm evidence binds the selected artifact and does not substitute for the candidate', () => {

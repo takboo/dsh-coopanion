@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { registerHooks } from 'node:module';
+import { createRequire, registerHooks } from 'node:module';
 import { dirname, join, sep } from 'node:path';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const sdk = process.env.COOPANION_ASAR_SDK;
 assert(sdk?.replaceAll('\\', '/').includes('/Contents/Resources/app.asar/dsh'), 'Use only the inspected official Desktop SDK');
 const anchor = pathToFileURL(join(sdk, 'package.json')).href;
+const requireFromAsar = createRequire(anchor);
 registerHooks({ resolve(specifier, context, next) {
   const isFile = specifier.startsWith('file:');
   const path = isFile ? fileURLToPath(specifier) : specifier;
@@ -17,6 +18,9 @@ registerHooks({ resolve(specifier, context, next) {
     if (isFile) {
       const metadata = next('@deepseek-ai/' + name + '/package.json', { ...context, parentURL: anchor });
       result = next(pathToFileURL(join(dirname(fileURLToPath(metadata.url)), (match[2] ?? '').slice(1))).href, context);
+    } else if (context.conditions.includes('require') && context.parentURL !== anchor) {
+      // Node's CommonJS resolver retains the original parent even when the hook changes parentURL.
+      result = { url: pathToFileURL(requireFromAsar.resolve(specifier)).href, shortCircuit: true };
     } else result = next(specifier, { ...context, parentURL: anchor });
     const resolved = fileURLToPath(result.url);
     assert(resolved.startsWith(sdk + sep), 'Desktop Host modules must resolve into the signed ASAR');
