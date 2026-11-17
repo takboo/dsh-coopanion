@@ -63,6 +63,16 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 
 ## 最近一次发布核验
 
+### v0.4.25
+
+2026-11-17 发布 [v0.4.25](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.25)，正式支持 DSH `0.2.2-rc.3`。发布提交为 `0e0be8ed5e78b99af5df0aeaff2e70f3ca651f0e`，规范包 SHA-256 为 `087bd303c12a357847978204dd137b45138075a4835a287f37bf4a01776d2eac`。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.25/verification.json)
+
+[PR #49 CI](https://github.com/takboo/dsh-coopanion/actions/runs/44027359662)、[main CI](https://github.com/takboo/dsh-coopanion/actions/runs/44030967761) 和[标签验证](https://github.com/takboo/dsh-coopanion/actions/runs/44034921959) 均通过三平台测试和九版宿主的 27 组安装。main 首轮的 Windows `0.2.1-alpha.1` 在桌宠恢复后读取审批状态时遇到 `ECONNRESET`，在同提交、同包及原断言下复跑通过。连接重置原因尚未定位。[首轮失败](https://github.com/takboo/dsh-coopanion/actions/runs/44030967761/job/133867585424) · [复跑](https://github.com/takboo/dsh-coopanion/actions/runs/44030967761/job/133872460986)
+
+标签规范包在固定 Linux ARM64 容器通过 `rc.3` 的安装、Web 设置、双语插件卡片、卸载和收件箱回归，`0.2.1-rc.4` 按预期拒绝。macOS 15.7.7 ARM64 Tart 来宾通过官方签名 Desktop ASAR 的通知、目标和会话契约，并经由官方 Electron 载体和 npm Web Host 完成同包安装、原生桌宠窗口、会话续接、进程恢复及正常退出。来宾已回收。
+
+[发布工作流](https://github.com/takboo/dsh-coopanion/actions/runs/44038000285) 使用标签验证原件完成 npm OIDC 发布和 GitHub 附件发布。npm `latest`、GitHub 版本包、固定别名和 latest 下载均与规范包逐字节一致，Release 正文与校验附件一致。随后在干净的 DSH `0.2.2-rc.3` profile 从 npm 安装精确 `0.4.25`，核对锁内 integrity、插件启用及无 DSH 兼容性豁免。
+
 ### v0.4.24
 
 2026-11-12 发布 [v0.4.24](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.24)，正式支持 DSH `0.2.2-rc.2`。发布提交为 `cb3bf4917b7643fa61827af8dff9ab1ebedfb781`，规范包 SHA-256 为 `a26e6c87b785fb7263a28c4d87b5fe0274964690cf4bb80324f551bb8627c8a0`。npm `latest`、GitHub 版本包、固定别名及 latest 下载都与规范包逐字节一致，Release 正文与校验附件一致。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.24/verification.json)
