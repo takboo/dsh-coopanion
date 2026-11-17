@@ -86,6 +86,7 @@ test('reviewed 0.2.2 candidates include their exact Cordis and Schemastery basel
     ['0.2.2-alpha.3', '4.0.6-alpha.2', '3.18.6-alpha.2'],
     ['0.2.2-rc.1', '4.1.0', '3.19.0'],
     ['0.2.2-rc.2', '4.1.0', '3.19.0'],
+    ['0.2.2-rc.3', '4.1.0', '3.19.0'],
   ]) {
     const candidate = targetManifest(production, target);
     for (const [name, exact] of [['@deepseek-ai/cordis', cordis], ['@deepseek-ai/schemastery', schemastery]]) {
