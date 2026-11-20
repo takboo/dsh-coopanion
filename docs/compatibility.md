@@ -4,7 +4,9 @@
 
 ## 正式支持与候选结案
 
-正式宿主范围以 [package.json](../package.json) 的 `engines.dsh` 和 DSH peer 声明为准。v0.4.25 纳入 DSH `0.2.2-rc.3`，保留此前八版宿主和插件运行时依赖。[PR #49](https://github.com/takboo/dsh-coopanion/pull/49) · [候选检查 #48](https://github.com/takboo/dsh-coopanion/issues/48)
+正式宿主范围以 [package.json](../package.json) 的 `engines.dsh` 和 DSH peer 声明为准。v0.4.26 纳入 DSH `0.2.2-rc.5`，保留此前九版宿主和插件运行时依赖。[PR #54](https://github.com/takboo/dsh-coopanion/pull/54) · [候选检查 #53](https://github.com/takboo/dsh-coopanion/issues/53)
+
+v0.4.25 纳入 DSH `0.2.2-rc.3`，保留此前八版宿主和插件运行时依赖。[PR #49](https://github.com/takboo/dsh-coopanion/pull/49) · [候选检查 #48](https://github.com/takboo/dsh-coopanion/issues/48)
 
 v0.4.24 将 `0.2.2-rc.2` 的审阅提案纳入正式 manifest 与 shrinkwrap，保留此前七版 Host 支持与运行时依赖。[PR #47](https://github.com/takboo/dsh-coopanion/pull/47)
 
@@ -29,7 +31,7 @@ v0.4.19 纳入了 `0.2.2-rc.1`，三个历史兼容性 Issue 已结案。发布�
 
 发现阶段读取 npm `latest` 的精确版本和 integrity。SDK 组件身份同时绑定宿主和这份发布物，原包更新后会重新观察。发布轨在独立 Linux Docker 任务中下载并校验 npm 原始 tarball，使用默认准入安装到干净 profile。接受后用包内探针验证真实 Web 宿主和插件设置。拒绝时核对官方诊断、profile 回滚和配置中无该插件，报告 `refused-as-expected`。候选轨继续运行原有三平台适配安装矩阵，报告候选包 SHA-256、integrity、实际准入和运行阶段。两轨核对同一精确 DSH 版本和 integrity。插件断言失败记 `failed`，安装准备、浏览器启动或执行中断按实际阶段记 `retry`。
 
-手动工作流输入一个精确宿主版本可同时演练两轨。可用 Docker 在本地复现发布轨，容器内安装项目锁定的 Playwright Chromium 后运行 `DSH_VERSION=0.2.2-rc.3 npm run compat:published`。候选适配使用 `compat:prepare` 和 `compat:check`，传入同一发现目标和构建目录。正式支持范围由项目 PR 审阅决定。
+手动工作流输入一个精确宿主版本可同时演练两轨。可用 Docker 在本地复现发布轨，容器内安装项目锁定的 Playwright Chromium 后运行 `DSH_VERSION=0.2.2-rc.5 npm run compat:published`。候选适配使用 `compat:prepare` 和 `compat:check`，传入同一发现目标和构建目录。正式支持范围由项目 PR 审阅决定。
 
 ## 配套基线与验证范围
 
@@ -68,10 +70,10 @@ npm run compat:discover -- --local
 候选准备在共享基座的隔离 Linux 容器或项目 CI 内执行。容器内使用锁文件安装依赖，`PLAYWRIGHT_BROWSERS_PATH` 指向本轮环境提供的浏览器绝对路径。项目测试若需另一个匹配版本，在临时容器内准备并随任务回收。
 
 ```bash
-DSH_VERSION=0.2.2-rc.3 npm run compat:prepare
+DSH_VERSION=0.2.2-rc.5 npm run compat:prepare
 ```
 
-示例版本对应 v0.4.25 的最高支持宿主，切换源码基线时先核对 `package.json`。准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 `npm run compat:check`；macOS ARM64 上的 `npm run compat:desktop` 只接受匹配的官方 feed 身份。原生检查在隔离 VM 中串行执行，范围及环境要求见[开发指南](development.md)。
+示例版本对应 v0.4.26 的最高支持宿主，切换源码基线时先核对 `package.json`。准备输出目录含 candidate.json、proposal.json、候选包、paper-star.zip 和 report.json。随后设置 DSH_TARGET_JSON 为发现的完整目标 JSON，DSH_CANDIDATE_DIR 为该输出目录，再运行 `npm run compat:check`；macOS ARM64 上的 `npm run compat:desktop` 只接受匹配的官方 feed 身份。原生检查在隔离 VM 中串行执行，范围及环境要求见[开发指南](development.md)。
 
 本地命令不写 Issue 或 PR。发现、状态与提案机制复用 dsh-session-bin / dsh-usage-state，MIT 许可保留在 scripts/compatibility/LICENSE；本流程不调用付费 AI 服务。
 
