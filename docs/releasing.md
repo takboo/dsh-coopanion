@@ -63,6 +63,16 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 
 ## 最近一次发布核验
 
+### v0.4.27
+
+2026-11-21 发布 [v0.4.27](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.27)，新增同进程 `ctx.get('coopanion')?.perform(word)` 动作展示通道（[Issue #50](https://github.com/takboo/dsh-coopanion/issues/50)），继续支持十版已声明 DSH 宿主。发布提交为 `efb845f6ba722b99e33b852a4fbfd0b0ac88ca4e`，规范包 SHA-256 为 `3a105880eccc2062e1873bd9086d152a4b616bd2ceb250a9dff1aab39f726b60`。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.27/verification.json)
+
+[PR #56 CI](https://github.com/takboo/dsh-coopanion/actions/runs/44885557113)、[main CI](https://github.com/takboo/dsh-coopanion/actions/runs/44894664257/attempts/2) 和[标签验证](https://github.com/takboo/dsh-coopanion/actions/runs/44895987106/attempts/2) 的三平台核心测试均 4/4 通过，main CI 与标签验证最终通过十版宿主的 30 组安装。三处首轮各有一组 Windows 安装用例在重启旧 Host 时未取到退出码（`tests/install.mjs:485`）：PR #56 的 Windows `0.2.2-rc.1` 跳过复跑直接合入，main CI 的 Windows `0.2.2-rc.1` 与标签验证的 Windows `0.2.2-rc.3` 在同提交、同规范包、原断言和原期限下复跑通过，根因尚未查明。[main 首轮](https://github.com/takboo/dsh-coopanion/actions/runs/44894664257/job/136820723515) · [标签首轮](https://github.com/takboo/dsh-coopanion/actions/runs/44895987106/job/136826763418)
+
+本轮仅新增同进程动作接口、未变更宿主兼容或依赖，未额外重跑本机 Tart 来宾或固定 Linux 容器验收，以标签验证的三平台测试与十版宿主 30 组安装矩阵为准；系统通知中心、物理多屏与真实模型会话仍需对应环境另行验收。
+
+[发布工作流](https://github.com/takboo/dsh-coopanion/actions/runs/44901553819) 使用标签验证原件完成 npm OIDC 发布（含 `--require-published` 线上字节校验）和 GitHub Release 附件上传。
+
 ### v0.4.26
 
 2026-11-21 发布 [v0.4.26](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.26)，正式支持 DSH `0.2.2-rc.5`，保留此前九版宿主。发布提交为 `f668580518f202245635100d6ba665b18f2bb545`，规范包 SHA-256 为 `1ea8fd68c5671c82b1b1682281370411ad3f331e8ed389fd444f502a2747f8f0`。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.26/verification.json)
