@@ -63,6 +63,18 @@ OIDC 认证失败时核对实际 Trusted Publisher 绑定和 job 日志。认证
 
 ## 最近一次发布核验
 
+### v0.4.26
+
+2026-11-21 发布 [v0.4.26](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.26)，正式支持 DSH `0.2.2-rc.5`，保留此前九版宿主。发布提交为 `f668580518f202245635100d6ba665b18f2bb545`，规范包 SHA-256 为 `1ea8fd68c5671c82b1b1682281370411ad3f331e8ed389fd444f502a2747f8f0`。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.26/verification.json)
+
+[PR #54 CI](https://github.com/takboo/dsh-coopanion/actions/runs/44756223123)、[main CI](https://github.com/takboo/dsh-coopanion/actions/runs/44763527629/attempts/3) 和[标签验证](https://github.com/takboo/dsh-coopanion/actions/runs/44847674776/attempts/2) 最终通过三平台测试和十版宿主的 30 组安装。main 首轮 Windows 收件箱测试等待桌宠界面就绪超时，随后 Windows `0.2.2-rc.5` 安装用例在首次重启时未取得旧 Host 的正常退出码。两项在同提交、原断言和原期限下复跑通过，安装复跑沿用同一包，根因尚未查明。[收件箱首轮](https://github.com/takboo/dsh-coopanion/actions/runs/44763527629/job/136382015999) · [安装首轮](https://github.com/takboo/dsh-coopanion/actions/runs/44763527629/job/136394889503)
+
+[标签验证首轮](https://github.com/takboo/dsh-coopanion/actions/runs/44847674776/attempts/1) 有 11 组在准备 npm Host 时收到 `@aws-sdk/credential-provider-http@3.972.87` tarball 的 HTTP 404。官方地址恢复后，11 组在原矩阵中使用同一规范包复跑通过。
+
+在 macOS 15.7.7 ARM64 共享 Tart 来宾，以标签规范包和 npm DSH `0.2.2-rc.5` 验证准入、真实 profile Loader、Web 设置、原生窗口、关闭后重开及正常退出。来宾已回收。官方签名 Desktop 的 ASAR 契约和载体集成已有候选检查证据。系统通知中心、物理多屏和真实模型会话仍需对应环境验收。[候选检查 #53](https://github.com/takboo/dsh-coopanion/issues/53)
+
+[发布工作流](https://github.com/takboo/dsh-coopanion/actions/runs/44852669494) 使用标签验证原件完成 npm OIDC 发布和 GitHub 附件发布。npm `latest`、GitHub 版本包、固定别名和 latest 下载均与规范包逐字节一致，Release 正文与校验附件一致。npm 元数据可读后，首次下载和安装仍返回 HTTP 404，09:59（Asia/Shanghai）官方原地址恢复并核对通过。随后在干净的 DSH `0.2.2-rc.5` profile 从 npm 安装精确 `0.4.26`，核对锁内 integrity、插件已启用且未使用兼容性豁免。
+
 ### v0.4.25
 
 2026-11-17 发布 [v0.4.25](https://github.com/takboo/dsh-coopanion/releases/tag/v0.4.25)，正式支持 DSH `0.2.2-rc.3`。发布提交为 `0e0be8ed5e78b99af5df0aeaff2e70f3ca651f0e`，规范包 SHA-256 为 `087bd303c12a357847978204dd137b45138075a4835a287f37bf4a01776d2eac`。[verification.json](https://github.com/takboo/dsh-coopanion/releases/download/v0.4.25/verification.json)
