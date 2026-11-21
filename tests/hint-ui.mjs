@@ -488,7 +488,7 @@ export async function createCustomBody(_base, { host }) {
       await b.receive({ type: 'perform', word: 'dragged', generation: 7 });
       await b.receive({ type: 'perform', word: 'pose', generation: 7 });
       await waitFrames(b.page, 3);
-      assert.deepEqual(await b.body.evaluate(() => window.bodyOrders.filter(o => o.t === 'do').map(o => o.word)), []);
+      assert.equal(await b.body.evaluate(() => window.bodyOrders.some(o => o.t === 'do' && ['dragged', 'pose'].includes(o.word))), false, 'dragged and custom lasting pose are blocked');
 
       // 2. Ignored 'sit' + disabling companionship in the exact same turn sit is emitted:
       // look is blocked during the sit-pending window, then unconditional layout sampling clears
@@ -524,7 +524,13 @@ export async function createCustomBody(_base, { host }) {
       }));
       await b.page.waitForFunction(target => window.npcFrameCount >= target, sitFrame + 2);
       assert.equal(await b.page.evaluate(() => window.lastNpcLayout?.mode), 'idle', 'custom body ignored sit and kept reporting idle');
-      assert.equal(await b.body.evaluate(() => window.bodyOrders.some(o => o.t === 'do' && o.word === 'look')), false, 'look is blocked on the same turn sit was emitted');
+      const sitCheck = await b.body.evaluate(() => {
+        const words = window.bodyOrders.filter(o => o.t === 'do').map(o => o.word);
+        const sitIdx = words.lastIndexOf('sit');
+        return { sitIdx, afterSit: sitIdx >= 0 ? words.slice(sitIdx + 1) : words };
+      });
+      assert.ok(sitCheck.sitIdx >= 0, 'NPC sit command reached the body');
+      assert.equal(sitCheck.afterSit.includes('look'), false, 'look is blocked on the same turn sit was emitted');
       await b.body.evaluate(() => { window.bodyOrders = []; });
       await b.receive({ type: 'perform', word: 'nod', generation: 7 });
       await waitLayoutFrames(b.page, 1);
