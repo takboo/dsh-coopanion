@@ -84,7 +84,7 @@ bash docs/tools/replay-tart-install-0421.sh /path/to/dsh-plugin-engineering
 | 改动 | 检查入口与范围 |
 |---|---|
 | 完成、通知与请求结算 | `npm test`、`test:n0`、`test:notification-ui`；宿主接口检查由安装入口执行 |
-| 同进程插件临时提示 | `npm test`、`test:hint-ui`；检查临时气泡、来源身份及可见性撤下，保持独立通知结算 |
+| 同进程插件提示与动作 | `npm test`、`test:hint-ui`、`test:desktop`；检查临时气泡、动作触发、来源身份、代次／状态门控及可见性撤下，保持独立通知与陪伴结算 |
 | 聊天、收件箱、字号、多屏、NPC 日常 | `test:inbox-ui`；会话与字号浏览器用例串行，初始化失败保留有界状态、控制台与截图 |
 | NPC 配置 | `tests/npc-controls-ui.mjs`：关闭许可、quiet／interactive、热切状态保持与禁用上游随机漫游 |
 | 异常查看与尺寸 | `tests/attention-size-ui.mjs`：通用异常回执、新修订、审批／提问与固定角色尺寸 |

@@ -1,3 +1,10 @@
+# v0.4.27
+
+- 其他同进程 Harness 插件现可通过 `ctx.get('coopanion')?.perform(word)` 触发当前角色词表中的短动作或表情，不依赖任务通知开关，纯属展示，不改写任务状态、未读、通知或自主陪伴熟悉度。
+- 放开 `hop` 与 `flap` 等原地短动作，跳过持久姿态／位移词（`sleep`、`sit`、`stand`、`walk`、`run`、`jump`、`dragged`）及自定义角色包标注 `lasting: true` 的词，并在角色忙碌、移动、坐姿、NPC 行走或陪伴活动／邀请期间静默跳过，保持宿主与小窝状态同步。
+
+安装包为 `dsh-coopanion-0.4.27.tgz`，npm 与 GitHub Release 使用同一份通过发布检查的包。
+
 # v0.4.26
 
 - 正式支持 DSH `0.2.2-rc.5`，继续支持此前九个精确宿主版本。

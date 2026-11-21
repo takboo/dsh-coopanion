@@ -10,7 +10,7 @@
 
 ### 在 Harness 中从 npm 安装
 
-打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.26`**，点击安装，再在「已安装插件」中启用该插件。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
+打开侧边栏 **插件 → 添加插件**，在「包名或地址」输入 **`@takboo/dsh-coopanion@0.4.27`**，点击安装，再在「已安装插件」中启用该插件。显式版本可以避免发布首日的裸包名解析回退，原因见下方。安装方式见 [Harness 官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md#安装一个组合包)。
 
 带展示元信息的包在 DSH 的「已安装插件」列表中随界面语言显示 **Coopanion · 桌宠搭子** 或 **Coopanion · Desk Pet Pal**。如界面显示包名，可按 `@takboo/dsh-coopanion` 找到卡片。
 
@@ -25,7 +25,7 @@ pnpm 11 的 `minimumReleaseAge` 默认为 1440 分钟（24 小时）。详情页
 **Desktop：** 使用 Desktop 自带的 `dsh` 命令。先启动 Desktop 一次初始化 profile，完全退出应用，再执行：
 
 ```bash
-dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.26
+dsh plugin --profile desktop add @takboo/dsh-coopanion@0.4.27
 ```
 
 npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到 Desktop 的命令，先在 Desktop 的菜单栏中使用 **Manage dsh command／管理 dsh 命令** 安装命令入口。
@@ -33,7 +33,7 @@ npm 安装的 dsh 不能管理 Desktop 所拥有的 profile；若系统找不到
 **本机 Web profile：** 使用 npm 安装的 dsh 时，向实际使用的 profile 安装。例如默认 `web` profile：
 
 ```bash
-dsh plugin --profile web add @takboo/dsh-coopanion@0.4.26
+dsh plugin --profile web add @takboo/dsh-coopanion@0.4.27
 dsh --profile web
 ```
 
@@ -148,6 +148,16 @@ ctx.get('coopanion')?.hint({ title: '电话接通了', body: '挂件正在听你
 已显示的提示会在角色失去显示资格（隐藏、锁屏、休眠或新一次启动）时立即撤下；恢复显示不会补发旧提示。停留时长取设置的 `bubbleDurationMs`。
 
 这条通道只画临时气泡：不创建任务通知、不写未读、不产生送达回执，也不改变会话状态；完成、审批和提问仍由[提醒契约](notification-contract.md)统一结算。
+
+同进程插件也可以请角色演一个词表中的短动作或表情（不依赖“任务通知”开关）：
+
+```js
+ctx.get('coopanion')?.perform('nod');
+```
+
+`word` 须符合角色词表 id 格式（`/^[a-z0-9][a-z0-9-]{0,31}$/`），原样校验、不做裁剪或大小写改写。返回值与 `hint()` 同为 best-effort：`true` 只表示 Host 校验通过并已提交到当前原生 IPC 通道（含背压队列），不表示当前角色认识该词、未被窗口丢弃或用户已看见；角色未运行、不可见、锁屏／休眠、格式非法或 IPC 不可用时返回 `false`。
+
+原生窗口与渲染层会按当前显示代次与状态复核：窗口隐藏、锁屏／休眠、过期代次、减少动态效果、角色睡眠、坐姿（含坐下待确认窗口）、按压／拖拽、角色上报忙碌或移动中、处于空中／起跳蹲伏／苏醒等受保护姿态、NPC 行走或陪伴活动／邀请期间，以及当前角色未声明该词时都会静默跳过，不会缓存或重放。为保持宿主状态与小窝位置同步，持久姿态／控制词与位移词（`sleep`、`sit`、`stand`、`walk`、`run`、`jump`、`dragged` 及自定义角色包标注 `lasting: true` 的词）均被跳过；使用共享 kit 的角色中，`turn`、`look` 等原地动作结束后可能保留新的朝向而不移动位置，独立实现的 API 2 角色由其 `do()` 自行决定。该接口纯属展示，不改写任务状态、未读、通知或自主陪伴熟悉度。
 
 ## 本地诊断与可选采样
 

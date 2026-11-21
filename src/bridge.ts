@@ -20,6 +20,7 @@ export interface PetBridge {
   notificationState?(snapshot: NotificationSnapshot): void;
   snoozeResult?(interactionId: string, ok: boolean, error?: string): void;
   presentRole?(notice: TaskNotice, runtime: NotificationRuntime): boolean;
+  perform?(word: string, runtime: NotificationRuntime): boolean;
   onAction(listener: (action: unknown) => void): void;
   removeAction(listener: (action: unknown) => void): void;
   dispose(): Promise<void>;
@@ -143,6 +144,11 @@ export class ElectronBridge extends EventEmitter implements PetBridge {
   notificationState(snapshot: NotificationSnapshot): void { this.lastNotificationState = structuredClone(snapshot); this.send({ type: 'notification-state', snapshot }); }
   snoozeResult(interactionId: string, ok: boolean, error?: string): void { this.send({ type: 'notification-snooze-result', interactionId, ok, ...(error ? { error: error.slice(0, 600) } : {}) }); }
   presentRole(notice: TaskNotice, runtime: NotificationRuntime): boolean { return this.notify(notice, runtime); }
+  perform(word: string, runtime: NotificationRuntime): boolean {
+    if (!this.child?.connected || this.closing) return false;
+    if (!this.nativeVisible || this.suspended || runtime.phase !== 'running' || !runtime.visible || runtime.suspended || runtime.generation !== this.generation || runtime.visibilityRevision !== this.visibilityRevision) return false;
+    return this.send({ type: 'perform', word, generation: runtime.generation, visibilityRevision: runtime.visibilityRevision });
+  }
   chatResult(receipt: ChatReceipt): void { this.send(receipt); }
   onAction(listener: (action: unknown) => void): void { this.on('action', listener); }
   removeAction(listener: (action: unknown) => void): void { this.off('action', listener); }

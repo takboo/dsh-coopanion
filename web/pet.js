@@ -38,6 +38,12 @@ const sfx = createSfx({ storageKey: 'dsh-pet.sound.v2', volume: .35 });
 const nameIn = names => localizedText(names, notificationLocale());
 const wordName = (word, view = previewCharacter) => word.names?.[notificationLocale()]?.[0] ?? (view?.builtin ? uiCopy().words[word.id] : undefined) ?? nameIn(word.names)?.[0] ?? word.id;
 let npc = initialNpc(1), npcGeneration = 1, npcEvent, npcRelocated = false, keyboardActivity = 'unknown', keyboardAt = -Infinity, keyboardBackend = 'none', keyboardStatus = 'disabled', npcSoundUntil = 0, npcGeometry, npcGroundLayout, npcSeated = false;
+const PERFORM_BLOCKED = new Set(['sleep', 'sit', 'stand', 'walk', 'run', 'jump', 'dragged']);
+// body-host keeps at most one tick in flight over the FIFO iframe channel, so
+// the 1st valid layout after do() may come from an earlier tick; the 2nd
+// guarantees the iframe has stepped past do().
+let layoutSerial = 0, lastLayout, npcSitPendingUntil = 0, performPendingUntil = 0;
+const syncLayoutSerial = () => { if (body?.layout && body.layout !== lastLayout) { lastLayout = body.layout; layoutSerial++; } return layoutSerial; };
 const homeMarker = document.createElement('div'); homeMarker.id = 'npc-home'; homeMarker.hidden = true; homeMarker.setAttribute('aria-hidden', 'true'); document.body.appendChild(homeMarker);
 let body, previewBody, previewCharacter, activeView, activeScheme, activeName = 'DeepSeek 大肥鱼', libraryState, libraryBusy = false;
 let appliedMood, appliedControls, speech, speechExpires = Infinity, pressing = false, dragStart, dragPoint, dragging = false, previewScheme = "", reducedNeedsStep = true;
@@ -257,7 +263,7 @@ function updateCompanion(now, mood, readingAttention, active) {
   const summary = companionClient.summary;
   const eligible = !!summary?.writable && !companionClient.error && summary.invitation.remaining > 0 && !summary.invitation.quiet && Date.now() >= summary.invitation.laterUntil;
   const inputQuiet = keyboardActivity !== 'idle' || performance.now() - keyboardAt > 2500;
-  const result = stepCompanionship(companion, { mode, now, hour: localHour, words: activityWords, occupied: blocked, motionBusy: !!body?.layout?.moving, automatic: options.roam && !reduced && !inputQuiet && !['pointer', 'work'].includes(npc.reason), eligible: eligible && !npc.walkId, unlocked: summary?.relation.unlocked, action: companionAction });
+  const result = stepCompanionship(companion, { mode, now, hour: localHour, words: activityWords, occupied: blocked, motionBusy: !!body?.layout?.moving, automatic: options.roam && !reduced && !inputQuiet && !['pointer', 'work'].includes(npc.reason), eligible: eligible && !npc.walkId && syncLayoutSerial() >= performPendingUntil, unlocked: summary?.relation.unlocked, action: companionAction });
   if (result.showInvitation) diagnosticCounters.event('invitationsShown');
   if (result.hideInvitation && companion.invitation === 'shown' && now >= companion.invitationUntil) diagnosticCounters.event('invitationsExpired');
   companionAction = undefined; companion = result.state;
@@ -307,7 +313,7 @@ function updateNpc(now, active, readingAttention) {
     work: active || performance.now() < npcWorkUntil, quiet: pendingRequests().length > 0 || ['waiting', 'error'].includes(sessionActivity(attentionSnapshot).mood), canWalk: activeView?.can?.walk === true && localHour >= 7 && localHour < 22 });
   npcEvent = undefined; npcRelocated = false; npc = result.state;
   if (result.stop) body?.stopWalk(result.stop);
-  if (result.word && !user && !active) { if (result.word === 'sit') npcSeated = true; else if (result.word === 'stand') npcSeated = false; npcSoundUntil = performance.now() + 3500; act(body, activeView, result.word); }
+  if (result.word && !user && !active) { if (result.word === 'sit') { npcSeated = true; npcSitPendingUntil = syncLayoutSerial() + 2; } else if (result.word === 'stand') { npcSeated = false; npcSitPendingUntil = 0; } npcSoundUntil = performance.now() + 3500; act(body, activeView, result.word); }
   if (npcSeated && npc.reason === 'disabled' && !user && layout?.mode === 'sit') { act(body, activeView, 'stand'); npcSeated = false; }
   if (result.place !== undefined) body?.place(result.place, result.place > innerWidth / 2 ? -1 : 1);
   if (result.walk) { npcSoundUntil = performance.now() + 3500; body?.walk(result.walk.x, false, result.walk.id); }
@@ -320,7 +326,7 @@ function attentionToWork() { npcWorkUntil = performance.now() + 12000; }
 function startCompanionPlay() {
   closePanels();
   const activity = sessionActivity(attentionSnapshot);
-  if (options.companionship === 'off' || companionBlocked(true, activity.mood, false, activity.active)) { companionMessage(uiCopy().companionBusy); return; }
+  if (options.companionship === 'off' || syncLayoutSerial() < performPendingUntil || companionBlocked(true, activity.mood, false, activity.active)) { companionMessage(uiCopy().companionBusy); return; }
   if (!companionInvitation.hidden) diagnosticCounters.event('invitationsAccepted');
   companionInvitation.hidden = true; companionAction = 'play'; companionManualId = crypto.randomUUID();
   companionMessage(uiCopy().companionPlaying); updateMood();
@@ -353,7 +359,7 @@ function updateMood() {
   updateNpc(now, active, readingAttention);
   if (mood !== appliedMood && !npc.walkId && !companion.active && !body.layout?.busy && (!actionRestorePending || !pressing && !dragging)) {
     reducedNeedsStep = true;
-    if (mood !== 'sleeping' && (appliedMood === 'sleeping' || ['sleep', 'sit'].includes(body.layout?.mode))) act(body, activeView, 'stand');
+    if (mood !== 'sleeping' && (appliedMood === 'sleeping' || ['sleep', 'sit'].includes(body.layout?.mode))) { npcSitPendingUntil = 0; act(body, activeView, 'stand'); }
     const word = { idle: 'neutral', thinking: 'thinking', talking: 'neutral', working: 'determined', waiting: 'worried', happy: 'happy', error: 'sad', sleeping: 'sleep' }[mood];
     if (word) act(body, activeView, word);
     appliedMood = mood;
@@ -654,6 +660,22 @@ function receive(message) {
       $('toast').hidden = false; clearTimeout(toastTimer);
       toastTimer = setTimeout(hideToast, options.bubbleDurationMs); break;
     }
+    case 'perform': {
+      if (typeof message.word !== 'string' || reduced || document.hidden || asleep) break;
+      if (notificationState && (notificationState.runtime.phase !== 'running' || !notificationState.runtime.visible || notificationState.runtime.suspended || (message.generation !== undefined && message.generation !== notificationState.runtime.generation))) break;
+      const serial = syncLayoutSerial(), layout = body?.layout;
+      if (!body || !activeView || !layout || pressing || dragging || layout.busy || layout.moving ||
+        npc.walkId || serial < npcSitPendingUntil || serial < performPendingUntil || companion.active || companion.invitation ||
+        ['air', 'drag', 'crouch', 'wake', 'sleep', 'sit'].includes(layout.mode)) break;
+      const entry = activeView.vocab.find(word => word.id === message.word);
+      if (!entry || entry.lasting || PERFORM_BLOCKED.has(message.word)) break;
+      if (!body.words || body.words.includes(message.word)) {
+        act(body, activeView, message.word);
+        performPendingUntil = serial + 2;
+        reducedNeedsStep = true;
+      }
+      break;
+    }
     case 'hit-state': pet.dataset.nativeHit = String(message.active); break;
     case 'cursor': {
       if (!displayGeometry || message.revision !== displayGeometry.revision) break;
@@ -846,7 +868,7 @@ document.addEventListener('pointermove', event => {
   const point = { x: event.clientX, y: event.clientY, t: event.timeStamp };
   if (pressing) dragPoint = point;
   if (pressing && !dragging && Math.hypot(point.x - dragStart.x, point.y - dragStart.y) > 6) {
-    dragging = true; npcRelocated = true; clearTimeout(touchTimer); closePanels(); bubble.hidden = true;
+    dragging = true; npcRelocated = true; npcSitPendingUntil = 0; clearTimeout(touchTimer); closePanels(); bubble.hidden = true;
   }
   const activity = sessionActivity(attentionSnapshot);
   const canCare = options.companionship !== 'off' && !activity.active && activity.mood === 'idle' && !pendingRequests().length && !userInputOccupied() && !asleep && interaction.hidden && ['idle', 'look', 'sit'].includes(body?.layout?.mode);
@@ -887,11 +909,12 @@ function animate(now) {
     if (now >= interactionExpires) { interaction.hidden = true; currentNotice = undefined; showNextReply(); }
   }
   presentNextNotice();
+  syncLayoutSerial();
   updateMood();
   if (liveMouth.pulse(now, !reduced && !document.hidden && pet.dataset.mood === 'talking')) body?.talk();
   // Only P1's fully idle pose renders at 30fps. Work and input retain the original cadence.
   // Accumulate real dt so rendering fewer frames never slows physics.
-  const companionIdle = options.companionship !== 'off' && pet.dataset.mood === 'idle' && !companion.active && !hovered && !pressing && !dragging && !reducedNeedsStep && body?.layout && !body.layout.moving && !userInputOccupied() && ![...composer.sessions.values()].some(s => !!s.text.trim() || s.phase === 'sending') && interaction.hidden && companionInvitation.hidden;
+  const companionIdle = options.companionship !== 'off' && pet.dataset.mood === 'idle' && !companion.active && !hovered && !pressing && !dragging && !reducedNeedsStep && layoutSerial >= npcSitPendingUntil && layoutSerial >= performPendingUntil && body?.layout && !body.layout.moving && !userInputOccupied() && ![...composer.sessions.values()].some(s => !!s.text.trim() || s.phase === 'sending') && interaction.hidden && companionInvitation.hidden;
   companionCadence = advanceRenderCadence(companionCadence, now, dt, companionIdle);
   if (companionCadence.paint) {
     body?.tick(reduced && !reducedNeedsStep && !pressing && !['air', 'drag', 'wake'].includes(body.layout?.mode) ? 0 : companionCadence.dt);
@@ -957,7 +980,7 @@ async function setCharacter(view, scheme = '') {
     onError: error => { characterStatus('bodyError', error.message); if (body === next && view.id !== BUILTIN_ID) void restoreBuiltin(); },
   });
   if (npc.walkId) body?.stopWalk(npc.walkId);
-  npc = initialNpc(++npcGeneration); npcEvent = undefined; npcRelocated = false; npcGeometry = undefined; npcGroundLayout = undefined; npcSeated = false;
+  npc = initialNpc(++npcGeneration); npcEvent = undefined; npcRelocated = false; npcGeometry = undefined; npcGroundLayout = undefined; npcSeated = false; lastLayout = undefined; npcSitPendingUntil = 0; performPendingUntil = 0;
   companionStroke.reset(); companion = initialCompanionship(); companionAction = companionManualId = undefined; companionInvitation.hidden = companionFeedback.hidden = true;
   body?.dispose(); body = next; body.set({ bounds: bounds() }); activeView = view; activeScheme = knownScheme(view, scheme); activeName = nameIn(view.name);
   actionRestorePending = false; activityWords = view.vocab.map(w => w.id).filter(w => next.words?.includes(w)); hourCheckedAt = -Infinity;
