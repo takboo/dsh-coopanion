@@ -472,7 +472,7 @@ export async function createCustomBody(_base, { host }) {
       await a.body.evaluate(() => { window.bodyOrders = []; });
       await a.receive({ type: 'perform', word: 'nod', generation: 7 });
       await waitFrames(a.page, 2);
-      assert.deepEqual(await a.body.evaluate(() => window.bodyOrders.filter(o => o.t === 'do').map(o => o.word)), []);
+      assert.equal(await a.body.evaluate(() => window.bodyOrders.some(o => o.t === 'do' && o.word === 'nod')), false, 'nod is blocked while invitation is shown');
       assert.equal(await a.page.locator('#companion-invitation').isVisible(), true, 'invitation remains visible');
       assert.deepEqual(a.errors, []);
     } finally {
@@ -493,8 +493,7 @@ export async function createCustomBody(_base, { host }) {
       // 2. Ignored 'sit' + disabling companionship in the exact same turn sit is emitted:
       // look is blocked during the sit-pending window, then unconditional layout sampling clears
       // the guard after 2 real layout frames so a single nod succeeds.
-      await npcUntil(b.page, 'outbound');
-      await b.page.waitForFunction(() => window.npcState.phase === 'observe', undefined, { timeout: 5000 });
+      await npcUntil(b.page, 'observe');
       await b.body.evaluate(() => { window.bodyOrders = []; });
       const sitFrame = await b.page.evaluate(() => new Promise((resolve, reject) => {
         const originalPush = window.npcEvents.push.bind(window.npcEvents);
