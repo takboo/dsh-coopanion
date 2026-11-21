@@ -72,6 +72,18 @@ export class PetControls {
     if (sessionId === false) return false;
     return this.bridge.notify({ title, body, sessionId: sessionId ?? '', kind: 'message' }, { ...this.state });
   }
+  /**
+   * Ask the pet to perform a single vocab word. Delivery is best-effort and
+   * pure presentation: it needs a running, visible, awake pet, does not depend
+   * on the notifications toggle, and never mutates task state, unread counts,
+   * notices or companionship familiarity.
+   */
+  perform(word: string): boolean {
+    if (this.disposed) return false;
+    if (this.state.phase !== 'running' || !this.state.visible || this.state.suspended) return false;
+    if (typeof word !== 'string' || !WORD_ID.test(word)) return false;
+    return this.bridge.perform?.(word, { ...this.state }) ?? false;
+  }
   command(command: PetCommand): Promise<PetStatus> {
     const alreadyStarting = this.state.phase === 'starting';
     // Intent and cancellation take effect before queued work, including queued starts.
@@ -192,6 +204,7 @@ export class PetControls {
   }
 }
 
+const WORD_ID = /^[a-z0-9][a-z0-9-]{0,31}$/;
 /** Collapse layout-breaking whitespace in display copy; identities must not use this. */
 function hintText(value: unknown, limit: number): string {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, limit);

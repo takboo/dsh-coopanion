@@ -152,6 +152,11 @@ process.on('message', message => {
     if (message.generation !== undefined && (message.generation !== generation || message.visibilityRevision !== visibilityRevision || !win?.isVisible() || suspended)) return;
     forward(message);
   }
+  if (message.type === 'perform') {
+    if (typeof message.word !== 'string' || !/^[a-z0-9][a-z0-9-]{0,31}$/.test(message.word)) return;
+    if (message.generation !== generation || message.visibilityRevision !== visibilityRevision || !win || win.isDestroyed() || !win.isVisible() || suspended) return;
+    forward(message);
+  }
 });
 process.on('disconnect', () => app.quit());
 process.on('SIGTERM', () => app.quit());

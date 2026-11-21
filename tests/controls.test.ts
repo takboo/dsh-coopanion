@@ -7,7 +7,7 @@ function fixture(limits = {}, overrides: Partial<DesktopOptions> = {}) {
   let lifecycle: (state: NativeLifecycle) => void = () => {}, generation = 0, revision = 0;
   const bridge: PetBridge = {
     start: vi.fn(async (_options: DesktopOptions, lifetime?: StartLifetime) => { generation = lifetime?.generation ?? 0; revision = 1; lifecycle({ running: true, visible: lifetime?.visible !== false, generation, visibilityRevision: revision }); }),
-    dispose: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(() => true),
+    dispose: vi.fn(async () => {}), update: vi.fn(), notify: vi.fn(() => true), perform: vi.fn(() => true),
     onAction: vi.fn(), removeAction: vi.fn(), configure: vi.fn(),
     control: vi.fn(command => { if (command !== 'characters') lifecycle({ running: true, visible: command !== 'hide', generation, visibilityRevision: ++revision }); }),
     onLifecycle: listener => { lifecycle = listener; }, removeLifecycle: vi.fn(),
@@ -264,5 +264,36 @@ it('reports bridge acceptance instead of assuming IPC delivery', async () => {
   vi.mocked(bridge.notify).mockReturnValueOnce(false);
   expect(controls.hint({ title: '电话接通了' })).toBe(false);
   expect(controls.hint({ title: '电话接通了' })).toBe(true);
+  await controls.dispose();
+});
+it('performs vocab words while running, visible and awake even with notices disabled', async () => {
+  const { controls, bridge, lifecycle } = fixture({}, { notifications: false });
+  expect(controls.perform('nod')).toBe(false);
+  await controls.command('start');
+  expect(controls.perform('nod')).toBe(true);
+  expect(bridge.perform).toHaveBeenCalledWith(
+    'nod',
+    expect.objectContaining({ phase: 'running', visible: true, generation: 1, visibilityRevision: 2, suspended: false }),
+  );
+  lifecycle({ running: true, visible: true, generation: 1, visibilityRevision: 2, suspended: true });
+  expect(controls.perform('love')).toBe(false);
+  lifecycle({ running: true, visible: false, generation: 1, visibilityRevision: 3 });
+  expect(controls.perform('love')).toBe(false);
+  await controls.command('hide'); expect(controls.perform('love')).toBe(false);
+  await controls.dispose(); expect(controls.perform('love')).toBe(false);
+  expect(bridge.perform).toHaveBeenCalledOnce();
+});
+it('validates perform word ids verbatim and honours bridge acceptance', async () => {
+  const { controls, bridge } = fixture();
+  await controls.command('start');
+  for (const word of ['', ' ', ' nod', 'nod ', 'Nod', '-nod', 'nod_1', 'nod!', 'a'.repeat(33), 42]) {
+    expect(controls.perform(word as string)).toBe(false);
+  }
+  expect(bridge.perform).not.toHaveBeenCalled();
+  for (const word of ['a', 'nod', 'wave-2', 'a'.repeat(32)]) expect(controls.perform(word)).toBe(true);
+  vi.mocked(bridge.perform!).mockReturnValueOnce(false);
+  expect(controls.perform('nod')).toBe(false);
+  bridge.perform = undefined;
+  expect(controls.perform('nod')).toBe(false);
   await controls.dispose();
 });

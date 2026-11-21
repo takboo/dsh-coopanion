@@ -15,6 +15,7 @@ import { petClick } from './helpers/native-pointer.mjs';
 import { unzipSync } from 'fflate';
 import { verifyNativeTextScale } from './helpers/text-scale-native.mjs';
 import { crashNative, connectRecovered, waitRecovery } from './helpers/desktop-recovery.mjs';
+import { recordBodyOrders } from './helpers/body-orders.mjs';
 
 let display, browser;
 let bridge = new ElectronBridge();
@@ -147,6 +148,64 @@ try {
   bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: raceShown.generation, visibilityRevision: raceShown.visibilityRevision, visible: true, suspended: false }, interactions: [] });
   await pause(100);
   assert.equal(await page.locator('#toast').isVisible(), false, 'a dropped hint does not reappear after showing again');
+
+  // Native perform uses real IPC and isolates visibilityRevision even when the window is visible again.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const bodyFrame = await recordBodyOrders(page);
+  await page.evaluate(() => {
+    window.desktopPerformMessages = [];
+    window.desktopNotificationRevisions = [];
+    window.desktopLastLayout = null;
+    window.desktopFrameCount = 0;
+    window.addEventListener('message', event => {
+      if (event.source === document.querySelector('#body-layer iframe')?.contentWindow && event.data?.t === 'frame' && event.data.layout) {
+        window.desktopLastLayout = event.data.layout;
+        window.desktopFrameCount++;
+      }
+    });
+    window.dshPetBridge.subscribe(message => {
+      if (message?.type === 'perform') window.desktopPerformMessages.push(message);
+      if (message?.type === 'notification-state') window.desktopNotificationRevisions.push(message.snapshot?.runtime?.visibilityRevision);
+    });
+  });
+  const waitDesktopFrames = async (n = 2) => {
+    const start = await page.evaluate(() => window.desktopFrameCount);
+    await page.waitForFunction(target => window.desktopFrameCount >= target, start + n);
+  };
+  const waitDesktopIdle = async () => {
+    await waitDesktopFrames(2);
+    await page.waitForFunction(() => window.desktopLastLayout?.mode === 'idle' && !window.desktopLastLayout.busy && !window.desktopLastLayout.moving);
+    await waitDesktopFrames(2);
+  };
+  await waitDesktopIdle();
+  await bodyFrame.evaluate(() => { window.bodyOrders = []; });
+  await page.evaluate(() => { window.desktopPerformMessages = []; });
+  assert.equal(bridge.perform('nod', currentRuntime()), true, 'host accepts perform while native window is visible');
+  for (let n = 0; n < 40 && !(await bodyFrame.evaluate(() => window.bodyOrders.some(order => order.t === 'do' && order.word === 'nod'))); n++) await pause(25);
+  assert.equal(await page.evaluate(() => window.desktopPerformMessages.filter(m => m.word === 'nod').length), 1, 'preload receives the initial perform');
+  assert.equal(await bodyFrame.evaluate(() => window.bodyOrders.filter(order => order.t === 'do' && order.word === 'nod').length), 1, 'real perform reaches the sandboxed body');
+  await waitDesktopIdle();
+  await bodyFrame.evaluate(() => { window.bodyOrders = []; });
+  await page.evaluate(() => { window.desktopPerformMessages = []; window.desktopNotificationRevisions = []; });
+  const stalePerformRuntime = currentRuntime();
+  const lifecyclesBeforeRace = lifecycles.length;
+  // Same host turn: hide -> show -> stale-revision perform. Main is visible again
+  // with an incremented visibilityRevision when perform arrives, so revision alone drops it.
+  bridge.control('hide');
+  bridge.control('show');
+  assert.equal(bridge.perform('nod', stalePerformRuntime), true, 'host accepts perform before receiving newer visibility revisions');
+  await waitLifecycle(state => state.visible && state.visibilityRevision > stalePerformRuntime.visibilityRevision && lifecycles.slice(lifecyclesBeforeRace).some(item => !item.visible));
+  const reshowLifecycle = lifecycles.at(-1);
+  assert.ok(reshowLifecycle.visibilityRevision > stalePerformRuntime.visibilityRevision, 'hide+show advances visibilityRevision');
+  bridge.notificationState({ protocol: 1, runtime: { phase: 'running', generation: reshowLifecycle.generation, visibilityRevision: reshowLifecycle.visibilityRevision, visible: true, suspended: false }, interactions: [] });
+  await page.waitForFunction(rev => window.desktopNotificationRevisions.includes(rev), reshowLifecycle.visibilityRevision);
+  assert.equal(await page.evaluate(() => window.desktopPerformMessages.length), 0, 'native main drops stale-visibilityRevision perform before forwarding to renderer');
+  assert.equal(await bodyFrame.evaluate(() => window.bodyOrders.some(order => order.t === 'do' && order.word === 'nod')), false, 'dropped stale perform never reaches the sandboxed body');
+  await waitDesktopIdle();
+  assert.equal(bridge.perform('nod', currentRuntime()), true, 'perform with current visibilityRevision is accepted');
+  for (let n = 0; n < 40 && !(await bodyFrame.evaluate(() => window.bodyOrders.some(order => order.t === 'do' && order.word === 'nod'))); n++) await pause(25);
+  assert.equal(await page.evaluate(() => window.desktopPerformMessages.filter(m => m.word === 'nod').length), 1, 'preload receives the current-revision perform');
+  assert.equal(await bodyFrame.evaluate(() => window.bodyOrders.filter(order => order.t === 'do' && order.word === 'nod').length), 1, 'same word succeeds with updated visibilityRevision');
   await verifyNativeTextScale({ page, bridge, snapshot: finalFrame });
   const idleFrame = { ...snapshot, mood: 'idle', active: false, revision: 2, sessions: [{ ...snapshot.sessions[0], mood: 'idle', active: false }] };
   bridge.update({ ...idleFrame, sessions: [...idleFrame.sessions, { id: 'second-test', label: '另一会话', mood: 'working', active: true, text: '正在运行命令', reply: '', revision: 1 }] });

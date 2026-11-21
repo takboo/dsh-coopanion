@@ -15,14 +15,15 @@ it('accepts queued hints under real IPC backpressure and sends each broker notic
   const peer = join(directory, 'peer.cjs');
   await writeFile(peer, `
 const { readSync } = require('node:fs');
-const notices = [];
+const notices = [], performs = [];
 process.on('message', message => {
   if (message.type === 'pause') process.send({ type: 'paused' }, () => {
     // The parent explicitly releases this barrier after filling the IPC queue.
     readSync(0, Buffer.alloc(1), 0, 1, null);
   });
   if (message.type === 'notice') notices.push(message.notice);
-  if (message.type === 'report') process.send({ type: 'report', notices });
+  if (message.type === 'perform') performs.push({ word: message.word, generation: message.generation, visibilityRevision: message.visibilityRevision });
+  if (message.type === 'report') process.send({ type: 'report', notices, performs });
   if (message.type === 'quit') process.exit(0);
 });
 process.send({ type: 'ready' });
@@ -44,6 +45,7 @@ process.send({ type: 'ready' });
     expect((await paused)[0]).toMatchObject({ type: 'paused' });
     expect(child.send({ type: 'padding', value: 'x'.repeat(2 * 1024 * 1024) })).toBe(false);
     const accepted = controls.hint({ title: 'queued hint' });
+    const performAccepted = controls.perform('nod');
     const session = { id: SessionId('backpressure-source'), header: { version: 4 as const, id: SessionId('backpressure-source'), createdAt: 0, isSeeded: false, cwd: '/review' } };
     broker.consume(session, { type: 'turn/start', seq: SessionSeq(0), time: 1, data: { turn: 1 } });
     broker.consume(session, { type: 'approval/asked', seq: SessionSeq(1), time: 2, data: { id: ApprovalRequestId('backpressure-approval'), toolName: 'bash' } });
@@ -51,10 +53,12 @@ process.send({ type: 'ready' });
     const reported = once(child, 'message'); child.send({ type: 'report' });
     child.stdin!.write(Buffer.from([0]));
     released = true;
-    const report = (await reported)[0] as { type: string; notices: { title: string; category?: string }[] };
+    const report = (await reported)[0] as { type: string; notices: { title: string; category?: string }[]; performs: { word: string; generation: number; visibilityRevision: number }[] };
     expect(report.type).toBe('report');
     expect(report.notices.filter(notice => notice.title === 'queued hint')).toHaveLength(1);
+    expect(report.performs).toEqual([{ word: 'nod', generation: 1, visibilityRevision: 1 }]);
     expect.soft(accepted).toBe(true);
+    expect.soft(performAccepted).toBe(true);
     expect.soft(broker.history()[0].state).toBe('role');
     expect.soft(report.notices.filter(notice => notice.category === 'approval')).toHaveLength(1);
   } finally {

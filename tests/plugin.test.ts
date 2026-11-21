@@ -12,7 +12,7 @@ function nativeBridge(): PetBridge {
   const listeners = new Set<(state: NativeLifecycle) => void>(); let generation = 0, revision = 0;
   const bridge: PetBridge = {
     start: vi.fn(async (_options, lifetime) => { generation = lifetime?.generation ?? generation + 1; revision = 1; for (const fn of listeners) fn({ running: true, visible: true, generation, visibilityRevision: revision, suspended: false }); }),
-    update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(() => true), dispose: vi.fn(async () => {}), onAction: vi.fn(), removeAction: vi.fn(),
+    update: vi.fn(), chatResult: vi.fn(), notify: vi.fn(() => true), perform: vi.fn(() => true), dispose: vi.fn(async () => {}), onAction: vi.fn(), removeAction: vi.fn(),
     onLifecycle: fn => { listeners.add(fn); }, removeLifecycle: fn => { listeners.delete(fn); },
     control: vi.fn(command => { for (const fn of listeners) fn({ running: true, visible: command !== 'hide', generation, visibilityRevision: ++revision, suspended: false }); }),
     notificationState: vi.fn(), snoozeResult: vi.fn(),
@@ -161,6 +161,12 @@ it('registers and disposes exact authenticated Connection routes without taking 
   expect((await navigation()).result.value).toEqual({ sessionId: 'existing  exact' });
   expect(bridge.update).toHaveBeenLastCalledWith(expect.objectContaining({ sessionId: 'existing  exact' }));
   expect(bridge.focusHarness).toHaveBeenCalledTimes(2);
+  const updatesBeforePerform = vi.mocked(bridge.update).mock.calls.length;
+  const noticesBeforePerform = vi.mocked(bridge.notify).mock.calls.length;
+  expect(ctx.coopanion.perform('nod')).toBe(true);
+  expect(bridge.perform).toHaveBeenCalledWith('nod', expect.objectContaining({ phase: 'running', visible: true, generation: 1, visibilityRevision: 2, suspended: false }));
+  expect(vi.mocked(bridge.update).mock.calls.length).toBe(updatesBeforePerform);
+  expect(vi.mocked(bridge.notify).mock.calls.length).toBe(noticesBeforePerform);
   await fiber.dispose(); expect(routes.size).toBe(0); await ctx.fiber.dispose();
 });
 
