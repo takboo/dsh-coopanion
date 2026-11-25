@@ -1,7 +1,8 @@
 # 接手入口
 
-开始仓库工作时先读 [docs/README.md](docs/README.md) 与 [工作流与验证门禁](docs/workflow.md)，按任务读取对应契约。日常门禁以 [mise.toml](mise.toml) 与 [基座锁文件](dsh-engineering.lock.json)（`v0.2.0-rc.1`）为准，版本、依赖和脚本以 `package.json`、`npm-shrinkwrap.json` 及 `.github/workflows/` 为准，当前执行范围来自用户。
+开始仓库工作时先读 [docs/README.md](docs/README.md) 与 [工作流与验证门禁](docs/workflow.md)，按任务读取对应契约。日常门禁以 [mise.toml](mise.toml) 与 [基座锁文件](dsh-engineering.lock.json)（`v0.2.0`）为准，版本、依赖和脚本以 `package.json`、`npm-shrinkwrap.json` 及 `.github/workflows/` 为准，当前执行范围来自用户。
 
+- 继承锁定基座契约（`docs/engineering-contract.md`，可通过 `locked-run.mjs docs docs/engineering-contract.md` 只读查阅）中的跨插件共享治理原则：**`Verification is all you need`**、EGM 磁盘真相与产品 `README.md` 保护、YAGNI / 独立只读复核 / 未授权不自动 push 或打 tag；以下仅声明本插件专属边界与红线。
 - 统一门禁使用 `mise run check`（`E0`+`E1`）；固定 Linux 容器宿主准入／拒绝／Web 探针与同镜像 `test:inbox-ui` 回归使用 `mise run verify:host`（`E1`+`E2`，详见[固定基座验收](docs/development.md#固定基座验收)）。
 - macOS 原生候选包使用[基座锁文件](dsh-engineering.lock.json)和[共享 Tart 复跑命令](docs/development.md#本地-macos-原生安装)。
 - 产品行为变更同步实现、测试和使用说明；完成语义由 `src/completion.ts` 共享判断，会话接受回执与任务完成分别结算。
