@@ -6,8 +6,10 @@
 
 | 任务 | 资料 |
 |---|---|
+| 统一门禁、`mise` 任务与 `E0`–`E4` 证据规则 | [工作流与验证门禁](workflow.md) |
 | 安装、配置、操作与升级 | [使用指南](usage.md) |
 | 开发、构建、测试与录制回归 | [开发指南](development.md) |
+| `src/` 源码模块与目录映射 | [源码目录说明](../src/README.md) |
 | 本地 macOS 原生安装与共享 Tart 复跑 | [本地 macOS 原生安装](development.md#本地-macos-原生安装) |
 | 完成判断、通知身份与请求结算 | [提醒契约](notification-contract.md) |
 | 会话续接、接受回执、草稿与去重 | [会话契约](session-chat-contract.md) |

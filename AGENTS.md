@@ -1,11 +1,12 @@
 # 接手入口
 
-开始仓库工作时先读 [docs/README.md](docs/README.md)，按任务读取对应契约。版本、依赖和命令以 `package.json`、`npm-shrinkwrap.json` 及 `.github/workflows/` 为准，当前执行范围来自用户。
+开始仓库工作时先读 [docs/README.md](docs/README.md) 与 [工作流与验证门禁](docs/workflow.md)，按任务读取对应契约。日常门禁以 [mise.toml](mise.toml) 与 [基座锁文件](dsh-engineering.lock.json)（`v0.2.0-rc.1`）为准，版本、依赖和脚本以 `package.json`、`npm-shrinkwrap.json` 及 `.github/workflows/` 为准，当前执行范围来自用户。
 
-- macOS 原生候选包使用[基座锁文件](dsh-engineering.lock.json)和[共享 Tart 复跑命令](docs/development.md#本地-macos-原生安装)。普通 Web 回归走[固定 Linux 容器](docs/development.md#固定基座验收)。
+- 统一门禁使用 `mise run check`（`E0`+`E1`）；固定 Linux 容器宿主准入／拒绝／Web 探针与同镜像 `test:inbox-ui` 回归使用 `mise run verify:host`（`E1`+`E2`，详见[固定基座验收](docs/development.md#固定基座验收)）。
+- macOS 原生候选包使用[基座锁文件](dsh-engineering.lock.json)和[共享 Tart 复跑命令](docs/development.md#本地-macos-原生安装)。
 - 产品行为变更同步实现、测试和使用说明；完成语义由 `src/completion.ts` 共享判断，会话接受回执与任务完成分别结算。
 - 浏览器回复、收件箱、字号、多屏或 NPC 日常的变更包含 `test:inbox-ui`。原生窗口和安装使用隔离 profile，系统桌面操作串行执行。自动化矩阵与物理实机验收分别报告。
 - 诊断和资源观察按 [诊断契约](docs/diagnostics-contract.md) 解释有效时间、缺口和报告状态；进程存活本身不证明自主活动可用。
 - 发布前读 [发布流程](docs/releasing.md)，保持同一分发包贯穿安装、npm 和 Release；本地构建或安装成功分别记录，不能代替发布成功。
-- `docs/evidence/` 只用于追溯提交、复现旧问题或核对原始证据；先读其 [说明](docs/evidence/README.md)，用 `rg --no-ignore docs/evidence` 显式检索。报告、日志、截图、摘要及第三方许可保留原字节，新验证绑定实际提交、宿主版本和包摘要。
-- `.cache/`、`artifacts/`、`dist/` 和 `node_modules/` 是本机或生成内容，使用前核对来源与实际源码。
+- `docs/evidence/` 只用于追溯提交、复现旧问题或核对原始证据，由根 [`.rgignore`](.rgignore) 排除出默认检索；先读其 [说明](docs/evidence/README.md)，用 `rg --no-ignore docs/evidence` 显式检索。报告、日志、截图、摘要及第三方许可保留原字节，新验证绑定实际提交、宿主版本和包摘要。
+- `.cache/`、`artifacts/`、`dist/` 和 `node_modules/` 是本机或生成内容，使用前核对来源与实际源码；仓库根目录不保留 `.tgz` 或 `.zip` 产物。
