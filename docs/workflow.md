@@ -2,10 +2,15 @@
 
 本仓库的日常开发门禁与宿主验证入口由根目录 [`mise.toml`](../mise.toml) 统一声明，并通过 [`dsh-engineering.lock.json`](../dsh-engineering.lock.json) 锁定共享工程基座 `dsh-plugin-engineering` 的精确 tag 与提交。
 
+## 治理总纲与交付边界
+
+- **`Verification is all you need`**：不靠口头声明或对话记忆担保；凡可机械验证的不变量、契约与回归模式都固化为 `mise` 统一门禁与自动化测试，严格区分 `E0`–`E4` 证据等级（未实跑一律标 `not-run`），并用同一份候选 `.tgz` 摘要串联 `E1` 打包元数据校验与 `E2`/`E3` 宿主验证。
+- **独立只读复核与受控交付边界**：遵循 YAGNI 与先做减法，变更须经独立只读复核收敛后再提交；未经明确授权不自动 `git push`、不打版本 tag、不越权修改其他仓库。
+
 ## 首次准备与唯一门禁
 
 首次运行统一门禁前需先准备两项前提：
-1. 安装项目与锁定基座所需的 `mise` Node 运行时：`mise install` 会安装本项目固定的 Node `24.21.0`，而锁定基座 `v0.2.0-rc.1` 另要求 `mise` 管理的基座 Node `24.22.2`。
+1. 安装项目与锁定基座所需的 `mise` Node 运行时：`mise install` 会安装本项目固定的 Node `24.21.0`，而锁定基座 `v0.2.0` 另要求 `mise` 管理的基座 Node `24.22.2`。
 2. 定位共享基座 checkout：`mise.toml` 在启动 `locked-run.mjs` 之前先由 shell 展开 `${DSH_ENGINEERING_CHECKOUT:-../dsh-plugin-engineering}`；若基座仓库不在相邻目录 `../dsh-plugin-engineering`（例如在独立的 git worktree 中运行），即使已配置 `${XDG_CONFIG_HOME:-$HOME/.config}/dsh-plugin-engineering/checkout`，也必须显式导出 `DSH_ENGINEERING_CHECKOUT` 绝对路径。
 
 ```bash
@@ -64,6 +69,7 @@ node "${DSH_ENGINEERING_CHECKOUT:-../dsh-plugin-engineering}/scripts/locked-run.
 
 ## EGM 文档结构与 `.rgignore` 约定
 
-- **L1 导航索引**：根目录 [`README.md`](../README.md) 面向用户展示，[`AGENTS.md`](../AGENTS.md) 负责接手约束，[`docs/README.md`](README.md) 全量索引 `docs/*.md`，[`src/README.md`](../src/README.md) 映射 `src/` 源码结构。
+- **L1 导航索引**：根目录 [`README.md`](../README.md) 面向用户展示（工程治理改动不将其改写为内部工程索引），[`AGENTS.md`](../AGENTS.md) 负责接手约束，[`docs/README.md`](README.md) 全量索引 `docs/*.md`，[`src/README.md`](../src/README.md) 映射 `src/` 源码结构。
+- **L2 阶段计划与 L3 探索草案**：`docs/plans/*.md`（L2，收官后删除）与 `docs/design/rfc-*.md`（L3，前 20 行标注 `EXPLORATORY / UNVERIFIED`）均须在 [`docs/README.md`](README.md) 中登记，并附单行结构化 `退场条件:` / `Retirement:` 字段。
 - **历史证据降噪**：[`docs/evidence/`](evidence/README.md) 保留原始历史证据字节且不可修改；由根 [`.rgignore`](../.rgignore) 以 `/docs/evidence/` 排除出默认检索，禁止在之后追加 `!` 反排除或添加嵌套 `docs/.rgignore`／`docs/.ignore`。需要溯源时使用 `rg --no-ignore docs/evidence`。
 - **工作区整洁**：仓库根目录禁止遗留 `.tgz` 或 `.zip` 产物；候选验证产物统一落在已忽略的 `artifacts/verify-host/`。
