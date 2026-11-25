@@ -1,0 +1,46 @@
+min_version = "2026.10.2"
+
+[tools]
+node = "24.21.0"
+
+[tasks.setup]
+description = "Install locked dependencies without lifecycle scripts"
+run = "npm ci --ignore-scripts"
+
+[tasks."check:shell"]
+description = "Run locked dsh-plugin-engineering plugin shell gate"
+run = 'node "${DSH_ENGINEERING_CHECKOUT:-../dsh-plugin-engineering}/scripts/locked-run.mjs" check-plugin --skip-path docs/evidence'
+
+[tasks."check:metadata"]
+description = "Verify package, shrinkwrap and release-notes metadata"
+run = "npm run verify:metadata"
+
+[tasks."check:typecheck"]
+description = "Typecheck Host and Client TypeScript sources"
+run = "npm run typecheck"
+
+[tasks.test]
+description = "Run unit, release, client, locale and compatibility tests"
+run = "npm test"
+
+[tasks.build]
+description = "Build Host, Client and runtime artifacts"
+run = "npm run build"
+
+[tasks.check]
+description = "Run unified static shell, metadata, typecheck and unit gates"
+depends = ["check:shell", "check:metadata", "check:typecheck", "test"]
+
+[tasks."verify:pack"]
+description = "Build, pack and run E1 metadata verification on candidate tarball"
+run = "node scripts/verify-host.mjs pack"
+
+[tasks."verify:host:container"]
+description = "Run locked Linux container admit/refuse/web probe (E2)"
+depends = ["verify:pack"]
+run = 'node "${DSH_ENGINEERING_CHECKOUT:-../dsh-plugin-engineering}/scripts/locked-run.mjs" container all tests/engineering-targets.json tests/engineering-web-probe.mjs artifacts/verify-host/candidate.tgz HEAD artifacts/verify-host/host.json'
+
+[tasks."verify:host"]
+description = "Verify host.json provenance and run containerized inbox-ui regression (E2)"
+depends = ["verify:host:container"]
+run = "node scripts/verify-host.mjs post"

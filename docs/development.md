@@ -1,8 +1,20 @@
 # 开发与验证
 
-先从[文档索引](README.md)阅读对应行为契约。工具链分别固定在 `.node-version` 和 `package.json#packageManager`，依赖锁为随包提供的 `npm-shrinkwrap.json`。
+先从[文档索引](README.md)与[工作流与验证门禁](workflow.md)阅读对应行为契约和门禁规则。工具链分别固定在 [`mise.toml`](../mise.toml)、`.node-version` 和 `package.json#packageManager`，依赖锁为随包提供的 `npm-shrinkwrap.json`。
 
 ## 本地源码检查
+
+推荐直接运行统一门禁（首次需准备项目与基座 `mise` Node，并在基座不在 `../dsh-plugin-engineering` 时导出 `DSH_ENGINEERING_CHECKOUT`，详见[工作流与验证门禁](workflow.md#首次准备与唯一门禁)）：
+
+```bash
+mise install && mise install node@24.22.2
+export DSH_ENGINEERING_CHECKOUT=/path/to/dsh-plugin-engineering
+mise run setup
+mise run check
+mise run build
+```
+
+或按需单独执行底层 `npm` 脚本：
 
 ```bash
 npm ci --ignore-scripts
@@ -38,15 +50,18 @@ CI 测试沙箱参数仅供隔离实例；普通安装保留 Chromium sandbox �
 
 ## 固定基座验收
 
-在干净 checkout 准备 Git、Bash、Node.js 和 Docker。Linux 入口固定使用 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) 提交 `9ed36752356975cd7d47c11d63744220443c1bf7`，在该提交下阅读 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`。传入已构建的包，以及包含这个固定提交的基座 checkout。
+在工作区准备 Git、Bash、mise（`>= 2026.10.2`）、项目 Node（`24.21.0`）、基座 Node（`24.22.2`，执行 `mise install node@24.22.2`）和 Docker。Linux 验收按[项目锁文件](../dsh-engineering.lock.json)固定的 [dsh-plugin-engineering](https://github.com/takboo/dsh-plugin-engineering) tag 与提交运行，通过基座 `scripts/locked-run.mjs docs <path>` 阅读锁定提交下的 `docs/engineering-contract.md`、`docs/plugin-onboarding.md`、`docs/distribution.md` 和 `docs/test-environments.md`（更多门禁说明见[工作流与验证门禁](workflow.md)）。
 
 普通浏览器检查使用基座固定的 Linux 容器。宿主 Web 探针使用基座镜像提供的 Playwright 和 Chromium。项目回归使用包内锁文件要求的 Playwright 及匹配的 Chromium，在同一镜像的临时容器内安装并随任务回收。项目目录不保留浏览器缓存、独立测试运行时或持久测试 VM。
 
 ```bash
-bash scripts/verify-engineering.sh /path/to/dsh-plugin-engineering /path/to/candidate.tgz artifacts/engineering-acceptance
+DSH_ENGINEERING_CHECKOUT=/path/to/dsh-plugin-engineering mise run verify:host
 ```
 
-入口从包内构建信息读取源码提交，并核对[宿主目标配置](../tests/engineering-targets.json)和 Web 探针在源码提交、候选包和 checkout 中的字节一致。输出目录需为新路径。基座在 Linux 容器内验证宿主准入、Web 行为和卸载，并把输入摘要和基座身份写入 `host.json`。Coopanion 的 `test:inbox-ui` 在同一个容器镜像内运行，使用同一包和包内锁文件，结果及 Chromium 版本写入 `inbox-ui.log`。
+该任务按 [`mise.toml`](../mise.toml) 的严格串行 DAG（`verify:pack` → `verify:host:container` → `verify:host`）执行，产物统一落在 `artifacts/verify-host/`：
+1. `verify:pack`（[`scripts/verify-host.mjs`](../scripts/verify-host.mjs)）校验 `artifacts/verify-host/` 路径位于仓库边界内且非符号链接，清理并重建目录，构建并打包候选包 `artifacts/verify-host/candidate.tgz`，对同一候选包运行 `scripts/check-package.mjs`（`E1` 打包元数据校验），默认要求工作区干净（`dist/build-info.json` 的 `dirty === false`）且包内[宿主目标配置](../tests/engineering-targets.json)和[Web 探针](../tests/engineering-web-probe.mjs)与已提交 `HEAD` 逐字节一致（仅本地未提交试跑时可显式设 `DSH_VERIFY_ALLOW_DIRTY=1`，其输出标明为脏树试跑，不作为正式 E2 证据）。
+2. `verify:host:container` 经锁定基座的 `locked-run.mjs container all ... HEAD artifacts/verify-host/host.json` 在 Linux 容器内验证真实 DSH 宿主准入、拒绝、Web 行为和卸载，并把输入摘要与基座 `git-archive` 身份写入 `artifacts/verify-host/host.json`。
+3. `verify:host` 复核 `host.json` 的 `provenance`、`HEAD`、候选包摘要、`admit`/`refuse` 结果及包内 `dist/build-info.json`（同样默认要求 `dirty === false` 且输入与 `HEAD` 一致），并在同一镜像的临时容器中以同一候选包和包内锁文件运行 `npm run test:inbox-ui`，结果及 Chromium 版本写入 `artifacts/verify-host/inbox-ui.log`。
 
 任务结束时清理临时 checkout、安装器、候选包、自动录屏和下载缓存。本地只保留仍用于问题复现、发布验收或恢复的独有材料。记录对应提交、包摘要和证据路径，相同字节只保留一份。可以从 Git、GitHub Release 或共享基座恢复的内容按需获取。
 

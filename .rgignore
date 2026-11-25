@@ -1,0 +1,2 @@
+# Immutable historical evidence is excluded from default search; query explicitly with `rg --no-ignore docs/evidence`.
+/docs/evidence/
